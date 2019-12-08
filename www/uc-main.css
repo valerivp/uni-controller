@@ -204,6 +204,7 @@ body.dark{
     /* margin: auto; */
     padding: 0.25ex 1ex;
     text-align: center;
+    max-height: 3.5em;
 }
 
 /* -------------- */

@@ -1,6 +1,6 @@
 'use strict';
 
-const child_process = require('child_process');
+const utils = require("./uc-utils");
 
 const Router = function () {
     this.routes = {
@@ -10,7 +10,7 @@ const Router = function () {
         'PATCH': {},
         'DELETE': {}
     };
-    this.help = '';
+    this._help = '';
 };
 
 const router = new Router;
@@ -18,10 +18,10 @@ module.exports = router;
 
 Router.prototype.addInfo = function(method, url, text){
     if(text)
-        this.help += `${method}\t${url}:\t${text}\n`;
+        this._help += `${method}\t${url}:\t${text}\n`;
 };
 Router.prototype.getInfo = function(){
-    return this.help;
+    return this._help;
 };
 
 Router.prototype.route = function (request, response) {
@@ -68,9 +68,27 @@ Router.prototype.delete = function (route, cb, about) {
     this.addInfo('DELETE', route, about);
 };
 
+Router.prototype.spawn = function (cmds, res) {
+    utils.spawnAnything(cmds, router.cmdOutToResponse.bind(null, res));
+};
+
+Router.prototype.cmdOutToResponse = function(res, child, stdout, stderr) {
+    if(child.exitCode) {
+        //console.log(`Failed to start child process '${child.spawnargs.join(' ')}' (${err.message})`);
+        res.writeHead(400, {'Content-Type': 'text/plain'});
+        /** @namespace child.spawnfile */
+        res.write(stderr);
+    }else{
+        res.writeHead(200, {'Content-Type': 'text/plain'});
+        res.write(stdout);
+    }
+    res.end();
+};
+
+
 router.get('/help',
     function (req, res) {
-        res.write(router.help);
+        res.write(router.getInfo());
         res.end();
     },
     'get list allow URLs');
@@ -81,17 +99,12 @@ router.get('/err',
     },
     'test internal error');
 
-router.get('/info',
-    function (req, res) {
-        let output = '';
-        output += "MCU:Onion Omega 2\n";
-        //output += "ChipID:" + ESP_getChipIdStr() + '\n';
-        //output += String(F("FreeHeap:")) + String(ESP.getFreeHeap()) + '\n';
-        //output += String(F("DemoMode:true\n"));
 
-        res.writeHead(200, {'Content-Type': 'text/plain', 'Access-Control-Allow-Origin': '*'});
-        res.write(output);
-        res.end();
+
+router.get('/system',
+    function (req, res) {
+        //utils.execAnything(['uname -nom', 'cmd /c ver'], router.cmdOutToResponse.bind(null, res));
+        router.spawn({'uname': ['-nom'], 'cmd': ['/c', 'ver']}, res);
     },
     'get system info');
 
@@ -158,21 +171,6 @@ router.post(urlUser,
     },
     'set user settings');
 
-/*
-help_info += "/user-info ? [format=json]: get user info as text or json. Allow methods: HTTP_GET\n";
-router.get("/user-info", function (req, res){
-    let data;
-    if (req.query.format === "json") {
-        data = JSON.stringify({name: authentication.User});
-        res.writeHead(200, {'Content-Type': 'text/json'});
-    }else {
-        data = "name:" + authentication.User + '\n';
-        res.writeHead(200, {'Content-Type': 'text/plain'});
-    }
-    res.write(data);
-    res.end();
-});
-*/
 
 let urlReboot = "/reboot";
 router.get(urlReboot,
@@ -196,24 +194,7 @@ router.get(urlReboot,
 
 router.post(urlReboot,
     function (req, res) {
-        let child = child_process.spawn("reboot");
-        child.on('error', (err) => {console.log('Failed to start child process: reboot');});
-        if(!child.pid){
-            child = child_process.spawn("shutdown", ['/r', '/t', '0']);
-            child.on('error', (err) => {console.log(`Failed to start child process: shutdown (${err.message})`);});
-        }
-
-        if(child.pid){
-            res.writeHead(200, {'Content-Type': 'text/plain'});
-            res.write(`Ok. Wait for restart:  ${child.spawnfile}`);
-
-        }else{
-            res.writeHead(400);
-            /** @namespace child.spawnfile */
-            res.write(`Failed to start child process: ${child.spawnfile}`);
-
-        }
-        res.end();
+        router.spawn({'reboot': [], 'shutdown': ['/r', '/t', '30']}, res);
     },
     'restart system');
 

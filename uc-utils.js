@@ -2,6 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const child_process = require('child_process');
 
 global.basedir = path.dirname(process.mainModule.filename);
 
@@ -107,6 +108,8 @@ Date.prototype.toFormatString = function(format, utc) {
     return format;
 };
 
+
+
 function exitHandler(options, exitCode) {
     for(let i = utils.exitHandlers.length - 1; i >= 0 ; i--){
         try{
@@ -151,5 +154,28 @@ function initExitHandler(exitHandler) {
     process.on('uncaughtException', err => {
         exitHandler({error: err, exit: true})
     });
-};
+}
 
+module.exports.spawnAnything = function (apps, cb, opt) {
+    for(let key in apps){
+        let child = child_process.spawn(key, apps[key], opt);
+        child.on('error', (err) => {
+            console.log(`Failed to start child process '${child.spawnargs.join(' ')}' (${err.message})`);
+        });
+        if(child.pid){
+            child._stdout = '';
+            child.stdout.on('data', (data) => {
+                child._stdout += (data ? new Buffer(data,'utf-8') : '').toString();
+            });
+            child._stderr = '';
+            child.stderr.on('data', (data) => {
+                child._stderr += (data ? new Buffer(data,'utf-8') : '').toString();
+            });
+
+            child.on('close', (code) => {
+                cb(child, child._stdout, child._stderr);
+            });
+            return child;
+        }
+    }
+};

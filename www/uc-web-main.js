@@ -132,7 +132,7 @@ const vToasts = new Vue({
         add(text){
             let pos = document.activeElement.getBoundingClientRect().top;
             pos = (pos ? 'calc(100vh - ' + pos + 'px)' : '50vh');
-            this.toasts.push({title:text, pos: pos});
+            this.toasts.push({title:text.split('\n')[0], pos: pos});
             setTimeout(this.del, 4000);
         },
         addHttpError(err){
@@ -414,7 +414,7 @@ vAbout.add(vcPropetiesPanelText, {content: 'content-about-thanks'});
 vAbout.add(
     Vue.component('about-system', {
         data:()=> {return {
-            mcu:'',
+            platform:'',
             chipID:'',
             uptimeText:'',
         }},
@@ -424,16 +424,16 @@ vAbout.add(
         },
         methods: {
             fetchInfo() {
-                axios.get(`http://${serverLocation}/info`).then(response => {
-                    let infoText = response.data;
-                    let data = String(infoText).split('\n');
+                axios.get(`http://${serverLocation}/system`).then(response => {
+                    this.platform = response.data.trim();
+                    /*let data = String(infoText).split('\n');
                     for(let i = 0; i < data.length; i++){
                         let keyValue = String(data[i]).split(':');
                         switch(keyValue[0]){
                             case 'MCU': this.mcu = keyValue[1]; break;
                             case 'ChipID': this.chipID = keyValue[1]; break;
                         }
-                    }
+                    }*/
                 }).catch(function (error) {vToasts.addHttpError(error); console.log(error);});
             },
             fetchUptime() {

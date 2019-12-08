@@ -179,10 +179,10 @@
 <script type="text/x-template" id="about-system">
 <div>
     <div>
-        <span>Микроконтроллер</span>
-        <span>{{mcu}}</span>
+        <span>Платформа</span>
+        <span>{{platform}}</span>
     </div>
-    <div v-if="chipID">
+    <div v-if="chipID" hidden>
         <span>Идентификатор</span>
         <span>{{chipID}}</span>
     </div>
@@ -261,7 +261,9 @@
 
 
 <div id="toasts">
-    <div class="toast" v-for="item in toasts" v-bind:style="{bottom:item.pos}"><div> {{item.title}} </div></div>
+    <div class="toast" v-for="item in toasts" v-bind:style="{bottom:item.pos}">
+        <div> {{item.title}} </div>
+    </div>
 </div>
 
 </body>
