@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>UniController</title>
+
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <script>
+        let ScriptLocation = (location.protocol === 'file:' || location.hostname === "localhost") ? '.js' : '.min.js';
+        document.write("<script src='vue" + ScriptLocation + "' type='text/javascript'><\/script>");
+        document.write("<script src='axios" + ScriptLocation + "' type='text/javascript'><\/script>");
+    </script>
+    <script src="vuex.js"></script>
+    <link rel="stylesheet" type="text/css" href="uc-main.css">
+    <link rel="stylesheet" type="text/css" href="css/fonts.css">
+    <link rel="stylesheet" type="text/css" href="uc-plugins.css">
+</head>
+<body class="hidden">
+
+
+<div id="main-title">
+    <div id="main-logo" onclick="vContent.setTab('main-info')">
+
+    </div>
+
+    <div id="main-menu-button-place">
+    </div>
+</div>
+
+<div id="splash-not-connected" v-if="isShowNotConnected" >
+    <span>Связь с модулем не установлена...</span>
+</div>
+
+<div id="main-content">
+    <div id="main-menu">
+        <div id="main-menu-button" class="sMenuButton" v-bind:class="!isMenuShow ? '' : ' sMenuButtonClosed'"
+             v-on:click="toggleMenu">
+            <div id="main-menu-sandvich">
+                <div class="vSandvichMenuBar1"></div>
+                <div class="vSandvichMenuBar2"></div>
+                <div class="vSandvichMenuBar3"></div>
+                <div class="vSandvichMenuBar4"></div>
+            </div>
+        </div>
+        <div id="menu-items" v-bind:class="!isMenuShow ? '' : ' sMenuButtonOpen'"
+             v-on:click="isMenuShow = !isMenuShow">
+            <div class="sMenuItem" v-for="tab in tabsList" v-on:click.stop="setTab(tab.id)"
+                 v-bind:class="(isShow(tab)?'sMenuItemSelected':'')">
+                {{tab.title}}
+            </div>
+        </div>
+    </div>
+    <!--<div id="tabs-content" v-bind:class="(!isConnected?'zzStBlur':'')">v-show="isShow(tab)"-->
+    <div id="tabs-content">
+        <div v-for="tab in tabsList" v-bind:id="'tab-' + tab.id" v-show="isShow(tab)">
+        </div>
+    </div>
+</div>
+
+<div id="tab-content-main-info" title="Состояние">
+    <div id="main-info">
+    </div>
+</div>
+
+
+<div id="tab-content-sensors" title="Датчики">
+    <div id="content-sensors">
+        <div v-for="type in types.types()" v-if="getSensorsByType(type).length" >
+        <!--<div v-for="data in getTypeData()">-->
+            <table class="sSensorsTable">
+                <tr>
+                    <th>
+                        {{'undefined' == String(type)  ? '#' : type}}
+                    </th>
+                    <th v-for="data in types.data(type)" v-bind:style="data.align ? 'text-align: ' + data.align : ''">
+                        {{data.title}}
+                    </th>
+                </tr>
+                <tr v-for="sensor in getSensorsByType(type)">
+                    <td class="sSensorName">
+                        <span v-show="!sensor.editName" v-on:click="doEditName(sensor)">{{ String(sensor) }}</span>
+                        <input v-show="sensor.editName" v-bind:id="sensor.nameInputElementId" type="text" v-model.lazy="sensor.name" v-on:change="setName(sensor)" v-on:blur="sensor.editName = false">
+                    </td>
+                    <td  v-for="data in types.data(type)" v-bind:style="data.align ? 'text-align: ' + data.align : ''">
+                        {{data.data(sensor)}}
+                    </td>
+                </tr>
+            </table>
+
+
+        </div>
+    </div>
+</div>
+
+
+<div id="tab-content-terminal" title="Терминал">
+    <div id="terminal" class="flex">
+        <div class="flex wrap">
+            <input style="flex-grow: 1" type="text" v-model="TextForSend" v-on:keyup.enter="send" v-on:keyup.up="prevCmd" v-on:keyup.down="nextCmd" v-on:keyup.esc="TextForSend = ''">
+            <!--<textarea id="text-for-send" v-model="TextForSend" v-on:keyup.enter="send" v-on:keyup.up="prevCmd" v-on:keyup.down="nextCmd" v-on:keyup.esc="TextForSend = ''"></textarea>-->
+            <button v-on:click="send">Отправить</button>
+        </div>
+        <div style="margin: 1ex; margin-bottom: 0; flex-grow: 1">
+
+            <textarea v-model="ReceivedText" id="terminal-received-text"></textarea>
+
+            <button v-on:click="clear" style="position: absolute; top:0; right: 0; margin: 0;">Очистить</button>
+
+        </div>
+        <div class="flex wrap">
+            <label style="margin-right: 5ex;"><INPUT TYPE="checkbox" v-model="NoPeriodicInfoLog">
+                <span>Без периодических данных</span></label>
+            <label><INPUT TYPE="checkbox" v-model="AutoScroll">
+                <span>Авто-прокрутка</span></label>
+        </div>
+    </div>
+</div>
+
+<script type="text/x-template"  id="properties-panel">
+    <div v-bind:id="id" class="sProperties">
+        <div v-bind:is="item.name" v-for="item in items" v-bind:id="item.id" v-bind:params="item">
+
+        </div>
+    </div>
+</script>
+
+
+<div id="tab-content-about" title="О системе">
+    <properties-panel id="about">
+    </properties-panel>
+</div>
+
+
+<script type="text/x-template"  id="properties-panel-text">
+    <div v-html="content">
+    </div>
+</script>
+
+<script type="text/x-template" id="content-about-developer">
+    <div>
+        <span>Разработка</span>
+    </div>
+    <div>
+        <span>Валерий Просвирнин</span>
+        <span><a href="mailto:valerivp@vehs.ru" target="_blank" rel="noopener noreferrer">valerivp@vehs.ru</a></span>
+    </div>
+    <div>
+        <span></span>
+        <span><a href="http://www.vehs.ru" target="_blank" rel="noopener noreferrer">www.vehs.ru</a></span>
+    </div>
+</script>
+
+<script type="text/x-template" id="content-about-thanks">
+    <div>
+        <span>Благодарности</span>
+    </div>
+    <div>
+        <span>Антон Федерольф</span>
+        <span><a href="mailto:zz-anton@yandex.ru" target="_blank" rel="noopener noreferrer">zz-anton@yandex.ru</a></span>
+    </div>
+    <div>
+        <span>Команда Vue.js</span>
+        <span><a href="https://ru.vuejs.org" target="_blank" rel="noopener noreferrer">ru.vuejs.org</a></span>
+    </div>
+</script>
+
+<script type="text/x-template" id="content-about-fullscreen">
+    <div>
+        <span>Режим приложения</span>
+    </div>
+    <div>
+            <span style="max-width: fit-content;"><span style="font-size: 75%;">Режим без строки адреса работает в Chrome для Android.<br>
+            Для запуска в этом режиме необходимо добавить ярлык страницы на главный экран из меню браузера и запускать с помощью ярлыка на главном экране.<br>
+            </span></span>
+    </div>
+</script>
+
+<script type="text/x-template" id="about-system">
+<div>
+    <div>
+        <span>Микроконтроллер</span>
+        <span>{{mcu}}</span>
+    </div>
+    <div v-if="chipID">
+        <span>Идентификатор</span>
+        <span>{{chipID}}</span>
+    </div>
+    <div>
+        <span>Время работы</span>
+        <span>{{`${uptimeText.substr(0, uptimeText.indexOf('D'))}д. ${Number(uptimeText.substr(-6, 2))}ч. ${uptimeText.substr(-4, 2)}мин.`}}</span>
+    </div>
+    <div>
+        <span>Дата и время</span>
+        <span>{{time && time.toString ? time.toFormatString('dd.mm.yyyy hh:ii:ss') : ''}}</span>
+    </div>
+</div>
+
+</script>
+
+
+
+<div id="tab-content-settings" title="Параметры">
+    <properties-panel id="settings">
+    </properties-panel>
+</div>
+
+<script type="text/x-template"  id="settings-select-theme">
+    <div>
+        <div>
+            <span>Тема оформления</span>
+
+            <select v-model="selectedTheme" v-on:change="onSelectTheme">
+                <option v-for="theme in themes" v-bind:value="theme.name">
+                    {{theme.title}}
+                </option>
+            </select>
+
+        </div>
+    </div>
+</script>
+
+<script type="text/x-template" id="settings-set-time">
+    <div>
+        <div>
+            <span>Установить время</span>
+            <button v-on:click="sendNewtime">Установить</button>
+        </div>
+        <div>
+            <span>Новое время</span>
+            <input v-model="newtime" length="15" placeholder="dd.MM.yyyy hh:mm:ss">
+        </div>
+    </div>
+</script>
+
+<script type="text/x-template"  id="settings-set-auth">
+        <div>
+            <div>
+                <span>Авторизация</span>
+                <button v-on:click="sendHttpAuth">Установить</button>
+            </div>
+            <div>
+                <span>Имя пользователя</span>
+                <input v-model="httpUserName" length="15">
+            </div>
+            <div>
+                <span>Пароль</span>
+                <input v-model="httpUserPassword" length="15" type="password" placeholder="******">
+            </div>
+        </div>
+</script>
+
+<script type="text/x-template"  id="settings-reboot">
+    <div>
+        <div>
+            <span>Перезагрузка</span>
+            <button v-on:click="sendReboot">Перезагрузить</button>
+        </div>
+    </div>
+</script>
+
+
+<div id="toasts">
+    <div class="toast" v-for="item in toasts" v-bind:style="{bottom:item.pos}"><div> {{item.title}} </div></div>
+</div>
+
+</body>
+
+
+<script src="uc-web-utils.js"></script>
+<script src="uc-web-main.js"></script>
+<script src="uc-web-plugins.js"></script>
+<script>
+    document.getElementsByTagName('body')[0].classList.remove('hidden');
+</script>
+
+</html>
+                                                                                                                                                                                       

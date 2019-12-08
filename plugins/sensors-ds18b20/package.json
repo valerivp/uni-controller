@@ -1,0 +1,15 @@
+{
+  "name": "sensors-ds18b20",
+  "version": "0.0.1",
+  "dependencies": {
+  },
+  "node": "",
+  "web":{
+    "js":[
+      "www/sensors-ds18b20-web.js"
+    ],
+    "css":[
+    ]
+  }
+}
+

@@ -1,0 +1,11 @@
+{
+  "name": "uni-controller",
+  "version": "0.0.1",
+  "dependencies": {
+    "multipart-formdata": "latest",
+    "safe-buffer": "latest",
+    "node-static": "latest",
+    "ws": "latest",
+    "basic-authentication": "latest"
+  }
+}

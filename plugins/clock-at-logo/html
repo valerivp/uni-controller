@@ -1,0 +1,11 @@
+    <div class="ucMainLogo" v-on:click="gotoMainPage">
+        <span class="ucFontBold ucColorContrast">UNI</span>CONTROLLER
+    </div>
+    &nbsp;
+    <div class="ucDateTime">
+        <span v-if="!time">--:--</span>
+        <span v-if="time" class="ucFontBold ucColorContrast">
+            {{String('00' + time.getHours()).substr(-2)}}<span v-bind:style="(time.getSeconds() % 2 ? 'opacity:0.4;' : '')">:</span>{{String('00' + time.getMinutes()).substr(-2)}}
+        </span>
+        <span v-if="time" >{{['воскресенье', 'понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота'][time.getDay()]}}</span>
+    </div>

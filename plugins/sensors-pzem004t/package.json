@@ -1,0 +1,15 @@
+{
+  "name": "sensors-pzem004t",
+  "version": "0.0.1",
+  "dependencies": {
+  },
+  "node": "",
+  "web":{
+    "js":[
+      "www/sensors-pzem004t-web.js"
+    ],
+    "css":[
+    ]
+  }
+}
+
