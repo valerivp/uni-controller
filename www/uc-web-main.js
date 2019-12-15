@@ -426,14 +426,6 @@ vAbout.add(
             fetchInfo() {
                 axios.get(`http://${serverLocation}/system`).then(response => {
                     this.platform = response.data.trim();
-                    /*let data = String(infoText).split('\n');
-                    for(let i = 0; i < data.length; i++){
-                        let keyValue = String(data[i]).split(':');
-                        switch(keyValue[0]){
-                            case 'MCU': this.mcu = keyValue[1]; break;
-                            case 'ChipID': this.chipID = keyValue[1]; break;
-                        }
-                    }*/
                 }).catch(function (error) {vToasts.addHttpError(error); console.log(error);});
             },
             fetchUptime() {
