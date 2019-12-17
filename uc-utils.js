@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const child_process = require('child_process');
 
-global.basedir = path.dirname(process.mainModule.filename);
+//global.basedir = path.dirname(process.mainModule.filename);
 
 const utils = module.exports;
 module.exports.file = {};
@@ -134,7 +134,7 @@ module.exports.defaultExitHandler = function(options, exitCode) {
 
     if (exitCode || exitCode === 0)
         utils.file.log('Done. Exit code: ' + exitCode + '\n');
-}
+};
 
 
 function initExitHandler(exitHandler) {

@@ -1,5 +1,6 @@
 'use strict';
 
+const basedir = require('path').dirname(process.mainModule.filename);
 const utils = require(`${basedir}/uc-utils`);
 
 const i2c = (process.platform === 'linux' ? require('./i2cs/i2cs') : undefined);

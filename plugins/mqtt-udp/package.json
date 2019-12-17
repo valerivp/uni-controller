@@ -1,12 +1,12 @@
 {
   "name": "mqtt-udp",
-  "version": "0.0.1",
+  "version": "0.0.4",
   "dependencies": {
   },
   "node": "mqtt-udp",
   "web":{
     "js":[
-
+      "www/mqtt-udp-web.js"
     ],
     "css":[
 

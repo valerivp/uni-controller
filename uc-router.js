@@ -129,9 +129,6 @@ router.get(urlUser,
         if (req.query.format === "json") {
             contentType = 'text/json';
             data = JSON.stringify({name: authentication.User});
-        }else if (req.query.format === "text"){
-            contentType = 'text/plain';
-            data = "name:" + authentication.User + '\n';
         }else{
             contentType = 'text/html';
             // language=HTML
@@ -142,8 +139,8 @@ router.get(urlUser,
                     </head>
                     <body>
                         <form method="post" action="user">
-                            <input name="name" maxlength="15" placeholder="name">
-                            <input name="password" maxlength="15" type="password" placeholder="password">
+                            <label>Name:<input name="name" maxlength="15" placeholder="name"></label><br>
+                            <label>Password:<input name="password" maxlength="15" type="password" placeholder="password"></label>
                             <button type="submit">save</button>
                         </form>
                     </body>
@@ -153,7 +150,7 @@ router.get(urlUser,
         res.write(data);
         res.end();
     },
-    'get user settings form or data (?[format=json|text])');
+    'get user settings form or data (?[format=json])');
 
 const authentication = require('./uc-auth');
 router.post(urlUser,

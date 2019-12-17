@@ -89,7 +89,8 @@ const vContent = new Vue({
             if(onHide) onHide();
             this.currentTab = tabId;
             let onShow = this.getTab(tabId).onShow;
-            if(onShow) onShow();
+            if(onShow) setTimeout(onShow, 0);
+
         },
         isShow:function (tab) {return this.currentTab === tab.id},
         toggleMenu: function (){
@@ -493,38 +494,6 @@ vSettings.add(
 );
 
 
-vSettings.add(
-    Vue.component('settings-set-time', {
-        data:()=> {return {newtime: ''}},
-        methods: {
-            sendNewtime(){
-                let bodyFormData = new FormData();
-                let ds = this.newtime;
-                let newtime = ds.substr(6, 4) + ds.substr(3, 2) + ds.substr(0, 2) + 'T' + ds.substr(11, 2) + ds.substr(14, 2) + ds.substr(17, 2);
-
-                bodyFormData.set('newtime', newtime);
-                axios({
-                        url: `http://${serverLocation}/rtc`,
-                    method: 'post',
-                    data: bodyFormData,
-                    config: { headers: {'Content-Type': 'multipart/form-data' }}})
-                    .then(function (response) {
-                        vToasts.add(response.data);
-                        console.log(response); })
-                    .catch(function (error) {
-                        vToasts.addHttpError(error);
-                        console.log(error);});
-            },
-            onFetch: function () {
-                this.newtime = (new Date()).toFormatString('dd.mm.yyyy hh:ii:ss', false);
-            },
-        },
-        created: function() {
-            this.$parent.$on('fetch', this.onFetch);
-        },
-        template:    "#settings-set-time"
-    })
-);
 
 vSettings.add(
     Vue.component('settings-set-auth', {

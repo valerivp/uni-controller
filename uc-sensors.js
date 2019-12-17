@@ -3,6 +3,19 @@
 const utils = require("./uc-utils");
 const db = require("./uc-db").init(getDbInitData());
 const wscli = require("./uc-wscli");
+const util = require("util");
+
+function EventEmitter() {
+    this.events = {
+        SensorDataReceived: 'sensor-data-received'
+    };
+}
+util.inherits(EventEmitter, require("events"));
+const events = new EventEmitter();
+//module.exports.on = events.on.bind(events);
+//EventEmitter.prototype.emitSensorDataReceived = function(data){ this.emit('sensor-data-received', data); };
+module.exports.onSensorDataReceived = events.on.bind(events, events.events.SensorDataReceived);
+
 
 wscli.context.add('sensor');
 
@@ -101,15 +114,25 @@ module.exports.updateSensorData = function(sensor, params){
         // noinspection JSUnfilteredForInLoop
         q += `INSERT INTO mem.SensorsParams (ID, Param, Value) VALUES ($ID, '${key}', ${params[key]});\n`;
     }
+    let isNewData = undefined;
     try{
         db.beginTransaction();
-        db.querySync(q, qp);
+        isNewData = !db.querySync("SELECT ID FROM mem.SensorsData WHERE ID = $ID AND TimeLabel = datetime($TimeLabel / 1000, 'unixepoch', 'localtime')", qp).length;
+        if(isNewData)
+            db.querySync(q, qp);
         db.commitTransaction();
     }catch (err){
+        isNewData = undefined;
         if(db.isTransaction())
             db.rollbackTransaction();
         throw(err);
     }
+
+    if(isNewData){
+        events.emit(events.events.SensorDataReceived,
+            {id: sensor.ID, type: sensor.Type, timelabel: sensor.TimeLabel, params: params});
+    }
+
 };
 
 

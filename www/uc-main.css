@@ -447,7 +447,7 @@ body.dark{
 }
 */
 
-.sProperties input, .sProperties select  {
+.sProperties input:not([type="checkbox"], [type="file"]), .sProperties select  {
     flex-grow: 1;
     max-width: 20ex;
 }
@@ -518,15 +518,6 @@ input.vSettingsValueShort{
     /*padding-right: 1ex;*/
 }
 
-.sSettingsData.button-inc-dec{
-    flex-wrap: nowrap;
-    display: flex;
-    align-items: center;
-}
-.sSettingsRow input:not([type="checkbox"], [type="file"]){
-    min-width: 5ex;
-}
-
 
 
 
@@ -559,9 +550,9 @@ input.vSettingsValueShort{
 #content-sensors > div{
     overflow-x: auto;
     margin-top: 1ex;
+    margin-bottom: 1ex;
 }
 #content-sensors > div:last-child{
-    margin-bottom: 1ex;
 }
 #content-sensors table{
     min-width:100%;
