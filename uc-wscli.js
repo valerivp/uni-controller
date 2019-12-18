@@ -1,5 +1,6 @@
 'use strict';
 
+const utils = require("./uc-utils").init(false);
 const db = require("./uc-db");
 
 const wscli = module.exports;
@@ -124,14 +125,14 @@ wscli.commands.add(
 wscli.commands.add(
     'Time',
     function (arg) {
-        let data = '#Time:' + (new Date()).toFormatString('yyyymmddThhiiss', false);
+        let data = '#Time:' + utils.DateToShotXMLString(new Date());
         wscli.sendClientData(data);
         return true;
     },
     'Get time from server');
 
 setInterval(function () {
-        wscli.sendData('#time:' + (new Date()).toFormatString('yyyymmddThhiiss', false));
+        wscli.sendData('#time:' + utils.DateToShotXMLString(new Date()));
         wscli.sendData();
     },
     1000);

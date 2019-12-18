@@ -21,9 +21,9 @@ new Vue({
     </div>  `
 
 });
-/* mqtt-udp v.0.0.4 */
+/* mqtt-udp-publicator v.0.0.1 */
 vSettings.add(
-    Vue.component('settings-set-mqtt-udp', {
+    Vue.component('settings-set-mqtt-udp-pub', {
         data:()=> {return {PublicateSensorsData: false, IP:''}},
         methods: {
             sendSettings(){
@@ -32,7 +32,7 @@ vSettings.add(
                 bodyFormData.set('PublicateSensorsData', (this.PublicateSensorsData ? 'on' : ''));
                 bodyFormData.set('IP', this.IP);
                 axios({
-                    url: `http://${serverLocation}/mqtt-udp`,
+                    url: `http://${serverLocation}/mqtt-udp-publicator`,
                     method: 'post',
                     data: bodyFormData,
                     config: { headers: {'Content-Type': 'multipart/form-data' }}})
@@ -44,7 +44,7 @@ vSettings.add(
                         console.log(error);});
             },
             onFetch: function () {
-                axios.get(`http://${serverLocation}/mqtt-udp?format=json`)
+                axios.get(`http://${serverLocation}/mqtt-udp-publicator?format=json`)
                     .then(response => {
                         this.PublicateSensorsData = Boolean(response.data.PublicateSensorsData);
                         this.IP = response.data.IP;
@@ -73,6 +73,37 @@ vSettings.add(
     </div>`
     })
 );
+
+/* sensors-wth433 v.0.0.1 */
+let sensorInfo = {
+    temperature: {
+        title: 'Темпе\u00ADратура, \u00B0C',
+        align: 'right',
+        data: (sd) => Number(sd.param('temperature') / 10).toFixed(1)
+    },
+    humidity: {
+        title: 'Влаж\u00ADность, %',
+        align: 'right',
+        data: (sd) => Number(sd.param('humidity'))
+    },
+    battery: {
+        title: 'Бата\u00ADрея',
+        align: 'center',
+        data: (sd) => '',
+        html: (sd) => {return `<div class="sSensorBattery"><div class="${(sd.param('battery') ? 'ok' : 'low')}"></div></div>`}
+    },
+    dataAge:{
+        title: 'Сек. назад',
+        align: 'right',
+        data: (sd) => sd.dataAge()
+    }
+};
+sensorsTypes.add( 'WTH433-0', Object.assign({}, sensorInfo));
+let sensorInfo1 = Object.assign({}, sensorInfo);
+delete sensorInfo1.battery;
+sensorsTypes.add( 'WTH433-1', sensorInfo1);
+sensorsTypes.add( 'WTH433-2', Object.assign({}, sensorInfo));
+sensorsTypes.add( 'WTH433-3', Object.assign({}, sensorInfo));
 
 /* sensors-ds18b20 v.0.0.1 */
 sensorsTypes.add( 'DS18B20', {

@@ -4,21 +4,19 @@ const fs = require('fs');
 const path = require('path');
 const child_process = require('child_process');
 
-//global.basedir = path.dirname(process.mainModule.filename);
-
 const utils = module.exports;
 module.exports.file = {};
 module.exports.file.log = function(text){
     console.log(text);
     if(utils.file.logFile) {
-        let tl = (new Date()).toFormatString('yyyymmddThhiiss');
+        let tl = utils.DateToShotXMLString(new Date());
         fs.appendFileSync(utils.file.logFile, `${tl}\t${text}\n`);
     }
 };
 
 module.exports.init = function (writeFileLog) {
     if(!utils.file.hasOwnProperty("logFile"))
-        if(writeFileLog === undefined || writeFileLog === true){
+        if(writeFileLog !== false){
             const processFile = path.parse(process.mainModule.filename);
             const logDir = `${processFile.dir}/logs`;
             if (!fs.existsSync(logDir))
@@ -27,13 +25,11 @@ module.exports.init = function (writeFileLog) {
         }else
             utils.file.logFile = undefined;
 
-    utils.exitHandlers.push(utils.defaultExitHandler);
 
     return module.exports;
 };
 
-module.exports.exitHandlers = [];
-initExitHandler(exitHandler);
+initExitHandler();
 
 
 
@@ -45,6 +41,9 @@ module.exports.byte = byte;
 
 module.exports.DateFromShotXMLString = function (ds){
     return new Date(ds.substr(0, 4), Number(ds.substr(4, 2)) - 1, ds.substr(6, 2), ds.substr(9, 2), ds.substr(11, 2), ds.substr(13, 2));
+};
+module.exports.DateToShotXMLString = function (d){
+    return ('number' == typeof d ? new Date(d) : d) .toFormatString('yyyymmddThhiiss');
 };
 
 
@@ -109,50 +108,29 @@ Date.prototype.toFormatString = function(format, utc) {
 };
 
 
-
-function exitHandler(options, exitCode) {
-    for(let i = utils.exitHandlers.length - 1; i >= 0 ; i--){
-        try{
-            utils.exitHandlers[i](options, exitCode);
-        }catch (err){
-            utils.file.log(err);
-        }
-    }
-
-/*    if(options.error)
-        utils.file.log(options.error.message + '\n' + options.error.stack);
-
-    if (exitCode || exitCode === 0)
-        utils.file.log('Done. Exit code: ' + exitCode + '\n');
-*/
-    if (options.exit) process.exit();
-}
-
-module.exports.defaultExitHandler = function(options, exitCode) {
-    if(options.error)
-        utils.file.log(options.error.message + '\n' + options.error.stack);
-
-    if (exitCode || exitCode === 0)
-        utils.file.log('Done. Exit code: ' + exitCode + '\n');
-};
-
-
 function initExitHandler(exitHandler) {
 //do something when app is closing
-    process.on('exit', exitHandler.bind(null, {cleanup: true}));
+    process.on('exit', (code) => {
+        utils.file.log(`Done. Exit code: ${code}`);
+    });
 
 //catches ctrl+c event
-    process.on('SIGINT', exitHandler.bind(null, {exit: true}));
+    process.on('SIGINT', (signal)=>{
+        utils.file.log(`Receive SIGINT (ctrl+c)`);
+        process.exit(0);
+    });
 
 // catches "kill pid" (for example: nodemon restart)
-    process.on('SIGUSR1', exitHandler.bind(null, {exit: true}));
-    process.on('SIGUSR2', exitHandler.bind(null, {exit: true}));
+//    process.on('SIGUSR1', exitHandler.bind(null, {event:'SIGUSR1', exit: true}));
+//    process.on('SIGUSR2', exitHandler.bind(null, {event:'SIGUSR2', exit: true}));
 
     process.on('unhandledRejection', (reason, p) => {
-        exitHandler({reason: reason, exit: true})
+        utils.file.log(reason);
+        process.exit(2);
     });
     process.on('uncaughtException', err => {
-        exitHandler({error: err, exit: true})
+        utils.file.log(err.message + '\n' + err.stack);
+        process.exit(1);
     });
 }
 

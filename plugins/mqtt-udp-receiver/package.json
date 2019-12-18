@@ -1,0 +1,15 @@
+{
+  "name": "mqtt-udp-receiver",
+  "version": "0.0.1",
+  "dependencies": {
+  },
+  "node": "mqtt-udp-receiver",
+  "web":{
+    "js":[
+    ],
+    "css":[
+
+    ]
+  }
+}
+

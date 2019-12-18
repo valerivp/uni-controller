@@ -5,16 +5,15 @@ const db = require("./uc-db").init(getDbInitData());
 const wscli = require("./uc-wscli");
 const util = require("util");
 
-function EventEmitter() {
+function EventEmitterClass() {
     this.events = {
         SensorDataReceived: 'sensor-data-received'
     };
 }
-util.inherits(EventEmitter, require("events"));
-const events = new EventEmitter();
+util.inherits(EventEmitterClass, require("events"));
+const EventEmitter = new EventEmitterClass();
 //module.exports.on = events.on.bind(events);
-//EventEmitter.prototype.emitSensorDataReceived = function(data){ this.emit('sensor-data-received', data); };
-module.exports.onSensorDataReceived = events.on.bind(events, events.events.SensorDataReceived);
+module.exports.onSensorDataReceived = EventEmitter.on.bind(EventEmitter, EventEmitter.events.SensorDataReceived);
 
 
 wscli.context.add('sensor');
@@ -83,11 +82,11 @@ wscli.commands.add('SensorsData',
         let timeFilter = ((arg_arr[1] && arg_arr[1].length === 15) ? utils.DateFromShotXMLString(arg_arr[1]).getTime(): 0);
 
         let data = '';
-        let rows = db.querySync("SELECT ID, Type, TimeLabel FROM mem.SensorsData WHERE (ID = $ID OR $ID = 0) AND TimeLabel > $TimeFilter", {$ID: id, $TimeFilter: timeFilter});
+        let rows = db.querySync("SELECT ID, Type, TimeLabel FROM mem.SensorsData WHERE (ID = $ID OR $ID = 0) AND TimeLabel > datetime($TimeLabel / 1000, 'unixepoch', 'localtime')", {$ID: id, $TimeLabel: timeFilter});
         rows.forEach(function (row) {
             let TimeLabel = new Date(row.TimeLabel);
             /** @namespace row.Type */
-            data += `#Sensor:0x${Number(row.ID).toHex(4)},Type:${row.Type},TimeLabel:${TimeLabel.toFormatString('yyyymmddThhiiss')}`;
+            data += `#Sensor:0x${Number(row.ID).toHex(4)},Type:${row.Type},TimeLabel:${utils.DateToShotXMLString(TimeLabel)}`;
             data += ',SensorData';
             let delimiter = ':';
             let rows_param = db.querySync("SELECT Param, Value FROM mem.SensorsParams WHERE ID = $ID", {$ID: row.ID});
@@ -129,7 +128,7 @@ module.exports.updateSensorData = function(sensor, params){
     }
 
     if(isNewData){
-        events.emit(events.events.SensorDataReceived,
+        EventEmitter.emit(EventEmitter.events.SensorDataReceived,
             {id: sensor.ID, type: sensor.Type, timelabel: sensor.TimeLabel, params: params});
     }
 

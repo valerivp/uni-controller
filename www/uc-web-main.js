@@ -287,7 +287,7 @@ const vSensors = new Vue({
     el: '#tab-content-sensors',
     data: {
         types: sensorsTypes,
-        maxTimeLabel: 0,
+        maxTimeLabel: '0',
         currentSensor : 0,
         sensors: [],
     },
@@ -459,6 +459,7 @@ vContent.addTab({id: 'settings', onShow: function () {vSettings.onShow();}}, {af
 
 
 const themes = [];
+themes.push({name:'', title: 'Белая'});
 themes.push({name:'turquoise', title: 'Бирюзовая'});
 themes.push({name:'dark', title: 'Темная'});
 
@@ -467,29 +468,24 @@ vSettings.add(
         data:()=> {return {themes:themes, selectedTheme: ''}},
         methods: {
             onSelectTheme: function () {
-                if(! this.selectedTheme){
-                    this.selectedTheme = localStorage.getItem('color-theme');
-                    if(! this.selectedTheme)
-                        this.selectedTheme = this.themes[0];
-                }
+                if(!this.selectedTheme && this.selectedTheme !== '')
+                    this.selectedTheme = '';
                 localStorage.setItem('color-theme', this.selectedTheme);
                 let body = document.getElementsByTagName('body')[0];
-                if(!body.classList.contains(this.selectedTheme)){
-                    for(let i = 0; i < this.themes.length; i++)
+                for(let i = 0; i < this.themes.length; i++)
+                    if(this.themes[i].name && body.classList.contains(this.themes[i].name))
                         body.classList.remove(this.themes[i].name);
-                    body.classList.add(this.selectedTheme);
-                }
+                body.classList.add(this.selectedTheme);
             },
             onFetch: function () {
-                this.onSelectTheme();
+                //this.onSelectTheme();
             },
         },
         created: function() {
+            this.selectedTheme = localStorage.getItem('color-theme');
             this.onSelectTheme();
-            this.$parent.$on('fetch', this.onFetch);
-            //this.$parent.$on('init', this.onInit);
         },
-        template:    "#settings-select-theme"
+        template: "#settings-select-theme"
     })
 );
 

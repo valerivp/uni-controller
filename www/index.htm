@@ -83,7 +83,7 @@
                         <input v-show="sensor.editName" v-bind:id="sensor.nameInputElementId" type="text" v-model.lazy="sensor.name" v-on:change="setName(sensor)" v-on:blur="sensor.editName = false">
                     </td>
                     <td  v-for="data in types.data(type)" v-bind:style="data.align ? 'text-align: ' + data.align : ''">
-                        {{data.data(sensor)}}
+                        {{data.data(sensor)}}<span v-if="data.html" v-html="data.html(sensor)"></span>
                     </td>
                 </tr>
             </table>
