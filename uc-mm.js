@@ -5,6 +5,8 @@ const path = require('path');
 const utils = require("./uc-utils").init(false);
 const db = require("./uc-db").init(getDbInitData());
 
+const mm = module.exports;
+
 if(process.mainModule.filename === module.filename){
 
     process.chdir(path.dirname(module.filename));
@@ -100,9 +102,23 @@ function cmdList() {
 }
 
 function cmdRemove(pluginName) {
-    if(db.querySync("SELECT * FROM Plugins WHERE Name = $Name", {$Name: pluginName}).length){
-        db.querySync("DELETE FROM Plugins WHERE Name = $Name", {$Name: pluginName});
-        console.log(`Plugin '${pluginName}' removed.`);
+    let rows = db.querySync("SELECT * FROM Plugins WHERE Name = $Name", {$Name: pluginName})
+    if(rows.length){
+        let pluginExistData = rows[0];
+        try{
+            db.beginTransaction();
+
+            uninit(pluginExistData.UninstallInfo);
+
+            db.querySync("DELETE FROM Plugins WHERE Name = $Name", {$Name: pluginName});
+
+            db.commitTransaction();
+            console.log(`Plugin '${pluginName}' removed.`);
+        } catch (err){
+            if(db.isTransaction())
+                db.rollbackTransaction();
+            throw(err);
+        }
     }else
         console.log(`Plugin '${pluginName}' not installed.`);
 
@@ -115,18 +131,17 @@ function cmdUpdate(dirName) {
     const obj = JSON.parse(fs.readFileSync(`${dir}/package.json`, 'utf8'));
 
     let rows = db.querySync("SELECT * FROM Plugins WHERE Name = $Name", {$Name: obj.name});
-    let pluginData = rows.length ? rows[0] : undefined;
+    let pluginExistData = rows.length ? rows[0] : undefined;
 
-    if(pluginData && pluginData.Version === obj.version) {
+    if(pluginExistData && pluginExistData.Version === obj.version) {
         console.log(`Plugin '${obj.name}' no need to update.`);
         return true;
     }
 
     let q = "CREATE TABLE mem.dependencies AS\nSELECT '' as Name WHERE 1 = 0\n";
     for(let d in obj["dependencies"]){
-        q = q + "UNION\n";
-        // noinspection JSUnfilteredForInLoop
-        q = q + `SELECT '${d}'\n`;
+        q = q + `UNION\n
+                 SELECT '${d}'\n`;
     }
     db.querySync(q);
 
@@ -146,7 +161,7 @@ function cmdUpdate(dirName) {
     try{
         db.beginTransaction();
 
-        if(pluginData) {
+        if(pluginExistData) {
             // удалим список зависимостей
             db.querySync("DELETE FROM PluginsDependences WHERE PluginID = $ID", {$ID: pluginData.ID});
             db.querySync("UPDATE Plugins SET Version = $Version, Directory = $Directory WHERE ID = $ID",
@@ -154,8 +169,8 @@ function cmdUpdate(dirName) {
         }else{
             db.querySync("INSERT INTO Plugins (Name, Version, Directory) VALUES ($Name, $Version, $Directory)",
                 {$Name: obj.name, $Version: obj.version, $Directory: dir});
-            pluginData = db.querySync("SELECT * FROM Plugins WHERE Name = $Name", {$Name: obj.name})[0];
         }
+        let pluginData = db.querySync("SELECT ID FROM Plugins WHERE Name = $Name", {$Name: obj.name})[0];
 
         q = `INSERT INTO PluginsDependences (PluginID, DependsOn)
                 SELECT $ID, p.ID FROM mem.dependencies as d
@@ -167,13 +182,11 @@ function cmdUpdate(dirName) {
         let UninstallInfo = '';
         if(obj.node){
             const plugin = require(dir + '/' + obj.node);
-            if(plugin.hasOwnProperty('update'))
-                UninstallInfo = plugin.update(pluginData.Version === obj.version ? undefined : pluginData.Version);
+            if(plugin.update)
+                UninstallInfo = plugin.update(pluginExistData ? pluginExistData.Version : undefined,
+                    pluginExistData ? pluginExistData.UninstallInfo : undefined);
         }
         db.querySync("UPDATE Plugins SET UninstallInfo = $UninstallInfo WHERE ID = $ID", {$ID: pluginData.ID, $UninstallInfo: UninstallInfo});
-
-
-
 
 
         db.commitTransaction();
@@ -269,5 +282,49 @@ function parseArg(){
     }
 
     return commands;
+
+}
+
+function uninitTable(table, data){
+    if(data.schema || !data.data) {
+        let table_schema = data.schema || data;
+        let table_info = db.querySync(`PRAGMA table_info(${table})`);
+        if (table_info.length) { // таблица существует
+            // поместим удаляемые колонки в массив
+            let columns = [];
+            for (let cn in table_schema)
+                columns.push(cn.toLowerCase());
+            let diff = columns.length !== table_info.length;
+            for (let i = 0; i < table_info.length && !diff; i++) {
+                if (columns.indexOf(table_info[i].name.toLowerCase()) < 0)
+                    diff = true;
+            }
+            if (diff)
+                throw new Error('Table structure differs from expected');
+
+            db.querySync(`DROP TABLE ${table}`);
+        }
+    }
+}
+
+
+module.exports.uninit = uninit;
+function uninit(uninitData){
+    const data = JSON.parse(uninitData);
+    if(data.main) {
+        try {
+            db.beginTransaction();
+
+            for (let table in data.main)
+                uninitTable(table, data.main[table]);
+
+            db.commitTransaction();
+
+        } catch (err) {
+            if (db.isTransaction())
+                db.rollbackTransaction();
+            throw(err);
+        }
+    }
 
 }
