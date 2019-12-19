@@ -1,0 +1,16 @@
+{
+  "name": "sensors-wth433",
+  "version": "0.0.1",
+  "dependencies": {
+  },
+  "node": "",
+  "web":{
+    "js":[
+      "www/sensors-wth433-web.js"
+    ],
+    "css":[
+      "www/sensors-wth433-web.css"
+    ]
+  }
+}
+

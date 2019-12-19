@@ -1,0 +1,16 @@
+{
+  "name": "mqtt-udp-publicator",
+  "version": "0.0.1",
+  "dependencies": {
+  },
+  "node": "mqtt-udp-publicator",
+  "web":{
+    "js":[
+      "www/mqtt-udp-publicator-web.js"
+    ],
+    "css":[
+
+    ]
+  }
+}
+
