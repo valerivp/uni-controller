@@ -27,6 +27,7 @@ module.exports.init = function () {
 
 
 function onMqttUdpData(topic, load){
+    //console.log(`${topic}: ${load}`);
     let topic_data = topic.split("/");
     let sensorData = {};
     sensorData.ID = Number(topic_data[1]);
@@ -36,10 +37,14 @@ function onMqttUdpData(topic, load){
     let load_data = JSON.parse(load);
     /** @namespace load_data.timelabel */
     if(load_data.timelabel){
-        sensorData.TimeLabel = utils.DateFromShotXMLString(load_data.timelabel).getTime();
+        if(load_data.timelabel.slice(8, 9) === 'T')
+            sensorData.TimeLabel = utils.DateFromShotXMLString(load_data.timelabel);
+        else
+            sensorData.TimeLabel = new Date(load_data.timelabel);
+
         delete load_data.timelabel;
     }else{
-        sensorData.TimeLabel = Date.now();
+        sensorData.TimeLabel = new Date;
     }
 
     sensors.updateSensorData(sensorData, load_data);

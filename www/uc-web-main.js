@@ -39,34 +39,30 @@ const vContent = new Vue({
     },
     methods: {
         addTab: function(tabInfo, pos){
-            let el = document.getElementById('tab-content-' + tabInfo.id);
-            tabInfo.title = (el.attributes.title ? el.attributes.title.value : tabInfo.id);
-
             let find = false;
-            if(pos){
-                for(let i = 0; i < this.tabsList.length; i++){
-                    let tabId = this.tabsList[i].id;
-                    if(tabId === pos.before){
-                        this.tabsList.splice(i, 0, tabInfo);
-                        find = true;
-                        break;
-                    }else if(tabId === pos.after){
-                        this.tabsList.splice(i + 1, 0, tabInfo);
-                        find = true;
-                        break;
-                    }
+            for(let i = 0; pos && (pos.before || pos.after) && i < this.tabsList.length; i++){
+                let tabId = this.tabsList[i].id;
+                if(tabId === pos.before){
+                    this.tabsList.splice(i, 0, tabInfo);
+                    find = true;
+                    break;
+                }else if(tabId === pos.after){
+                    this.tabsList.splice(i + 1, 0, tabInfo);
+                    find = true;
+                    break;
                 }
             }
             if(!find)
                 this.tabsList.push(tabInfo);
 
-            Vue.nextTick(function () {
-                moveElement('tab-content-' + tabInfo.id, 'tab-' + tabInfo.id);
-            });
+            setTimeout(function () {
+                tabInfo.component.$mount('#tab-' + tabInfo.id);
+                if(!tabInfo.title){
+                    let el = tabInfo.el || document.getElementById('tab-content-' + tabInfo.id);
+                    tabInfo.title = (el.attributes.title ? el.attributes.title.value : tabInfo.id);
+                }
+            }, 0);
 
-            if(this.tabsList.length === 1){
-                Vue.nextTick(function () {vContent.setTab(tabInfo.id, true)});
-            }
 
         },
         getTab: function (tabId){
@@ -74,16 +70,22 @@ const vContent = new Vue({
                 if(this.tabsList[i].id === tabId)
                     return this.tabsList[i];
         },
-        setTab: function (tabId, addHistory) {
+        _setTab: function (tabId, addHistory) {
+            this.isMenuShow = false;
+
+            if('number' === typeof  tabId)
+                tabId = this.tabsList[tabId].id;
+
             if(!this.getTab(tabId))
                 throw new Error(`Page not found: '${tabId}'`);
+            if(this.currentTab && this.currentTab.id === tabId)
+                return;
+
             addHistory = addHistory===undefined ? true : addHistory;
             if(this.isMenuShow && addHistory)
                 navigationHistory.replaceState(this.currentTab);
             else if(addHistory)
                 navigationHistory.pushState(this.currentTab);
-
-            this.isMenuShow = false;
 
             let onHide = (this.currentTab ? this.getTab(this.currentTab).onHide : undefined);
             if(onHide) onHide();
@@ -91,6 +93,9 @@ const vContent = new Vue({
             let onShow = this.getTab(tabId).onShow;
             if(onShow) setTimeout(onShow, 0);
 
+        },
+        setTab: function (tabId, addHistory) {
+            setTimeout(this._setTab.bind(this, tabId, addHistory), 1);
         },
         isShow:function (tab) {return this.currentTab === tab.id},
         toggleMenu: function (){
@@ -110,9 +115,13 @@ const vContent = new Vue({
 
 moveElement('main-menu-button', 'main-menu-button-place');
 
-vContent.addTab({id: 'main-info', onShow: function () { setTimeout(doOnResizeStateItems, 10);}});
-vContent.addTab({id: 'terminal'});
-vContent.addTab({id: 'about', onShow: function () {vAbout.onShow();}});
+
+setTimeout(function () {vContent.setTab(0, true)}, 1);
+
+
+//vContent.addTab({id: 'main-info', onShow: function () { setTimeout(doOnResizeStateItems, 10);}});
+//vContent.addTab({id: 'terminal'});
+//vContent.addTab({id: 'about', onShow: function () {vAbout.onShow();}});
 
 
 window.addEventListener('popstate', function(e){
@@ -149,7 +158,7 @@ const vToasts = new Vue({
 });
 
 const vTerminal = new Vue({
-    el: '#terminal',
+    template: '#tab-content-terminal',
     data: {
         TextForSend: '',
         ReceivedText: '',
@@ -197,10 +206,14 @@ const vTerminal = new Vue({
                 el.scrollTop = el.scrollHeight;
             }
         },
-        log: function(text) {this.writeLog(text);},
+        log: function(text) {this.writeLog(text + '\n');},
     }
 });
 
+vContent.addTab({component: vTerminal, id: 'terminal'});
+
+
+/*
 const vTabMainInfo = new Vue({
     el: '#tab-content-main-info',
     data: {
@@ -208,7 +221,7 @@ const vTabMainInfo = new Vue({
     methods: {
     }
 });
-
+*/
 
 
 function SensorData(id) {
@@ -217,7 +230,7 @@ function SensorData(id) {
     this.name = '';
     this.editName = false;
     this.timeLabel = 0;
-    this.id2hex = () => '0x' + String('0000' + Number(this.id).toString(16)).slice(-4);
+    this.id2hex = () => '0x' + Number(this.id).toHex();
 
     this.toString = ()=> (this.name === '' ? '' : this.name +', ') + this.id2hex();
     this.dataAge =  ()=> (this.timeLabel ? ($store.state.time - this.timeLabel) / 1000 : '-');
@@ -284,7 +297,7 @@ sensorsTypes.add( undefined, {
 
 
 const vSensors = new Vue({
-    el: '#tab-content-sensors',
+    template: '#tab-content-sensors',
     data: {
         types: sensorsTypes,
         maxTimeLabel: '0',
@@ -359,14 +372,13 @@ const sensorsInfoQuery = new function(){
     };
 };
 
-vContent.addTab({id: 'sensors',
-    onShow: sensorsInfoQuery.start,
-    onHide: sensorsInfoQuery.stop,
-}, {before: 'terminal'});
+vContent.addTab({component: vSensors, id: 'sensors', onShow: sensorsInfoQuery.start, onHide: sensorsInfoQuery.stop}, {before: 'terminal'});
 
 
 
-const vcProperties = Vue.component('properties-panel', {
+//Vue.nextTick(function () {vContent.setTab('settings', true)});
+
+const vtProperties = {
     data: function () {
         return {
             items: [],
@@ -386,7 +398,22 @@ const vcProperties = Vue.component('properties-panel', {
         add(name, params) {
             let item = params || {};
             item.name = typeof name === 'function' ? name.options.name : name;
-            this.items.push(item);
+
+            let find = false;
+            for(let i = 0; params && (params.before || params.after) && i < this.items.length; i++){
+                let itemId = this.items[i].name;
+                if(itemId === params.before){
+                    this.items.splice(i, 0, item);
+                    find = true;
+                    break;
+                }else if(itemId === params.after){
+                    this.items.splice(i + 1, 0, item);
+                    find = true;
+                    break;
+                }
+            }
+            if(!find)
+                this.items.push(item);
         },
         onShow() {
             this.$emit('fetch');
@@ -394,9 +421,13 @@ const vcProperties = Vue.component('properties-panel', {
     },
     template:    "#properties-panel"
 
-});
+};
 
-const vAbout = (new Vue(vcProperties.options)).$mount("#about");
+
+const vAbout = new Vue(vtProperties);//).$mount("#about");
+
+vContent.addTab({component: vAbout, id: 'about', title: "О системе", onShow: function () {vAbout.onShow();}});
+
 
 const vcPropetiesPanelText = Vue.component('properties-panel-text', {
     props: ['params'],
@@ -449,13 +480,9 @@ vAbout.add(
 vAbout.add(vcPropetiesPanelText, {content: 'content-about-fullscreen'});
 
 
+const vSettings = new Vue(vtProperties);
 
-
-Vue.nextTick(function () {vContent.setTab('settings', true)});
-
-const vSettings = (new Vue(vcProperties.options)).$mount("#settings");
-
-vContent.addTab({id: 'settings', onShow: function () {vSettings.onShow();}}, {after: 'terminal'});
+vContent.addTab({component: vSettings, id: 'settings', title: "Параметры", onShow: function () {vSettings.onShow();}}, {after: 'terminal'});
 
 
 const themes = [];
@@ -779,38 +806,45 @@ function WSConnection (server, terminal) {
     this._events = {};
     this._terminal = terminal;
 
-    this.on = (event, func) => { this._events['on' +  event.toLowerCase()] = func; };
+    this.on = (event, func) => {
+        let en = 'on' +  event.toLowerCase();
+        if(!this._events[en])
+            this._events[en] = [];
+        this._events[en].push(func);
+    };
+    this.emit = (event, data) => {
+        let en = 'on' +  event.toLowerCase();
+        if(!this._events[en])
+            this._events[en] = [];
+        this._events[en].forEach((func)=>{func(data);});
+    };
 
-    this.connect = function () {
+    this.connect = ()=> {
         this.disconnect();
         this._socket = new WebSocket(`ws://${this._server}/`);
         this._lastConnectTimelabel = new Date();
-
+        this._lastMsgTimelabel = 0;
+        
         this._socket.onopen = () => {
             this._terminal.log('WebSocket Ok');
-            if(this._events.onopen)
-                this._events.onopen();
+            this.emit('open');
         };
         this._socket.onerror = (error) => {
             this._terminal.log('WebSocket error', error);
             /** @namespace this._events.onError */
-            if(this._events.onerror)
-                this._events.onerror(error);
+            this.emit('error', error);
         };
         this._socket.onmessage = (msg) => {
             this._lastMsgTimelabel = new Date();
-            this._terminal.log(msg.data);
-            if(this._events.onmessage)
-                this._events.onmessage(msg.data);
+            this._terminal.log(String(msg.data).trim());
+            this.emit('message', msg.data);
         };
         this._socket.onclose = () => {
             this._terminal.log('WebSocket Closed');
-            /** @namespace this._events.onClose */
-            if(this._events.onclose)
-                this._events.onclose();
+            this.emit('close');
         };
     };
-    this.disconnect = function () {
+    this.disconnect = ()=> {
         if (this._socket !== undefined){
             this._socket.close();
             this._socket = undefined;
@@ -838,10 +872,10 @@ function WSConnection (server, terminal) {
         else
             this._terminal.log('WebSocket not connected');
 
-        this._terminal.log(String(text).replace('#', '>'));
+        this._terminal.log(String(String(text).replace('#', '>')).trim());
     };
 
-    this._SendText = function(text) {
+    this._SendText = (text)=> {
         text += (String(text).endsWith('\n') ? '' : '\n');
 
         if(this._textBufferForSend && this._textBufferForSend.endsWith('\n')) {
@@ -853,7 +887,7 @@ function WSConnection (server, terminal) {
         setTimeout(this._SendTextBuffer, 0);
     };
 
-    this.init = function () {
+    this.init = ()=> {
         this.connect();
         setInterval(this._checkConnection, 2000);
         window.addEventListener("unload", this.disconnect);

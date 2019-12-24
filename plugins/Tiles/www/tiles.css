@@ -1,0 +1,73 @@
+#tab-content-tiles {
+    height: calc(100vh - 3.5em);
+    display: flex;
+    flex-flow: row wrap;
+    align-content: center;
+    justify-content: center;
+    padding-bottom: 1ex;
+    padding-left: 1ex;
+}
+
+.sTileWrap{
+    padding-top: 1ex;
+}
+.sTile {
+
+    border-radius: 3px;
+    box-shadow: 0 2px 2px 0 rgba(0,0,0,0.14), 0 3px 1px -2px rgba(0,0,0,0.2), 0 1px 5px 0 rgba(0,0,0,0.12);
+    border-top: 0.4ex solid;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    margin-right: 1ex;
+    cursor: pointer;
+}
+
+
+/* --------------------------- */
+/* -- landscape - Zone info -- */
+/* --------------------------- */
+@media screen and (orientation: landscape){
+    .l1-in-line{
+        width: 100%;
+    }
+    .l2-in-line{
+        width: 50%;
+    }
+    .l3-in-line{
+        width: calc(100% / 3);
+    }
+    .l4-in-line{
+        width: 25%;
+    }
+    .sTilesCount1, .sTilesCount2, .sTilesCount3 {
+        height:100%;
+    }
+    .sTilesCount4, .sTilesCount5, .sTilesCount6, .sTilesCount7, .sTilesCount8{
+        height:50%;
+    }
+}
+/* -------------------------- */
+/* -- portrait - Zone info -- */
+/* -------------------------- */
+@media screen and (orientation: portrait){
+    .p1-in-line{
+        width: 100%;
+    }
+    .p2-in-line{
+        width: 50%;
+    }
+    .sTilesCount1{
+        height:100%;
+    }
+    .sTilesCount2{
+        height:50%;
+    }
+    .sTilesCount3, .sTilesCount4, .sTilesCount5, .sTilesCount6{
+        height:calc(100% / 3);
+    }
+    .sTilesCount7, .sTilesCount8{
+        height:25%;
+    }
+
+}

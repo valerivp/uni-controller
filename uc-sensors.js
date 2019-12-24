@@ -52,7 +52,7 @@ wscli.commands.add('SetName',
         } else {
             db.querySync('DELETE FROM SensorsNames WHERE ID = $Sensor', {$Sensor: currentSensor});
         }
-        wscli.sendData(`#Sensor:0x${Number(currentSensor).toHex(4)},Name:${arg}`);
+        wscli.sendData(`#Sensor:0x${Number(currentSensor).toHex()},Name:${arg}`);
         return true;
     },
     'Set sensor name');
@@ -64,7 +64,7 @@ wscli.commands.add('SensorsNames',
         if(!arg || checkRangeSensorID(arg)){
             let rows = db.querySync("SELECT ID, Name FROM SensorsNames WHERE ID = $ID OR 1 = $all", {$ID: arg, $all: 0 | !arg});
             rows.forEach(function (row) {
-                wscli.sendData(`#Sensor:0x${Number(row.ID).toHex(4)},Name:${row.Name}`);
+                wscli.sendData(`#Sensor:0x${Number(row.ID).toHex()},Name:${row.Name}`);
                 res = true;
             });
             if(!res)
@@ -81,12 +81,12 @@ wscli.commands.add('SensorsData',
         let id = ((0 | arg_arr[0]) ? 0 | arg_arr[0] : 0);
         let timeFilter = ((arg_arr[1] && arg_arr[1].length === 15) ? utils.DateFromShotXMLString(arg_arr[1]).getTime(): 0);
 
-        let data = '';
         let rows = db.querySync("SELECT ID, Type, TimeLabel FROM mem.SensorsData WHERE (ID = $ID OR $ID = 0) AND TimeLabel > datetime($TimeLabel / 1000, 'unixepoch', 'localtime')", {$ID: id, $TimeLabel: timeFilter});
         rows.forEach(function (row) {
+            let data = '';
             let TimeLabel = new Date(row.TimeLabel);
             /** @namespace row.Type */
-            data += `#Sensor:0x${Number(row.ID).toHex(4)},Type:${row.Type},TimeLabel:${utils.DateToShotXMLString(TimeLabel)}`;
+            data += `#Sensor:0x${Number(row.ID).toHex()},Type:${row.Type},TimeLabel:${utils.DateToShotXMLString(TimeLabel)}`;
             data += ',SensorData';
             let delimiter = ':';
             let rows_param = db.querySync("SELECT Param, Value FROM mem.SensorsParams WHERE ID = $ID", {$ID: row.ID});
@@ -96,16 +96,15 @@ wscli.commands.add('SensorsData',
                 data += `${delimiter}${row_param.Param}=${row_param.Value}`;
                 delimiter = '/';
             });
-            data += '\n';
+            wscli.sendClientData(data);
         });
-        wscli.sendClientData(data);
         return true;
     },
     'Get sensors data.');
 
 
 module.exports.updateSensorData = function(sensor, params){
-    const qp = {$ID: sensor.ID, $Type: sensor.Type, $TimeLabel: sensor.TimeLabel};
+    const qp = {$ID: sensor.ID, $Type: sensor.Type, $TimeLabel: new Date(sensor.TimeLabel).getTime()};
     let q = `DELETE FROM mem.SensorsData WHERE ID = $ID;
         DELETE FROM mem.SensorsParams WHERE ID = $ID;
         INSERT INTO mem.SensorsData (ID, Type, TimeLabel) VALUES ($ID, $Type, datetime($TimeLabel / 1000, 'unixepoch', 'localtime'));\n`;
@@ -129,7 +128,7 @@ module.exports.updateSensorData = function(sensor, params){
 
     if(isNewData){
         EventEmitter.emit(EventEmitter.events.SensorDataReceived,
-            {id: sensor.ID, type: sensor.Type, timelabel: sensor.TimeLabel, params: params});
+            {id: sensor.ID, type: sensor.Type, timelabel: new Date(sensor.TimeLabel), params: params});
     }
 
 };

@@ -1,3 +1,5 @@
+
+
 const navigationHistory = {
     get state(){
         return this.stack[this.stack.length - 1];
@@ -72,7 +74,8 @@ function moveElement(whatId, toId){
 
 function addElement(whatTag, toId){
     const what = document.createElement(whatTag);
-    moveElement(what, toId);
+    if(toId)
+        moveElement(what, toId);
 
     return what;
 }
@@ -123,6 +126,11 @@ function DateFromShotXMLString(ds){
     var date = new Date(ds.substr(0, 4), Number(ds.substr(4, 2)) - 1, ds.substr(6, 2), ds.substr(9, 2), ds.substr(11, 2), ds.substr(13, 2));
     return date;
 }
+
+Number.prototype.toHex = function(len){
+    let res = Number(this).toString(16);
+    return String('00000000' + res).slice(-Math.max(len || 0, Math.ceil(res.length / 2) * 2));
+};
 
 
 Date.prototype.toFormatString = function(format, utc) {

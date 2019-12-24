@@ -48,7 +48,8 @@ module.exports.DateToShotXMLString = function (d){
 
 
 Number.prototype.toHex = function(len){
-    return String('0000' + Number(this).toString(16)).slice(-len);
+    let res = Number(this).toString(16);
+    return String('00000000' + res).slice(-Math.max(len || 0, Math.ceil(res.length / 2) * 2));
 };
 Number.prototype.toBin = function(len){
     return String('0000000000000000' + Number(this).toString(2)).slice(-len);
@@ -67,7 +68,7 @@ Array.prototype.toBin = function() {
 Array.prototype.toHex = function() {
     let res = '';
     this.forEach(function (entry) {
-        res += Number(byte(entry)).toHex(2) + ' ';
+        res += Number(byte(entry)).toHex() + ' ';
     });
 
     return res;

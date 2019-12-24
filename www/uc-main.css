@@ -5,7 +5,7 @@
     padding: 0;
     margin: 0;
     font-weight: inherit;
-    /*border: 1px dotted red;*/
+    /*outline: 1px dotted red;*/
 }
 
 *,
@@ -123,6 +123,10 @@ body.turquoise{
 .turquoise{
     border-color: #000;
 }
+.turquoise .border3d{
+    background-color: #fff;
+    border-color: #bbb;
+}
 
 /* dark */
 body.dark{
@@ -146,6 +150,10 @@ body.dark{
 }
 .dark{
     border-color: white;
+}
+.dark .border3d{
+    background-color:  #3d3d3d;
+    border-color: #777;
 }
 
 
@@ -229,37 +237,6 @@ body.dark{
 #main-logo{
     display: inline-block;
     flex-grow: 1;
-}
-.zzStBoiler{
-    display: inline-block;
-    width: 2em;
-    height: 2em;
-    opacity: 0.5;
-}
-.zzStBoiler.working{
-    opacity:1;
-}
-.zzStBoiler.working .fire{
-    animation: zzStAnFile 2s linear infinite -0.75s;
-}
-.zzStBoiler.sleepping{
-}
-@keyframes zzStAnFile {
-    0% {
-        fill: #f80;
-    }
-    35% {
-        fill: #f40;
-    }
-    50% {
-        fill: #f80;
-    }
-    65% {
-        fill: #fd0;
-    }
-    100% {
-        fill: #f80;
-    }
 }
 
 /* -- Menu -- */
@@ -435,6 +412,25 @@ body.dark{
     font-size: 75%;
 }
 
+
+.button-inc-dec button{
+    width: 2em;
+    padding-left: 0;
+    padding-right: 0;
+}
+.button-inc-dec span{
+    padding-left: 1ex;
+    padding-right: 1ex;
+}
+.button-inc-dec input{
+    margin-left: 1ex;
+}
+
+div.button-inc-dec{
+    flex-wrap: nowrap;
+    display: flex;
+    align-items: center;
+}
 
 
 /* ------------------ */

@@ -20,7 +20,7 @@
 
 
 <div id="main-title">
-    <div id="main-logo" onclick="vContent.setTab('main-info')">
+    <div id="main-logo">
 
     </div>
 
@@ -53,69 +53,73 @@
     </div>
     <!--<div id="tabs-content" v-bind:class="(!isConnected?'zzStBlur':'')">v-show="isShow(tab)"-->
     <div id="tabs-content">
-        <div v-for="tab in tabsList" v-bind:id="'tab-' + tab.id" v-show="isShow(tab)">
-        </div>
-    </div>
-</div>
+        <div v-for="tab in tabsList" v-show="isShow(tab)" v-bind:id="'tab-wrap-' + tab.id">
+            <div v-bind:id="'tab-' + tab.id">
 
-<div id="tab-content-main-info" title="Состояние">
-    <div id="main-info">
-    </div>
-</div>
-
-
-<div id="tab-content-sensors" title="Датчики">
-    <div id="content-sensors">
-        <div v-for="type in types.types()" v-if="getSensorsByType(type).length" >
-        <!--<div v-for="data in getTypeData()">-->
-            <table class="sSensorsTable">
-                <tr>
-                    <th>
-                        {{'undefined' == String(type)  ? '#' : type}}
-                    </th>
-                    <th v-for="data in types.data(type)" v-bind:style="data.align ? 'text-align: ' + data.align : ''">
-                        {{data.title}}
-                    </th>
-                </tr>
-                <tr v-for="sensor in getSensorsByType(type)">
-                    <td class="sSensorName">
-                        <span v-show="!sensor.editName" v-on:click="doEditName(sensor)">{{ String(sensor) }}</span>
-                        <input v-show="sensor.editName" v-bind:id="sensor.nameInputElementId" type="text" v-model.lazy="sensor.name" v-on:change="setName(sensor)" v-on:blur="sensor.editName = false">
-                    </td>
-                    <td  v-for="data in types.data(type)" v-bind:style="data.align ? 'text-align: ' + data.align : ''">
-                        {{data.data(sensor)}}<span v-if="data.html" v-html="data.html(sensor)"></span>
-                    </td>
-                </tr>
-            </table>
-
-
+            </div>
         </div>
     </div>
 </div>
 
 
-<div id="tab-content-terminal" title="Терминал">
-    <div id="terminal" class="flex">
-        <div class="flex wrap">
-            <input style="flex-grow: 1" type="text" v-model="TextForSend" v-on:keyup.enter="send" v-on:keyup.up="prevCmd" v-on:keyup.down="nextCmd" v-on:keyup.esc="TextForSend = ''">
-            <!--<textarea id="text-for-send" v-model="TextForSend" v-on:keyup.enter="send" v-on:keyup.up="prevCmd" v-on:keyup.down="nextCmd" v-on:keyup.esc="TextForSend = ''"></textarea>-->
-            <button v-on:click="send">Отправить</button>
-        </div>
-        <div style="margin: 1ex; margin-bottom: 0; flex-grow: 1">
+<script type="text/x-template"  id="tab-content-sensors">
+    <div id="tab-content-sensors" title="Датчики">
+        <div id="content-sensors">
+            <div v-for="type in types.types()" v-if="getSensorsByType(type).length" >
+            <!--<div v-for="data in getTypeData()">-->
+                <table class="sSensorsTable">
+                    <tr>
+                        <th>
+                            {{'undefined' == String(type)  ? '#' : type}}
+                        </th>
+                        <th v-for="data in types.data(type)" v-bind:style="data.align ? 'text-align: ' + data.align : ''">
+                            {{data.title}}
+                        </th>
+                    </tr>
+                    <tr v-for="sensor in getSensorsByType(type)">
+                        <td class="sSensorName">
+                            <span v-show="!sensor.editName" v-on:click="doEditName(sensor)">{{ String(sensor) }}</span>
+                            <input v-show="sensor.editName" v-bind:id="sensor.nameInputElementId" type="text" v-model.lazy="sensor.name" v-on:change="setName(sensor)" v-on:blur="sensor.editName = false">
+                        </td>
+                        <td  v-for="data in types.data(type)" v-bind:style="data.align ? 'text-align: ' + data.align : ''">
+                            {{data.data(sensor)}}<span v-if="data.html" v-html="data.html(sensor)"></span>
+                        </td>
+                    </tr>
+                </table>
 
-            <textarea v-model="ReceivedText" id="terminal-received-text"></textarea>
 
-            <button v-on:click="clear" style="position: absolute; top:0; right: 0; margin: 0;">Очистить</button>
-
-        </div>
-        <div class="flex wrap">
-            <label style="margin-right: 5ex;"><INPUT TYPE="checkbox" v-model="NoPeriodicInfoLog">
-                <span>Без периодических данных</span></label>
-            <label><INPUT TYPE="checkbox" v-model="AutoScroll">
-                <span>Авто-прокрутка</span></label>
+            </div>
         </div>
     </div>
-</div>
+</script>
+
+
+
+<script type="text/x-template"  id="tab-content-terminal">
+    <div id="tab-content-terminal" title="Терминал">
+        <div id="terminal" class="flex">
+            <div class="flex wrap">
+                <input style="flex-grow: 1" type="text" v-model="TextForSend" v-on:keyup.enter="send" v-on:keyup.up="prevCmd" v-on:keyup.down="nextCmd" v-on:keyup.esc="TextForSend = ''">
+                <!--<textarea id="text-for-send" v-model="TextForSend" v-on:keyup.enter="send" v-on:keyup.up="prevCmd" v-on:keyup.down="nextCmd" v-on:keyup.esc="TextForSend = ''"></textarea>-->
+                <button v-on:click="send">Отправить</button>
+            </div>
+            <div style="margin: 1ex; margin-bottom: 0; flex-grow: 1">
+
+                <textarea v-model="ReceivedText" id="terminal-received-text"></textarea>
+
+                <button v-on:click="clear" style="position: absolute; top:0; right: 0; margin: 0;">Очистить</button>
+
+            </div>
+            <div class="flex wrap">
+                <label style="margin-right: 5ex;"><input TYPE="checkbox" v-model="NoPeriodicInfoLog">
+                    <span>Без периодических данных</span></label>
+                <label><input TYPE="checkbox" v-model="AutoScroll">
+                    <span>Авто-прокрутка</span></label>
+            </div>
+        </div>
+    </div>
+</script>
+
 
 <script type="text/x-template"  id="properties-panel">
     <div v-bind:id="id" class="sProperties">
@@ -126,15 +130,15 @@
 </script>
 
 
-<div id="tab-content-about" title="О системе">
-    <properties-panel id="about">
-    </properties-panel>
-</div>
+<script type="text/x-template"  id="tab-content-about">
+    <div id="tab-content-about" title="О системе">
+        <properties-panel id="about"></properties-panel>
+    </div>
+</script>
 
 
 <script type="text/x-template"  id="properties-panel-text">
-    <div v-html="content">
-    </div>
+    <div v-html="content"></div>
 </script>
 
 <script type="text/x-template" id="content-about-developer">
@@ -170,40 +174,45 @@
         <span>Режим приложения</span>
     </div>
     <div>
-            <span style="max-width: fit-content;"><span style="font-size: 75%;">Режим без строки адреса работает в Chrome для Android.<br>
-            Для запуска в этом режиме необходимо добавить ярлык страницы на главный экран из меню браузера и запускать с помощью ярлыка на главном экране.<br>
-            </span></span>
+            <span style="max-width: fit-content;">
+                <span style="font-size: 75%;">Режим без строки адреса работает в Chrome для Android.<br>
+                    Для запуска в этом режиме необходимо добавить ярлык страницы на главный экран из меню браузера и запускать с помощью ярлыка на главном экране.<br>
+                </span>
+            </span>
     </div>
 </script>
 
 <script type="text/x-template" id="about-system">
-<div>
     <div>
-        <span>Платформа</span>
-        <span>{{platform}}</span>
+        <div>
+            <span>Платформа</span>
+            <span>{{platform}}</span>
+        </div>
+        <div v-if="chipID" hidden>
+            <span>Идентификатор</span>
+            <span>{{chipID}}</span>
+        </div>
+        <div>
+            <span>Время работы</span>
+            <span>{{`${uptimeText.substr(0, uptimeText.indexOf('D'))}д. ${Number(uptimeText.substr(-6, 2))}ч. ${uptimeText.substr(-4, 2)}мин.`}}</span>
+        </div>
+        <div>
+            <span>Дата и время</span>
+            <span>{{time && time.toString ? time.toFormatString('dd.mm.yyyy hh:ii:ss') : ''}}</span>
+        </div>
     </div>
-    <div v-if="chipID" hidden>
-        <span>Идентификатор</span>
-        <span>{{chipID}}</span>
-    </div>
-    <div>
-        <span>Время работы</span>
-        <span>{{`${uptimeText.substr(0, uptimeText.indexOf('D'))}д. ${Number(uptimeText.substr(-6, 2))}ч. ${uptimeText.substr(-4, 2)}мин.`}}</span>
-    </div>
-    <div>
-        <span>Дата и время</span>
-        <span>{{time && time.toString ? time.toFormatString('dd.mm.yyyy hh:ii:ss') : ''}}</span>
-    </div>
-</div>
 
 </script>
 
 
 
-<div id="tab-content-settings" title="Параметры">
-    <properties-panel id="settings">
-    </properties-panel>
-</div>
+<script type="text/x-template"  id="tab-content-settings">
+    <div id="tab-content-settings" title="Параметры">
+        <properties-panel id="settings">
+        </properties-panel>
+    </div>
+</script>
+
 
 <script type="text/x-template"  id="settings-select-theme">
     <div>
@@ -221,20 +230,20 @@
 </script>
 
 <script type="text/x-template"  id="settings-set-auth">
+    <div>
         <div>
-            <div>
-                <span>Авторизация</span>
-                <button v-on:click="sendHttpAuth">Установить</button>
-            </div>
-            <div>
-                <span>Имя пользователя</span>
-                <input v-model="httpUserName" length="15">
-            </div>
-            <div>
-                <span>Пароль</span>
-                <input v-model="httpUserPassword" length="15" type="password" placeholder="******">
-            </div>
+            <span>Авторизация</span>
+            <button v-on:click="sendHttpAuth">Установить</button>
         </div>
+        <div>
+            <span>Имя пользователя</span>
+            <input v-model="httpUserName" length="15">
+        </div>
+        <div>
+            <span>Пароль</span>
+            <input v-model="httpUserPassword" length="15" type="password" placeholder="******">
+        </div>
+    </div>
 </script>
 
 <script type="text/x-template"  id="settings-reboot">

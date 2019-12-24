@@ -5,34 +5,38 @@ const db = require("./uc-db");
 
 const wscli = module.exports;
 
-wscli.context = {
-    _current: undefined,
-    none: undefined,
-    getCurrent: function(){
-        return this._current;
-    },
-    setCurrent: function(c){
-        if ( !this._current || !c)
-            return (this._current = c);
-        else
-            wscli.setError("Context already set");
-        return undefined;
-    },
-    add: function(item){
-        if(!this.hasOwnProperty(item))
-            this[item] = item;
-        else
-            throw(`Contexts item alredy present: ${item}`);
-    }
+/*
+Use:
+wscli.sendData("#Cmd");
+wscli.sendClientData("#Cmd2");
+ */
 
+const tContext = function () {
+    this._current = undefined;
+    this.none = undefined;
+};
+wscli.context = new tContext;
+tContext.prototype.getCurrent = function(){ return this._current; };
+tContext.prototype.setCurrent = function(c){
+    if ( !this._current || !c)
+        return (this._current = c);
+    else
+        wscli.setError("Context already set");
+    return false;
+};
+tContext.prototype.add = function(item){
+    if(!this.hasOwnProperty(item))
+        this[item] = item;
+    else
+        throw(`Contexts item alredy present: ${item}`);
 };
 
 
 
-let WebSocket;
-wscli.init = function (ws) {
-    if(!WebSocket) {
-        WebSocket = ws;
+let ws;
+wscli.init = function (pws) {
+    if(!ws) {
+        ws = pws;
 
         ws.on('connection', function connection(client) {
             client.isAlive = true;
@@ -57,7 +61,7 @@ function onConnection(client) {
 
 function onCommand(client, cmdStrings) {
     // (^#.*$)|((^[?][\s\S]*)) - режем на команды и запросы
-    wscli._client = client;
+    wscli._currentClient = client;
 
     (String(cmdStrings).match(/(^#.*$)|((^[?][\s\S]*))/gm) || []).forEach(
         function (cmdString) {
@@ -75,8 +79,6 @@ function onCommand(client, cmdStrings) {
                     }
 
                 }
-                wscli.sendData();
-
             }else if(cmdString.slice(0, 1) === '?'){
                 let data = '';
                 try{
@@ -86,8 +88,8 @@ function onCommand(client, cmdStrings) {
                     data = err.toString();
                 }
                 wscli.sendClientData(data);
-                wscli.sendData();
             }
+            sendBuffers();
         });
 
 }
@@ -96,7 +98,10 @@ function onCommand(client, cmdStrings) {
 
 
 wscli.commands = {
-    add: function (name, func, about) {
+    add: function (name, pfunc, pabout) {
+        let func = ('function' === typeof pfunc ? pfunc : pabout);
+        let about = ('function' === typeof pfunc ? pabout : pfunc);
+
         const _name = 'cmd-' + name.toLowerCase();
 
         if(!this[_name])
@@ -133,7 +138,6 @@ wscli.commands.add(
 
 setInterval(function () {
         wscli.sendData('#time:' + utils.DateToShotXMLString(new Date()));
-        wscli.sendData();
     },
     1000);
 
@@ -187,19 +191,19 @@ wscli.checkInRange = function (arg, lv, rv, desc){
     return false;
 };
 
-let sendDataBuffer = undefined, sendClientDataBuffer = undefined;
+let dataBuffer = '';
+
+let handleTimeout = undefined;
 
 wscli.sendData = function (data) {
-    if(sendDataBuffer === undefined)
-        sendDataBuffer = '';
-    if(sendClientDataBuffer === undefined)
-        sendClientDataBuffer = '';
-
-    if(data !== undefined) {
+/*    if(data !== undefined) {
         if (data.length && !data.endsWith('\n'))
             data += '\n';
-        sendDataBuffer += data;
-
+*/
+    dataBuffer += data.trim() + '\n';
+    clearTimeout(handleTimeout);
+    handleTimeout = setTimeout(sendBuffers);
+/*
     }else{
         if(sendDataBuffer){
             sendDataBroadcastDirect(sendDataBuffer);
@@ -210,14 +214,35 @@ wscli.sendData = function (data) {
             sendClientDataBuffer = '';
         }
     }
+    */
 };
 
 wscli.sendClientData = function (data) {
-    if (data.length && !data.endsWith('\n'))
+ /*   if (data.length && !data.endsWith('\n'))
         data += '\n';
-    sendClientDataBuffer += data;
+
+ */
+    wscli._currentClient.dataBuffer = (wscli._currentClient.dataBuffer || '') +  data.trim() + '\n';
+    clearTimeout(handleTimeout);
+    handleTimeout = setTimeout(sendBuffers);
 };
 
+function sendBuffers() {
+    handleTimeout = undefined;
+    if(dataBuffer){
+        ws.broadcast(dataBuffer);
+        dataBuffer = '';
+    }
+
+    ws.clients.forEach(function(client) {
+        if (client.dataBuffer) {
+            ws.send(client, client.dataBuffer);
+            client.dataBuffer = '';
+        }
+    });
+}
+
+/*
 function sendDataBroadcastDirect(data) {
     if(!data)
         return;
@@ -228,6 +253,6 @@ function sendClientDataDirect(client, data) {
     if(!data)
         return;
     WebSocket.send(client, data);
-}
+}*/
 
 
