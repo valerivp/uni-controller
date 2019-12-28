@@ -44,7 +44,7 @@ wscli.init = function (pws) {
                 this.isAlive = true;
             });
             client.on('message', function incoming(message) {
-                console.log('>: %s', message);
+                console.log('>: %s', message.trim());
                 onCommand(client, message);
             });
             onConnection(client);
@@ -74,7 +74,7 @@ function onCommand(client, cmdStrings) {
                 for (let i = 0; i < cmdArray.length; i++) {
                     let cmd = cmdArray[i].trim();
                     if(cmd && !executeCmd(cmd)){
-                        console.log(`Cmd executing error: ${cmd}`);
+                        console.error(`Cmd executing error: ${cmd}`);
                         break;
                     }
 

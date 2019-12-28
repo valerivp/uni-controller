@@ -101,7 +101,7 @@ module.exports.ws = ws;
 
 ws.broadcast = function broadcast(data) {
     if(data.indexOf("#time"))
-        console.log('b: %s', data);
+        console.log('b: %s', data.trim());
     ws.clients.forEach(function(client) {
         if (client.readyState === WebSocket.OPEN) {
             client.send(data);
@@ -110,7 +110,7 @@ ws.broadcast = function broadcast(data) {
 };
 
 ws.send = function send(client, data) {
-    console.log('c: %s', data);
+    console.log('c: %s', data.trim());
     if (client.readyState === WebSocket.OPEN) {
         client.send(data);
     }

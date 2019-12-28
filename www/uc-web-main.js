@@ -1,6 +1,7 @@
 'use strict';
 
 const serverLocation = location.protocol === 'file:' ? 'localhost:8080' : location.host;
+//const serverLocation = 'localhost:8080';
 
 if (!Array.prototype.last){ Array.prototype.last = function(){ return this[this.length - 1]; } }
 
@@ -54,6 +55,11 @@ const vContent = new Vue({
             }
             if(!find)
                 this.tabsList.push(tabInfo);
+
+            if(!tabInfo.onShow)
+                tabInfo.onShow = tabInfo.component.onShow;
+            if(!tabInfo.onHide)
+                tabInfo.onHide = tabInfo.component.onHide;
 
             setTimeout(function () {
                 tabInfo.component.$mount('#tab-' + tabInfo.id);
@@ -294,7 +300,34 @@ sensorsTypes.add( undefined, {
     }
     });
 
+const sensorsInfoQuery = new function(){
+    this._timerHandle = undefined;
+    this._sendTextSensorsInfo = () => wscli.send('#SensorsData:>' + vSensors.maxTimeLabel);
+    this.count = 0;
+    this.start = () => {
+        if(!this.count++){
+            wscli.send("#SensorsNames");
+            this._timerHandle = setInterval(this._sendTextSensorsInfo, 3000);
+            console.log("Start fetching sensors data");
+        }
+    };
+    this.stop  = () => {
+        if(! --this.count){
+            if(this._timerHandle)
+                clearInterval(this._timerHandle);
+            this._timerHandle = undefined;
+            console.log("Stop fetching sensors data");
+        }
+    };
+};
 
+function Sensors() {
+}
+Sensors.prototype.toArray = function () {
+    let res = [];
+    Object.keys(this).forEach((id)=>res.push(this[id]));
+    return res;
+};
 
 const vSensors = new Vue({
     template: '#tab-content-sensors',
@@ -302,10 +335,12 @@ const vSensors = new Vue({
         types: sensorsTypes,
         maxTimeLabel: '0',
         currentSensor : 0,
-        sensors: [],
+        sensors: new Sensors(),
     },
 
     methods: {
+        onShow: ()=> {sensorsInfoQuery.start();},
+        onHide: ()=> {sensorsInfoQuery.stop();},
         setName(sensor) {
             wscli.send("#Sensor:" + sensor.id2hex() + ",SetName:" + sensor.name);
             sensor.editName = false;
@@ -319,12 +354,19 @@ const vSensors = new Vue({
         getCurrentSensor: function(){
             if(!this.currentSensor)
                 return undefined;
+            /*
             for(let s = 0; s < this.sensors.length; s++){
                 if(this.sensors[s].id === this.currentSensor)
                     return this.sensors[s];
             }
             this.sensors.push(new SensorData(this.currentSensor));
-            return this.sensors.last();
+            return this.sensors.last();*/
+            let sensor = this.sensors[this.currentSensor];
+            if(!sensor){
+                sensor = new SensorData(this.currentSensor);
+                Vue.set(this.sensors, this.currentSensor, sensor);
+            }
+            return sensor;
         },
         setSensorInfo: function (param, val){
             if(wscli.context.getCurrent() === wscli.context.sensor)
@@ -334,22 +376,21 @@ const vSensors = new Vue({
         },
         eraseCurrentSensor(what){
             if(this.currentSensor){
-                for(let s = 0; s < this.sensors.length; s++){
-                    if(this.sensors[s].id === this.currentSensor){
-                        this.currentSensor = 0;
-                        let sensor = this.sensors[s];
-                        this.sensors.splice(s, 1);
-                        if(what === 'name')
-                            wscli.send('#SensorsInfo:' + sensor.idHex);
-                        else if(what === 'sensor')
-                            wscli.send('#SensorsNames:' + sensor.idHex);
-                        break;
-                    }
+                let sensor = this.sensors[this.currentSensor];
+                if(sensor){
+                    Vue.set(this.sensors, this.currentSensor, undefined);
+                    delete this.sensors[this.currentSensor];
+                    this.currentSensor = 0;
+                    if(what === 'name')
+                        wscli.send('#SensorsInfo:' + sensor.idHex);
+                    else if(what === 'sensor')
+                        wscli.send('#SensorsNames:' + sensor.idHex);
                 }
             }
         },
         getSensorsByType(type){
-            let arr = this.sensors.filter((item) =>
+
+            let arr = this.sensors.toArray().filter((item) =>
                 (String(type) === 'undefined') ? !this.types.known(item.type) : String(item.type).toLowerCase() === String(type).toLowerCase()
             );
             arr = arr.sort((a, b) => ((a.name < b.name) ? -1 : ( (a.name > b.name) ? 1 : 0)));
@@ -358,21 +399,7 @@ const vSensors = new Vue({
     }
 });
 
-const sensorsInfoQuery = new function(){
-    this._timerHandle = undefined;
-    this._sendTextSensorsInfo = () => wscli.send('#SensorsData:>' + vSensors.maxTimeLabel);
-    this.start = () => {
-        wscli.send("#SensorsNames");
-        this._timerHandle = setInterval(this._sendTextSensorsInfo, 3000);
-    };
-    this.stop  = () => {
-        if(this._timerHandle)
-            clearInterval(this._timerHandle);
-        this._timerHandle = undefined;
-    };
-};
-
-vContent.addTab({component: vSensors, id: 'sensors', onShow: sensorsInfoQuery.start, onHide: sensorsInfoQuery.stop}, {before: 'terminal'});
+vContent.addTab({component: vSensors, id: 'sensors'}, {before: 'terminal'});
 
 
 
@@ -426,7 +453,7 @@ const vtProperties = {
 
 const vAbout = new Vue(vtProperties);//).$mount("#about");
 
-vContent.addTab({component: vAbout, id: 'about', title: "О системе", onShow: function () {vAbout.onShow();}});
+vContent.addTab({component: vAbout, id: 'about', title: "О системе"});
 
 
 const vcPropetiesPanelText = Vue.component('properties-panel-text', {
@@ -482,7 +509,7 @@ vAbout.add(vcPropetiesPanelText, {content: 'content-about-fullscreen'});
 
 const vSettings = new Vue(vtProperties);
 
-vContent.addTab({component: vSettings, id: 'settings', title: "Параметры", onShow: function () {vSettings.onShow();}}, {after: 'terminal'});
+vContent.addTab({component: vSettings, id: 'settings', title: "Параметры"}, {after: 'terminal'});
 
 
 const themes = [];
@@ -738,7 +765,7 @@ function WSCli (ws){
                     for (let i = 0; i < cmdArray.length; i++) {
                         let cmd = cmdArray[i].trim();
                         if(cmd && (this.executeCmd(cmd) === false || this._error)){
-                            console.log(`Cmd executing error: ${cmd} ${this._error}`);
+                            console.error(`Cmd executing error: ${cmd} ${this._error}`);
                             break;
                         }
                     }
@@ -763,7 +790,7 @@ function WSCli (ws){
                 let res = command.funcs[i](arg);
                 if (res === false){
                     result = false;
-                    //wscli.sendClientData(`#Cmd:${command.name},Value:${arg},CmdRes:Error,Error:${error}`);
+                    //wscli.send(`#Cmd:${command.name},Value:${arg},CmdRes:Error,Error:${error}`);
                     break;
                 } else if (res === true) {
                     //wscli.sendClientData(`#Cmd:${command.name},CmdRes:Ok`);
@@ -772,11 +799,13 @@ function WSCli (ws){
             }
             if(result === undefined){
                 result = false;
-                //wscli.sendClientData(`#Cmd:${command.name},CmdRes:Error,Error:NotProcessed`);
+                wscli.setError('NotProcessed');
+                //wscli.send(`#Cmd:${command.name},CmdRes:Error,Error:NotProcessed`);
             }
         }else {
             result = false;
-            //wscli.sendClientData(`#Cmd:${cmd},CmdRes:NoCmd`);
+            wscli.setError('NoCmd');
+            //wscli.send(`#Cmd:${cmd},CmdRes:NoCmd`);
         }
         return result;
     };
@@ -787,6 +816,17 @@ function WSCli (ws){
         this.ws.on('message', this.onMessage);
         this.ws.init();
     };
+
+    this.checkInRange = function (arg, lv, rv, desc){
+        if ((lv <= arg) && (arg <= rv))
+            return true;
+        if (desc) {
+            let err = desc + ' ' + arg + ' not in range ' + lv + '-' + rv;
+            this.setError(err);
+        }
+        return false;
+    };
+
 }
 
 
@@ -878,11 +918,11 @@ function WSConnection (server, terminal) {
     this._SendText = (text)=> {
         text += (String(text).endsWith('\n') ? '' : '\n');
 
-        if(this._textBufferForSend && this._textBufferForSend.endsWith('\n')) {
+/*        if(this._textBufferForSend && this._textBufferForSend.endsWith('\n')) {
             this._textBufferForSend = this._textBufferForSend.substr(0, this._textBufferForSend.length - 1) + ',';
             text = text.substr(1);
         }
-        this._textBufferForSend = this._textBufferForSend ? this._textBufferForSend + text : text;
+*/        this._textBufferForSend = this._textBufferForSend ? this._textBufferForSend + text : text;
 
         setTimeout(this._SendTextBuffer, 0);
     };

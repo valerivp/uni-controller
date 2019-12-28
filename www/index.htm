@@ -53,7 +53,7 @@
     </div>
     <!--<div id="tabs-content" v-bind:class="(!isConnected?'zzStBlur':'')">v-show="isShow(tab)"-->
     <div id="tabs-content">
-        <div v-for="tab in tabsList" v-show="isShow(tab)" v-bind:id="'tab-wrap-' + tab.id">
+        <div v-for="tab in tabsList" v-show="isShow(tab)" v-bind:id="'tab-wrap-' + tab.id" v-bind:key="tab.id">
             <div v-bind:id="'tab-' + tab.id">
 
             </div>
@@ -237,11 +237,11 @@
         </div>
         <div>
             <span>Имя пользователя</span>
-            <input v-model="httpUserName" length="15">
+            <input v-model="httpUserName" maxlength="15">
         </div>
         <div>
             <span>Пароль</span>
-            <input v-model="httpUserPassword" length="15" type="password" placeholder="******">
+            <input v-model="httpUserPassword" maxlength="15" type="password" placeholder="******">
         </div>
     </div>
 </script>
