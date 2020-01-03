@@ -466,8 +466,18 @@ setTimeout(()=>console.log(2), 2);
 setTimeout(()=>console.log(4), 4);
 setTimeout(()=>console.log(0), 0);
 */
+/* sensor-data-sender v.0.0.1 */
+wscli.commands.add(
+    'Autosend',
+    (arg) => {
+        arg = 0 | arg;
+        if(wscli.context.getCurrent() === wscli.context.sensor)
+            return true;
+    }
+);
+
 /* tile-temperature-humidity-battery v.0.0.1 */
-vTilesComponentsTypes.add('tile-temperature', {title: 'Температура'});
+vTilesComponentsTypes.add('tile-temperature', {title: 'Температура и влажность'});
 
 Vue.component('tile-temperature', {
     computed:{

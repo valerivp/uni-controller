@@ -1,0 +1,16 @@
+{
+  "name": "sensor-data-sender",
+  "version": "0.0.1",
+  "dependencies": {
+  },
+  "node": "sensor-data-sender.js",
+  "web":{
+    "js":[
+      "www/sensor-data-sender-web.js"
+    ],
+    "css":[
+
+    ]
+  }
+}
+

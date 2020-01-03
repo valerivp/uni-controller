@@ -13,17 +13,19 @@ function EventEmitterClass() {
 util.inherits(EventEmitterClass, require("events"));
 const EventEmitter = new EventEmitterClass();
 //module.exports.on = events.on.bind(events);
+const sensors = module.exports;
+
 module.exports.onSensorDataReceived = EventEmitter.on.bind(EventEmitter, EventEmitter.events.SensorDataReceived);
 
 
 wscli.context.add('sensor');
 
-let currentSensor = undefined;
+sensors.currentSensor = undefined;
 wscli.commands.add('Sensor',
     function (arg) {
         arg = 0 | arg;
         if (checkRangeSensorID(arg) && wscli.context.setCurrent(wscli.context.sensor)) {
-            currentSensor = arg;
+            sensors.currentSensor = arg;
             return true;
         }
         return false;
@@ -39,10 +41,11 @@ wscli.commands.add('SetName',
         if(arg) {
             try {
                 db.beginTransaction();
-                let q = `UPDATE SensorsNames SET Name = $Name WHERE ID = $Sensor;
+/*                let q = `UPDATE SensorsNames SET Name = $Name WHERE ID = $Sensor;
                          INSERT INTO SensorsNames (ID, Name)
                             SELECT $Sensor, $Name WHERE (SELECT Changes() = 0);`;
-                db.querySync(q, {$Sensor: currentSensor, $Name: arg});
+*/                let q = `REPLACE INTO SensorsNames (ID, Name) VALUES ($ID, $Name)`;
+                db.querySync(q, {$ID: sensors.currentSensor, $Name: arg});
                 db.commitTransaction();
             }catch (err){
                 if(db.isTransaction())
@@ -50,9 +53,9 @@ wscli.commands.add('SetName',
                 throw err;
             }
         } else {
-            db.querySync('DELETE FROM SensorsNames WHERE ID = $Sensor', {$Sensor: currentSensor});
+            db.querySync('DELETE FROM SensorsNames WHERE ID = $Sensor', {$Sensor: sensors.currentSensor});
         }
-        wscli.sendData(`#Sensor:0x${Number(currentSensor).toHex()},Name:${arg}`);
+        wscli.sendData(`#Sensor:0x${Number(sensors.currentSensor).toHex()},Name:${arg}`);
         return true;
     },
     'Set sensor name');
@@ -105,9 +108,9 @@ wscli.commands.add('SensorsData',
 
 module.exports.updateSensorData = function(sensor, params){
     const qp = {$ID: sensor.ID, $Type: sensor.Type, $TimeLabel: new Date(sensor.TimeLabel).getTime()};
-    let q = `DELETE FROM mem.SensorsData WHERE ID = $ID;
-        DELETE FROM mem.SensorsParams WHERE ID = $ID;
-        INSERT INTO mem.SensorsData (ID, Type, TimeLabel) VALUES ($ID, $Type, datetime($TimeLabel / 1000, 'unixepoch', 'localtime'));\n`;
+    //let q = `DELETE FROM mem.SensorsData WHERE ID = $ID;
+    let q = `DELETE FROM mem.SensorsParams WHERE ID = $ID;
+        REPLACE INTO mem.SensorsData (ID, Type, TimeLabel) VALUES ($ID, $Type, datetime($TimeLabel / 1000, 'unixepoch', 'localtime'));\n`;
     for (let key in params) {
         // noinspection JSUnfilteredForInLoop
         q += `INSERT INTO mem.SensorsParams (ID, Param, Value) VALUES ($ID, '${key}', ${params[key]});\n`;

@@ -196,32 +196,12 @@ let dataBuffer = '';
 let handleTimeout = undefined;
 
 wscli.sendData = function (data) {
-/*    if(data !== undefined) {
-        if (data.length && !data.endsWith('\n'))
-            data += '\n';
-*/
     dataBuffer += data.trim() + '\n';
     clearTimeout(handleTimeout);
     handleTimeout = setTimeout(sendBuffers);
-/*
-    }else{
-        if(sendDataBuffer){
-            sendDataBroadcastDirect(sendDataBuffer);
-            sendDataBuffer = '';
-        }
-        if(sendClientDataBuffer){
-            sendClientDataDirect(wscli._client, sendClientDataBuffer);
-            sendClientDataBuffer = '';
-        }
-    }
-    */
 };
 
 wscli.sendClientData = function (data) {
- /*   if (data.length && !data.endsWith('\n'))
-        data += '\n';
-
- */
     wscli._currentClient.dataBuffer = (wscli._currentClient.dataBuffer || '') +  data.trim() + '\n';
     clearTimeout(handleTimeout);
     handleTimeout = setTimeout(sendBuffers);
