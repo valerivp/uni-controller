@@ -1,0 +1,17 @@
+{
+  "name": "tile-temperature-humidity-battery",
+  "version": "0.0.1",
+  "dependencies": {
+    "tiles":""
+  },
+  "node": "",
+  "web":{
+    "js":[
+      "www/tile-t-h-b-web.js"
+    ],
+    "css":[
+
+    ]
+  }
+}
+
