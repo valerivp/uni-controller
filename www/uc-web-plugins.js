@@ -11,7 +11,7 @@ new Vue({
         time: ()=> $store.state.time,
     },
     template: `
-    <div id="clock-at-logo" onclick="vContent.setTab(0)">
+    <div id="clock-at-logo" onclick="vContent.setTab(vContent.tabsList[0].id)">
         <span class="sFontBold sColorContrast">UNI</span>Controller
         <span v-if="!time">--:--</span>
         <span v-if="time" class="sFontBold sColorContrast">
@@ -164,58 +164,69 @@ vSettings.add(
 );
 
 /* tiles v.0.0.1 */
-const tiles$store = new Vuex.Store({
-    state: {
-        tilesCount: 0,
-        tiles: [],
-        selectedTile: 0,
-    },
-    mutations: {
-        setTilesCount:(state, val) => {
-            if(state.tilesCount !== val) {
-                state.tilesCount = val;
-                let tiles = state.tiles;
-                while (tiles.length <= val)
-                    tiles.push({id: tiles.length + 1});
-                while (tiles.length > val)
-                    tiles.pop();
-            }
-        },
-        setSelectedTile:(state, val) => {
-            if(state.selectedTile !== val)
-                state.selectedTile = val;
-        },
-        setTileData: (state, val) => {
-            let tmp = state.tiles[val.id - 1];
-            for(let key in val) // noinspection JSUnfilteredForInLoop
-                tmp[key] = val[key];
-            Vue.set(state.tiles, val.id - 1, tmp);
-        }
-    },
-    strict: (location.protocol === 'file:'),
-});
-tiles$store.mutation = {
-    setTilesCount: 'setTilesCount',
-    setSelectedTile: 'setSelectedTile',
-    setTileData: 'setTileData'
+
+const TilesComponentsTypes = function () {
+};
+TilesComponentsTypes.prototype.add = function(name, params){
+    this[name] = params;
+    this[name].name = name;
+};
+const vTilesComponentsTypes = new TilesComponentsTypes;
+
+function Tiles() {
+}
+
+Tiles.prototype.toArray = function () {
+    let res = [];
+    // noinspection JSCheckFunctionSignatures
+    Object.keys(this).forEach((id)=>res.push(this[id]));
+    return res;
+};
+Tiles.prototype.length = function () {
+    let res = 0;
+    // noinspection JSCheckFunctionSignatures
+    Object.keys(this).forEach(() => res++);
+    return res;
 };
 
-// noinspection HtmlUnknownAttribute
 const vTiles = new Vue({
     data: {
-        currentTile: undefined,
+        currentTileId: undefined,
+        tiles: new Tiles(),
+    },
+    computed:{
+        tilesCount: {
+            get(){
+                return this.tiles.length();
+            },
+            set(val){
+                wscli.send(`#SetTilesCount:${val}`);
+            }
+        },
     },
 
     methods: {
-        setTilesCount: (count)=> tiles$store.commit(tiles$store.mutation.setTilesCount, count),
-        changeTileSetting: (id)=>{
-            tiles$store.commit(tiles$store.mutation.setSelectedTile, id);
-            vContent.setTab('tile-settings');
+        setTilesCount(val){
+            let tilesCount = this.tiles.length();
+            if(tilesCount !== val) {
+                while (tilesCount < val){
+                    tilesCount++;
+                    Vue.set(this.tiles, tilesCount, {id: tilesCount});
+                    wscli.send(`#Tile:${tilesCount},GetType,GetParams`);
+                }
+                while (tilesCount > val)
+                    Vue.delete(this.tiles, tilesCount--);
+            }
         },
-        checkTile:(t)=> wscli.checkInRange(t, 1, tiles$store.state.tilesCount, "Tile id"),
+        changeTileSetting(id){
+            vContent.setTab('tile-settings', {tileId: id});
+        },
+        checkTile(t){
+            return wscli.checkInRange(t, 1, this.tiles.length(), "Tile id");
+        },
 
-        getClass: (id) =>{
-            let tilesCount = tiles$store.state.tilesCount;
+        getCSSClass(id){
+            let tilesCount = this.tiles.length();
             let l = [[1], [2,2], [3,3,3], [2,2,2,2], [2,2,3,3,3], [3,3,3,3,3,3], [3,3,3,4,4,4,4],[4,4,4,4,4,4,4,4]];
             let p = [[1],[1,1],[1,1,1],[1,2,2,1],[2,2,1,2,2],[2,2,2,2,2,2],[2,2,2,2,2,2,1],[2,2,2,2,2,2,2,2]];
             return `sTilesCount${tilesCount}`
@@ -223,15 +234,12 @@ const vTiles = new Vue({
                 + ` p${p[tilesCount - 1][id - 1]}-in-line`
             ;
         },
-        setType: (id, type)=>{
-            if(tiles$store.state.tiles[id - 1].type !== type)
+        setType(id, type){
+            if(this.tiles[id].type !== type){
                 wscli.send(`#Tile:${id},SetType:${type},GetParams`);
+            }
         },
-/*        setName: (id, name)=>{
-            if(tiles$store.state.tiles[id - 1].name !== name)
-                wscli.send(`#Tile:${id},SetName:${name}`);
-        },
-*/        setParams: (id, params)=>{
+        setParams(id, params){
             let data = `#Tile:${id},SetParams:`;
             let delimiter = '';
             for(let key in params){ // noinspection JSUnfilteredForInLoop
@@ -241,9 +249,6 @@ const vTiles = new Vue({
             wscli.send(data);
         }
     },
-    computed:{
-        tiles: ()=> tiles$store.state.tiles,
-    },
     created: function() {
         ws.on('open', ()=>{
             wscli.send("#GetTilesCount,Tile,GetType,GetParams");
@@ -251,7 +256,7 @@ const vTiles = new Vue({
     },
     template:`
     <div id="tab-content-tiles" title="Состояние">
-        <div v-for="tile in tiles" v-bind:class="getClass(tile.id) + ' sTileWrap'" v-on:click="changeTileSetting(tile.id)">
+        <div v-for="tile in tiles.toArray()" v-bind:class="getCSSClass(tile.id) + ' sTileWrap'" v-on:click="changeTileSetting(tile.id)">
             <div class="sTile border3d">{{tile.name}}: {{tile.id}} x {{tile.type}}
                 <div v-bind:params="tile.params" v-bind:is="tile.type">
                 
@@ -262,72 +267,74 @@ const vTiles = new Vue({
 
 });
 
-vContent.addTab({component: vTiles, id: 'tiles'}, {before: 'sensors'});
+vContent.addTab({component: vTiles, id: 'tiles'}, {before: 'sensors', });
 
-const tTilesComponentsTypes = function () {
-};
-tTilesComponentsTypes.prototype.add = function(name, params){
-    this[name] = params;
-    this[name].name = name;
-};
-const vTilesComponentsTypes = new tTilesComponentsTypes;
 
 vTilesComponentsTypes.add('tile-test', {title: 'Компонент'});
 vTilesComponentsTypes.add('tile-second', {title: 'Второй'});
 
 const vTileSettings = new Vue({
     data: {
-        tmpName:''
+        _selectedTileId: undefined
     },
 
     methods: {
-        onShow(){
-            this.$emit('fetch');
+        onShow(params){
+            if(params && params.tileId)
+                this.selectedTileId = params.tileId;
+            if(this.selectedTypeName)
+                setTimeout(this.$emit.bind(this, `show-${this.selectedTypeName}-settings`), 2);
         },
         onHide(){
-            this.$emit('drop');
+            if(this.selectedTypeName)
+                setTimeout(this.$emit.bind(this, `hide-${this.selectedTypeName}-settings`), 1);
         },
-        onSelectTile(arg){
-            //this.selectedType = vTiles.tiles[this.selectedTile - 1].type;
+        types(){
+            let res = vTilesComponentsTypes;
+            if(this.selectedTypeName && !res[this.selectedTypeName]){
+                res = Object.assign(new TilesComponentsTypes(), res);
+                res.add(this.selectedTypeName, {title: this.selectedTypeName + ', not instaled'});
+            }
+            return res;
         },
-        onSelectType(){
-            //this.$emit('fetch');
-            //vTiles.setType(this.selectedTile, this.selectedType);
-        },
-/*        onChangeName(arg){
-            if(this.tmpName)
-                vTiles.setName(this.selectedTile, this.tmpName);
-            //this.$emit('fetch');
-            //vTiles.setType(this.selectedTile, this.selectedType);
-        },
-*/    },
+    },
     computed:{
-        tiles: ()=> tiles$store.state.tiles,
-        types: ()=> vTilesComponentsTypes,
-        selectedTile: {
-            get: ()=> tiles$store.state.selectedTile,
-            set: function(id){
-                this.$emit('drop');
-                tiles$store.commit(tiles$store.mutation.setSelectedTile, id);
-                this.$emit('fetch');
+        tiles: ()=> vTiles.tiles,
+        tilesCount: {
+            get(){ return vTiles.tilesCount;},
+            set(val){
+                vTiles.tilesCount = val;
+                if(val && this.selectedTileId > val)
+                    this.selectedTileId = val;
             }
         },
-        selectedType: {
-            get: function(){ return (this.tiles[this.selectedTile - 1] || {}).type; },
+        selectedTile(){
+            return this.tiles[this.selectedTileId];
+        },
+        selectedTileId: {
+            get(){ return this.$data._selectedTileId; },
+            set(id){
+                this.$data._selectedTileId = id;
+                wscli.send(`#Tile:${id},GetType,GetParams`);
+            }
+        },
+        selectedTypeName: {
+            get: function(){ return (this.tiles[this.selectedTileId] || {}).type; },
             set: function(t){
-                this.$emit('drop');
-                if(t)
-                    vTiles.setType(this.selectedTile, t);
-                this.$emit('fetch');
+                if(t){
+                    vTiles.setType(this.selectedTileId, t);
+                }
             }
         },
-/*        selectedTileName: {
-            get: function(){ return (this.tiles[this.selectedTile - 1] || {}).name; },
-            set: function(n){
-                this.tmpName = n;
-            }
-        },
-*/    },
+    },
+    watch:{
+        selectedTypeName: function (newVal, oldVal) {
+            if(oldVal)
+                setTimeout(this.$emit.bind(this, `hide-${oldVal}-settings`), 1);
+            if(newVal)
+                setTimeout(this.$emit.bind(this, `show-${newVal}-settings`), 2);
+        }
+    },
     created: function() {
     },
     template:`
@@ -336,9 +343,15 @@ const vTileSettings = new Vue({
             <div>
                 <div>
                     <span>Панель</span>
-                    <select v-model="selectedTile">
+                    <select v-model="selectedTileId">
                         <option v-for="tile in tiles" v-bind:value="tile.id">{{tile.id}}</option>
                     </select>
+                    <div class="button-inc-dec">
+                        <span> из </span>
+                        <button v-on:click="tilesCount--"  class="button-inc-dec">-</button>
+                        <span>{{tilesCount}}</span>
+                        <button v-on:click="tilesCount++"  class="button-inc-dec">+</button>
+                    </div>
                 </div>
                 <!--<div>
                     <span>Наименование</span>
@@ -348,12 +361,12 @@ const vTileSettings = new Vue({
             <div>
                 <div>
                     <span>Тип данных</span>
-                    <select v-model="selectedType">
-                        <option v-for="type in types" v-bind:value="type.name">{{type.name}}, {{type.title}}</option>
+                    <select v-model="selectedTypeName">
+                        <option v-for="type in types()" v-bind:value="type.name">{{type.title}}</option>
                     </select>
                 </div>
             </div>
-            <div v-bind:is="selectedType + '-settings'" v-if="selectedType">
+            <div v-bind:is="selectedTypeName + '-settings'" v-if="selectedTypeName" v-bind:type="selectedTypeName + '-settings'">
             
             </div>
         </div>
@@ -371,21 +384,20 @@ wscli.commands.add(
         let res = false;
         if(wscli.context.setCurrent(wscli.context.tile)){
             if(vTiles.checkTile(arg)){
-                vTiles.currentTile = arg;
+                vTiles.currentTileId = arg;
                 res = true;
             }
         }
         return res;
     }
 );
-//wscli.commands.add('Name', receiveSensorInfo.bind(undefined, 'name'));
+
 wscli.commands.add('Type', function (arg) {
         if(wscli.context.getCurrent() === wscli.context.tile){
             let res = false;
-            if(vTiles.checkTile(vTiles.currentTile)){
-                let data = {id: vTiles.currentTile};
-                data.type = arg;
-                tiles$store.commit(tiles$store.mutation.setTileData, data);
+            if(vTiles.checkTile(vTiles.currentTileId)){
+                if(vTiles.tiles[vTiles.currentTileId].type !== arg)
+                    Vue.set(vTiles.tiles, vTiles.currentTileId, {id: vTiles.currentTileId, type: arg});
                 res = true;
             }
             return res;
@@ -396,16 +408,16 @@ wscli.commands.add('Type', function (arg) {
 wscli.commands.add('Params', function (arg) {
         if(wscli.context.getCurrent() === wscli.context.tile){
             let res = false;
-            if(vTiles.checkTile(vTiles.currentTile)){
-                let data = {id: vTiles.currentTile};
+            if(vTiles.checkTile(vTiles.currentTileId)){
+                //let data = {id: vTiles.currentTileId};
                 let arr = String(arg).match(/(?:[^\/\\]+|\\.)+/gm) || [];
                 let params = {};
                 arr.forEach(function (item) {
                     let param = item.match(/(?:[^=\\]+|\\.)+/)[0];
                     params[param.toLowerCase()] = item.slice(param.length + 1);
                 });
-                data.params = params;
-                tiles$store.commit(tiles$store.mutation.setTileData, data);
+                //data.params = params;
+                Vue.set(vTiles.tiles[vTiles.currentTileId], 'params', params);
                 res = true;
             }
             return res;
@@ -422,106 +434,6 @@ wscli.commands.add(
     }
 );
 
-vSettings.add(
-    Vue.component('settings-tiles-count', {
-        computed: {
-            tilesCount: () => tiles$store.state.tilesCount,
-        },
-        methods: {
-            changeTilesCount: function(delta){
-                wscli.send(`#SetTilesCount:${this.tilesCount + delta}`);
-            },
-            //onFetch: () => {  },
-        },
-        created: function() {
-            //this.$parent.$on('fetch', this.onFetch);
-            wscli.send("#GetTilesCount");
-            ws.on('open', ()=>{
-                wscli.send("#GetTilesCount");
-            });
-        },
-        template:`
-    <div>
-        <div>
-            <span>Количество плиток</span>
-            <div class="button-inc-dec">
-                <button v-on:click="changeTilesCount(-1)">-</button>
-                <span>{{tilesCount}}</span>
-                <button v-on:click="changeTilesCount(+1)">+</button>
-            </div>
-        </div>
-    </div>`
-    }),
-    {after: 'settings-select-theme'}
-);
-
-vTilesComponentsTypes.add('tile-temperature', {title: 'Температура'});
-
-Vue.component('tile-temperature', {
-    computed:{
-        sensor: function () {
-            return this.params ? vSensors.sensors[this.params.sensor] || {} : {};
-        },
-        temperature: function () {
-            let temperature = this.sensor.param ? this.sensor.param('temperature') : undefined;
-            return (temperature !== undefined) ? temperature / 10 : undefined;
-        }
-    },
-    props: {
-        name: String,
-        params: Object
-    },
-    template: `
-        <div><h3>temperature {{ sensor.name }} {{ params }}</h3>
-        {{temperature === undefined ? '-.-' : Number(temperature).toFixed(1) }}
-        </div>`
-});
-
-Vue.component('tile-temperature-settings', {
-    data: ()=>{ return {
-            params: {},
-            isActive: false,
-        }
-    },
-    computed:{
-        sensors: ()=>vSensors.sensors.toArray().filter((sd)=> (sd.param('temperature') !== undefined)),
-        sensor: {
-            get: () => (tiles$store.state.tiles[tiles$store.state.selectedTile - 1].params || {}).sensor,
-            set: function (s) {
-                this.params.sensor = s;
-                vTiles.setParams(tiles$store.state.selectedTile, this.params);
-            }
-        },
-    },
-    methods: {
-        onFetch(){
-            if(!this.isActive) {
-                this.isActive = !this.isActive;
-                sensorsInfoQuery.start();
-            }
-        },
-        onDrop(){
-            if(this.isActive) {
-                this.isActive = !this.isActive;
-                sensorsInfoQuery.stop();
-            }
-        },
-    },
-    created: function() {
-        this.$parent.$on('fetch', this.onFetch);
-        this.$parent.$on('drop', this.onDrop);
-    },
-    template: `
-           <div>
-                <div>
-                    <span>Датчик</span>
-                    <select v-model="sensor">
-                        <option v-for="sensor in sensors" v-bind:value="sensor.id">{{sensor.toString()}}</option>
-                    </select>
-                </div>
-            </div>
-        `
-});
 
 Vue.component('tile-test', {
     props: {
@@ -547,4 +459,89 @@ Vue.component('tile-second-settings', {
     props: {
     },
     template: '<h3>SECOND settings{{  }}</h3>'
+});
+/*
+setTimeout(()=>console.log(3), 3);
+setTimeout(()=>console.log(2), 2);
+setTimeout(()=>console.log(4), 4);
+setTimeout(()=>console.log(0), 0);
+*/
+/* tile-temperature-humidity-battery v.0.0.1 */
+vTilesComponentsTypes.add('tile-temperature', {title: 'Температура'});
+
+Vue.component('tile-temperature', {
+    computed:{
+        sensor: function () {
+            return this.params ? vSensors.sensors[this.params.sensor] || {} : {};
+        },
+        temperature: function () {
+            let temperature = this.sensor.param ? this.sensor.param('temperature') : undefined;
+            return (temperature !== undefined) ? temperature / 10 : undefined;
+        }
+    },
+    props: {
+        name: String,
+        params: Object
+    },
+    template: `
+        <div><h3>temperature {{ sensor.name }} {{ params }}</h3>
+        {{temperature === undefined ? '-.-' : Number(temperature).toFixed(1) }}
+        </div>`
+});
+
+Vue.component('tile-temperature-settings', {
+    data: ()=>({
+        params: {},
+        //_isActive: false
+    }),
+    props: {
+        type: String,
+    },
+    computed:{
+        sensors(){
+            let res = vSensors.sensors.toArray().filter((sd)=> (sd.param('temperature') !== undefined));
+            if(this.sensor && !res[this.sensor]){
+                res = res.slice();
+                res.splice(0, 0, new SensorData(this.sensor));
+            }
+            return res;
+        },
+        sensor: {
+            get(){
+                return (vTileSettings.selectedTile.params || {}).sensor
+            },
+            set(s) {
+                this.params.sensor = s;
+                vTiles.setParams(vTileSettings.selectedTileId, this.params);
+            }
+        },
+    },
+    methods: {
+        onShow(){
+            if(!this._isActive) {
+                this._isActive = !this._isActive;
+                sensorsInfoQuery.start();
+            }
+        },
+        onHide(){
+            if(this._isActive) {
+                this._isActive = !this._isActive;
+                sensorsInfoQuery.stop();
+            }
+        },
+    },
+    created() {
+        this.$parent.$on('show-' + this.type, this.onShow);
+        this.$parent.$on('hide-' + this.type, this.onHide);
+    },
+    template: `
+           <div>
+                <div>
+                    <span>Датчик</span>
+                    <select v-model="sensor">
+                        <option v-for="sensor in sensors" v-bind:value="sensor.id">{{sensor.toString()}}</option>
+                    </select>
+                </div>
+            </div>
+        `
 });

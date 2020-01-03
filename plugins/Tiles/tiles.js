@@ -29,55 +29,26 @@ wscli.commands.add('Tile', 'Set current tile. Tile as param.',
         return res;
     });
 
+// noinspection JSUnusedLocalSymbols
 function GetInfo(info, arg) {
     if(wscli.context.getCurrent() === wscli.context.tile){
         let res = false;
-        let q = `SELECT * FROM TilesParams WHERE (ID = $ID OR $ID = 0)`;
-        let rows = db.querySync(q, {$ID: currentTile});
+        // noinspection JSUnresolvedVariable
+        let TilesCount = db.querySync("SELECT TilesCount FROM TilesSettings")[0].TilesCount;
+        let q = `SELECT * FROM TilesParams WHERE (ID = $ID OR ($ID = 0 AND ID <= $TilesCount))`;
+        let rows = db.querySync(q, {$ID: currentTile, $TilesCount: TilesCount});
         rows.forEach(function (row) { // noinspection JSUnresolvedVariable
             let data = `#Tile:${row.ID},${info}:${row[info]}`;
             wscli.sendClientData(data);
             res = true;
         });
+        // noinspection JSConstructorReturnsPrimitive
         return res;
     }
 }
 
-// noinspection JSUnusedLocalSymbols
-//wscli.commands.add('GetName', 'Get current tile name.', GetInfo.bind(undefined, 'Name'));
 wscli.commands.add('GetType', 'Get current tile type.', GetInfo.bind(undefined, 'Type'));
-/*
-    function(arg){
-        if(wscli.context.getCurrent() === wscli.context.tile){
-            let res = false;
-            let q = `SELECT * FROM TilesParams WHERE (ID = $ID OR $ID = 0)`;
-            let rows = db.querySync(q, {$ID: currentTile});
-            rows.forEach(function (row) { // noinspection JSUnresolvedVariable
-                let data = `#Tile:${row.ID},Type:${row.Component}`;
-                wscli.sendClientData(data);
-                res = true;
-            });
-            return res;
-        }
-    });
-    */
-// noinspection JSUnusedLocalSymbols
 wscli.commands.add('GetParams', 'Get current tile params.', GetInfo.bind(undefined, 'Params'));
-/*
-    function(arg){
-        if(wscli.context.getCurrent() === wscli.context.tile){
-            let res = false;
-            let q = `SELECT * FROM TilesParams WHERE (ID = $ID OR $ID = 0)`;
-            let rows = db.querySync(q, {$ID: currentTile});
-            rows.forEach(function (row) { // noinspection JSUnresolvedVariable
-                let data = `#Tile:${row.ID},Params:${row.Params}`;
-                wscli.sendClientData(data);
-                res = true;
-            });
-            return res;
-        }
-    });
-*/
 
 function SetInfo(info, arg) {
     if(wscli.context.getCurrent() === wscli.context.tile){
@@ -94,6 +65,7 @@ function SetInfo(info, arg) {
             wscli.sendData(data);
             res = true;
         }
+        // noinspection JSConstructorReturnsPrimitive
         return res;
     }
 
@@ -104,8 +76,8 @@ wscli.commands.add('SetType', 'Set current tile type.', SetInfo.bind(undefined, 
     function(arg){
         if(wscli.context.getCurrent() === wscli.context.tile){
             let res = false;
-            if(checkRangeTile(currentTile)){
-                let qp = {$ID: currentTile, $Component: arg};
+            if(checkRangeTile(currentTileId)){
+                let qp = {$ID: currentTileId, $Component: arg};
                 db.querySync("UPDATE TilesParams SET Component = $Component, Params = '' WHERE ID = $ID and Component != $Component", qp);
                 let row = db.querySync("SELECT ID, Component FROM TilesParams WHERE ID = $ID", qp)[0];
                 let data = `#Tile:${row.ID},Type:${row.Component}`;
@@ -120,8 +92,8 @@ wscli.commands.add('SetParams', 'Set current tile params.', SetInfo.bind(undefin
     function(arg){
         if(wscli.context.getCurrent() === wscli.context.tile) {
             let res = false;
-            if (checkRangeTile(currentTile)) {
-                let qp = {$ID: currentTile, $Params: arg};
+            if (checkRangeTile(currentTileId)) {
+                let qp = {$ID: currentTileId, $Params: arg};
                 db.querySync("UPDATE TilesParams SET Params = $Params WHERE ID = $ID", qp);
                 let row = db.querySync("SELECT ID, Params FROM TilesParams WHERE ID = $ID", qp)[0];
                 let data = `#Tile:${row.ID},Params:${row.Params}`;

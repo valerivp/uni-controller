@@ -7,7 +7,7 @@ new Vue({
         time: ()=> $store.state.time,
     },
     template: `
-    <div id="clock-at-logo" onclick="vContent.setTab(0)">
+    <div id="clock-at-logo" onclick="vContent.setTab(vContent.tabsList[0].id)">
         <span class="sFontBold sColorContrast">UNI</span>Controller
         <span v-if="!time">--:--</span>
         <span v-if="time" class="sFontBold sColorContrast">

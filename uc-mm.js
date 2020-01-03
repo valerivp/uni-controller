@@ -310,6 +310,8 @@ function uninitTable(table, data){
 
 module.exports.uninit = uninit;
 function uninit(uninitData){
+    if(!uninitData)
+        return
     const data = JSON.parse(uninitData);
     if(data.main) {
         try {

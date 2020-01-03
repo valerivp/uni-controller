@@ -76,18 +76,15 @@ const vContent = new Vue({
                 if(this.tabsList[i].id === tabId)
                     return this.tabsList[i];
         },
-        _setTab: function (tabId, addHistory) {
+        _setTab: function (tabId, params) {
             this.isMenuShow = false;
-
-            if('number' === typeof  tabId)
-                tabId = this.tabsList[tabId].id;
 
             if(!this.getTab(tabId))
                 throw new Error(`Page not found: '${tabId}'`);
             if(this.currentTab && this.currentTab.id === tabId)
                 return;
 
-            addHistory = addHistory===undefined ? true : addHistory;
+            let addHistory = (params || {}).addHistory === undefined ? true : params.addHistory;
             if(this.isMenuShow && addHistory)
                 navigationHistory.replaceState(this.currentTab);
             else if(addHistory)
@@ -97,11 +94,11 @@ const vContent = new Vue({
             if(onHide) onHide();
             this.currentTab = tabId;
             let onShow = this.getTab(tabId).onShow;
-            if(onShow) setTimeout(onShow, 0);
+            if(onShow) setTimeout(onShow.bind(this, params), 0);
 
         },
-        setTab: function (tabId, addHistory) {
-            setTimeout(this._setTab.bind(this, tabId, addHistory), 1);
+        setTab: function (tabId, params) {
+            setTimeout(this._setTab.bind(this, tabId, params), 1);
         },
         isShow:function (tab) {return this.currentTab === tab.id},
         toggleMenu: function (){
@@ -121,21 +118,14 @@ const vContent = new Vue({
 
 moveElement('main-menu-button', 'main-menu-button-place');
 
-
-setTimeout(function () {vContent.setTab(0, true)}, 1);
-
-
-//vContent.addTab({id: 'main-info', onShow: function () { setTimeout(doOnResizeStateItems, 10);}});
-//vContent.addTab({id: 'terminal'});
-//vContent.addTab({id: 'about', onShow: function () {vAbout.onShow();}});
-
+setTimeout(function () {vContent.setTab(vContent.tabsList[0].id)}, 1);
 
 window.addEventListener('popstate', function(e){
     let data = navigationHistory.popState();
     switch (data){
         case null: break;
         case 'close-menu': vContent.isMenuShow = false; break;
-        default: vContent.setTab(data, false);
+        default: vContent.setTab(data, {addHistory:false});
     }
 });
 
@@ -217,17 +207,6 @@ const vTerminal = new Vue({
 });
 
 vContent.addTab({component: vTerminal, id: 'terminal'});
-
-
-/*
-const vTabMainInfo = new Vue({
-    el: '#tab-content-main-info',
-    data: {
-    },
-    methods: {
-    }
-});
-*/
 
 
 function SensorData(id) {
@@ -378,8 +357,7 @@ const vSensors = new Vue({
             if(this.currentSensor){
                 let sensor = this.sensors[this.currentSensor];
                 if(sensor){
-                    Vue.set(this.sensors, this.currentSensor, undefined);
-                    delete this.sensors[this.currentSensor];
+                    Vue.delete(this.sensors, this.currentSensor);
                     this.currentSensor = 0;
                     if(what === 'name')
                         wscli.send('#SensorsInfo:' + sensor.idHex);
@@ -400,10 +378,6 @@ const vSensors = new Vue({
 });
 
 vContent.addTab({component: vSensors, id: 'sensors'}, {before: 'terminal'});
-
-
-
-//Vue.nextTick(function () {vContent.setTab('settings', true)});
 
 const vtProperties = {
     data: function () {
@@ -550,7 +524,7 @@ vSettings.add(
         data:()=> {return {httpUserPassword: '', httpUserName:''}},
         methods: {
             sendHttpAuth(){
-                var bodyFormData = new FormData();
+                let bodyFormData = new FormData();
                 bodyFormData.append('name', this.httpUserName);
                 bodyFormData.append('password', this.httpUserPassword);
                 axios({
@@ -579,15 +553,16 @@ vSettings.add(
         template: "#settings-set-auth"
     })
 );
+
+// noinspection JSUnusedGlobalSymbols
 vSettings.add(
     Vue.component('settings-reboot', {
         data:()=> {return {httpUserPassword: '', httpUserName:''}},
         methods: {
-            sendReboot(){
-                axios.post(`http://${serverLocation}/reboot`).then(response => {
-                    console.log(response);
-                    vToasts.add(response.data);
-                }).catch(function (error) {console.log(error);});
+            sendReboot:()=>{
+                axios.post(`http://${serverLocation}/reboot`)
+                    .then((response) => { console.log(response); vToasts.add(response.data);})
+                    .catch((error) => {console.log(error);});
             },
         },
         template: "#settings-reboot"
@@ -596,18 +571,8 @@ vSettings.add(
 
 
 
-const ws = new WSConnection(serverLocation, vTerminal);/*, {
-    onOpen: function () {
-        SendInitMessage();
-    },
-    onMessage: wscli.onMessage//
-});
-*/
+const ws = new WSConnection(serverLocation, vTerminal);
 const wscli = new WSCli(ws);
-
-function SendInitMessage() {
-    //wscli.send('#MainInfo,ZonesInfo,ZonesTemp,RelayInfo,SchemasInfo');
-}
 
 document.addEventListener('DOMContentLoaded', wscli.init);
 
