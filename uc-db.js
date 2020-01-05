@@ -20,13 +20,13 @@ db.beginTransaction = function(){
 };
 db.commitTransaction = function(){
     if(!transactionCount)
-        throw new Error("transaction not active");
+        throw("transaction not active");
     if(!--transactionCount)
         db.query("COMMIT;");
 };
 db.rollbackTransaction = function(){
     if(!transactionCount)
-        throw new Error("transaction not active");
+        throw("transaction not active");
     db.query("ROLLBACK;");
     transactionCount = 0;
 };
@@ -37,7 +37,7 @@ db.isTransaction = function(){
 
 function querySync(query, par) {
     if(query.match(/^BEGIN|^COMMIT|^ROLLBACK/mi))
-        throw new Error("do not use SQL transactions");
+        throw("do not use SQL transactions");
 
     let result = undefined;
     db.query(query, par, function (rows) {

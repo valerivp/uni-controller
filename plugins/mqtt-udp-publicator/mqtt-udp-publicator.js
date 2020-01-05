@@ -46,7 +46,7 @@ function mqtt_udp_send(topic, data, ip_addr){
 
     let total_len = topic.length + data.length + 2; // packet size
     if( total_len > (buf.length - 6) )
-        throw new Error(`Packet lenght more than ${(buf.length - 6)} bytes`);
+        throw(`Packet lenght more than ${(buf.length - 6)} bytes`);
 
     do{
         let byte = total_len % 128;

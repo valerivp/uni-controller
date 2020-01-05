@@ -80,7 +80,7 @@ const vContent = new Vue({
             this.isMenuShow = false;
 
             if(!this.getTab(tabId))
-                throw new Error(`Page not found: '${tabId}'`);
+                throw(`Tab not found: '${tabId}'`);
             if(this.currentTab && this.currentTab.id === tabId)
                 return;
 
@@ -348,7 +348,7 @@ const vSensors = new Vue({
             return sensor;
         },
         setSensorInfo: function (param, val){
-            if(wscli.context.getCurrent() === wscli.context.sensor)
+            if(wscli.context.current === wscli.context.sensor)
                 Vue.set(vSensors.getCurrentSensor(), param, val);
             else
                 return false;
@@ -581,7 +581,7 @@ wscli.context.add('cmd');
 wscli.commands.add(
     'Cmd',
     (arg) => {
-        if(wscli.context.setCurrent(wscli.context.cmd)){
+        if(wscli.context.current = (wscli.context.cmd)){
             wscli.lastCmd = arg;
             return true;
         }else
@@ -601,7 +601,7 @@ wscli.commands.add(
 wscli.commands.add(
     'Error',
     (arg) => {
-        if(wscli.context.getCurrent() === wscli.context.cmd){
+        if(wscli.context.current === wscli.context.cmd){
             vToasts.add(`Cmd ${wscli.lastCmd} error: ${arg}`);
             return true;
         }
@@ -620,7 +620,7 @@ wscli.commands.add(
     'Sensor',
     (arg) => {
         /** @namespace wscli.context.sensor */
-        if(wscli.context.setCurrent(wscli.context.sensor)){
+        if(wscli.context.current = (wscli.context.sensor)){
             vSensors.currentSensor = Number(arg);
             return true;
         }else
@@ -630,7 +630,7 @@ wscli.commands.add(
 wscli.commands.add(
     'Type',
     (arg) => {
-        if(wscli.context.getCurrent() === wscli.context.sensor){
+        if(wscli.context.current === wscli.context.sensor){
             Vue.set(vSensors.getCurrentSensor(), 'type', String(arg).toUpperCase());
             return true;
         }
@@ -639,7 +639,7 @@ wscli.commands.add(
 wscli.commands.add(
     'TimeLabel',
     (arg) => {
-        if(wscli.context.getCurrent() === wscli.context.sensor){
+        if(wscli.context.current === wscli.context.sensor){
             Vue.set(vSensors.getCurrentSensor(), 'timeLabel', DateFromShotXMLString(arg));
             if(arg > vSensors.maxTimeLabel)
                 vSensors.maxTimeLabel = arg;
@@ -651,9 +651,9 @@ wscli.commands.add(
 wscli.commands.add(
     'SensorData',
     (arg) => {
-        if(wscli.context.getCurrent() === wscli.context.sensor){
+        if(wscli.context.current === wscli.context.sensor){
 
-            let arr = String(arg).match(/(?:[^\/\\]+|\\.)+/gm) || [];
+            let arr = String(arg).match(/(?:[^;\\]+|\\.)+/gm) || [];
             let params = {};
             arr.forEach(function (item) {
                 let param = item.match(/(?:[^=\\]+|\\.)+/)[0];
@@ -668,7 +668,7 @@ wscli.commands.add(
 wscli.commands.add(
     'Name',
     (arg) => {
-        if(wscli.context.getCurrent() === wscli.context.sensor){
+        if(wscli.context.current === wscli.context.sensor){
             Vue.set(vSensors.getCurrentSensor(), 'name', arg);
             return true;
         }
@@ -699,15 +699,7 @@ function WSCli (ws){
 
     this.context = {
         _current: undefined,
-        none: undefined,
-        getCurrent: function() {return this._current},
-        setCurrent: function(c){
-            if ( !this._current || !c)
-                return (this._current = c);
-            else
-                wscli.setError("Context already set");
-            return undefined;
-        },
+        none: null,
         add: function(item){
             if(!this.hasOwnProperty(item))
                 this[item] = item;
@@ -715,23 +707,39 @@ function WSCli (ws){
                 throw(`Contexts item alredy present: ${item}`);
         }
     };
+    Object.defineProperty(this.context, 'current', {
+        get() {
+            return this._current;
+        },
+        set(val) {
+            if ( !this._current || !val)
+                this._current = val;
+            else
+                throw("Context already set");
+        }});
 
-    this.setError = (err) => this._error = err;
+    //this.setError = (err) => this._error = err;
 
     this._onCommand = function(cmdStrings) {
         (String(cmdStrings).match(/(^#.*$)/gm) || []).forEach(
              (cmdString)=> {
-                this.context.setCurrent(this.context.none);
-                this.setError('');
+                this.context.current = this.context.none;
+                //this.setError('');
 
                 if (cmdString.slice(0, 1) === '#'){
 
                     let cmdArray = cmdString.slice(1).match(/(?:[^,\\]+|\\.)+/gm);
                     for (let i = 0; i < cmdArray.length; i++) {
                         let cmd = cmdArray[i].trim();
-                        if(cmd && (this.executeCmd(cmd) === false || this._error)){
-                            console.error(`Cmd executing error: ${cmd} ${this._error}`);
-                            break;
+                        if(cmd) {
+                            try {
+                                this.executeCmd(cmd);
+                            } catch (err) {
+                                let message = `Cmd executing error: ${cmd} ${err.message || err}`;
+                                vToasts.add(message);
+                                console.error(message);
+                                break;
+                            }
                         }
                     }
                 }
@@ -748,31 +756,20 @@ function WSCli (ws){
         let cmd = cmdText.match(/(?:[^:\\]+|\\.)+/)[0];
         let arg = cmdText.slice(cmd.length + 1);
 
-        let result = undefined;
         let command = this.commands['cmd-' + cmd.toLowerCase()];
         if(command){
+            let result = undefined;
             for(let i = 0; i < command.funcs.length; i++) {
                 let res = command.funcs[i](arg);
-                if (res === false){
-                    result = false;
-                    //wscli.send(`#Cmd:${command.name},Value:${arg},CmdRes:Error,Error:${error}`);
-                    break;
-                } else if (res === true) {
-                    //wscli.sendClientData(`#Cmd:${command.name},CmdRes:Ok`);
+                if (res === true) {
                     result = true;
-                }
+                }else if(res !== undefined)
+                    throw('Unknown error');
             }
-            if(result === undefined){
-                result = false;
-                wscli.setError('NotProcessed');
-                //wscli.send(`#Cmd:${command.name},CmdRes:Error,Error:NotProcessed`);
-            }
-        }else {
-            result = false;
-            wscli.setError('NoCmd');
-            //wscli.send(`#Cmd:${cmd},CmdRes:NoCmd`);
-        }
-        return result;
+            if(result === undefined)
+                throw('Not processed');
+        }else
+            throw('No cmd');
     };
 
     this.onMessage = (msg) => this._onCommand(msg);
@@ -785,11 +782,8 @@ function WSCli (ws){
     this.checkInRange = function (arg, lv, rv, desc){
         if ((lv <= arg) && (arg <= rv))
             return true;
-        if (desc) {
-            let err = desc + ' ' + arg + ' not in range ' + lv + '-' + rv;
-            this.setError(err);
-        }
-        return false;
+        let err = desc + ' ' + arg + ' not in range ' + lv + '-' + rv;
+        throw(err);
     };
 
 }

@@ -95,7 +95,7 @@ router.get('/help',
 
 router.get('/err',
     function (req, res) {
-        throw new Error('Test error')
+        throw('Test error')
     },
     'test internal error');
 

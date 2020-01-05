@@ -1,4 +1,3 @@
-
 const TilesComponentsTypes = function () {
 };
 TilesComponentsTypes.prototype.add = function(name, params){
@@ -6,6 +5,50 @@ TilesComponentsTypes.prototype.add = function(name, params){
     this[name].name = name;
 };
 const vTilesComponentsTypes = new TilesComponentsTypes;
+
+function Tile(pId) {
+    this.params = {};
+    this._id = pId;
+    this._type = undefined;
+}
+Object.defineProperty(Tile.prototype, 'id', {
+    get() {
+        return this._id;
+    },
+    set(val) {
+        throw('Property is read only');
+    },
+});
+Object.defineProperty(Tile.prototype, 'type', {
+    get() {
+        return this._type;
+    },
+    set(val) {
+        if(val !== this._type){
+            this.params = {};
+            this._type = val;
+        }
+    },
+});
+
+Tile.prototype = {
+    get id() {
+        return this._id;
+    },
+    set id(val) {
+        throw('Property is read only');
+    },
+    get type() {
+        return this._type;
+    },
+    set type(val) {
+        if(val !== this._type){
+            this.params = {};
+            this._type = val;
+        }
+    },
+};
+
 
 function Tiles() {
 }
@@ -45,7 +88,7 @@ const vTiles = new Vue({
             if(tilesCount !== val) {
                 while (tilesCount < val){
                     tilesCount++;
-                    Vue.set(this.tiles, tilesCount, {id: tilesCount});
+                    Vue.set(this.tiles, tilesCount, new Tile(tilesCount));//{id: tilesCount, params: {}});
                     wscli.send(`#Tile:${tilesCount},GetType,GetParams`);
                 }
                 while (tilesCount > val)
@@ -78,7 +121,7 @@ const vTiles = new Vue({
             let delimiter = '';
             for(let key in params){ // noinspection JSUnfilteredForInLoop
                 data += `${delimiter}${key}=${params[key]}`;
-                delimiter = '/';
+                delimiter = ';';
             }
             wscli.send(data);
         }
@@ -109,17 +152,20 @@ vTilesComponentsTypes.add('tile-second', {title: 'Второй'});
 
 const vTileSettings = new Vue({
     data: {
-        _selectedTileId: undefined
+        _isActive: false,
+        _selectedTileId: 1
     },
 
     methods: {
         onShow(params){
+            this.$data._isActive = true;
             if(params && params.tileId)
                 this.selectedTileId = params.tileId;
             if(this.selectedTypeName)
                 setTimeout(this.$emit.bind(this, `show-${this.selectedTypeName}-settings`), 2);
         },
         onHide(){
+            this.$data._isActive = false;
             if(this.selectedTypeName)
                 setTimeout(this.$emit.bind(this, `hide-${this.selectedTypeName}-settings`), 1);
         },
@@ -133,6 +179,7 @@ const vTileSettings = new Vue({
         },
     },
     computed:{
+        //isActive: () => vContent.
         tiles: ()=> vTiles.tiles,
         tilesCount: {
             get(){ return vTiles.tilesCount;},
@@ -143,7 +190,7 @@ const vTileSettings = new Vue({
             }
         },
         selectedTile(){
-            return this.tiles[this.selectedTileId];
+            return this.tiles[this.selectedTileId] || {}; // для старта, когда нет плиток
         },
         selectedTileId: {
             get(){ return this.$data._selectedTileId; },
@@ -153,7 +200,7 @@ const vTileSettings = new Vue({
             }
         },
         selectedTypeName: {
-            get: function(){ return (this.tiles[this.selectedTileId] || {}).type; },
+            get: function(){ return this.selectedTile.type; },
             set: function(t){
                 if(t){
                     vTiles.setType(this.selectedTileId, t);
@@ -163,10 +210,12 @@ const vTileSettings = new Vue({
     },
     watch:{
         selectedTypeName: function (newVal, oldVal) {
-            if(oldVal)
-                setTimeout(this.$emit.bind(this, `hide-${oldVal}-settings`), 1);
-            if(newVal)
-                setTimeout(this.$emit.bind(this, `show-${newVal}-settings`), 2);
+            if(this.$data._isActive){
+                if(oldVal)
+                    setTimeout(this.$emit.bind(this, `hide-${oldVal}-settings`), 1);
+                if(newVal)
+                    setTimeout(this.$emit.bind(this, `show-${newVal}-settings`), 2);
+            }
         }
     },
     created: function() {
@@ -187,10 +236,6 @@ const vTileSettings = new Vue({
                         <button v-on:click="tilesCount++"  class="button-inc-dec">+</button>
                     </div>
                 </div>
-                <!--<div>
-                    <span>Наименование</span>
-                    <input v-model="selectedTileName" maxlength="32" v-on:change="onChangeName">
-                </div>-->
             </div>
             <div>
                 <div>
@@ -216,7 +261,7 @@ wscli.commands.add(
     (arg) => {
         arg = 0 | arg;
         let res = false;
-        if(wscli.context.setCurrent(wscli.context.tile)){
+        if(wscli.context.current = (wscli.context.tile)){
             if(vTiles.checkTile(arg)){
                 vTiles.currentTileId = arg;
                 res = true;
@@ -227,11 +272,12 @@ wscli.commands.add(
 );
 
 wscli.commands.add('Type', function (arg) {
-        if(wscli.context.getCurrent() === wscli.context.tile){
+        if(wscli.context.current === wscli.context.tile){
             let res = false;
             if(vTiles.checkTile(vTiles.currentTileId)){
-                if(vTiles.tiles[vTiles.currentTileId].type !== arg)
-                    Vue.set(vTiles.tiles, vTiles.currentTileId, {id: vTiles.currentTileId, type: arg});
+                if(vTiles.tiles[vTiles.currentTileId].type !== arg){
+                    Vue.set(vTiles.tiles[vTiles.currentTileId], "type", arg);
+                }
                 res = true;
             }
             return res;
@@ -240,17 +286,15 @@ wscli.commands.add('Type', function (arg) {
 );
 
 wscli.commands.add('Params', function (arg) {
-        if(wscli.context.getCurrent() === wscli.context.tile){
+        if(wscli.context.current === wscli.context.tile){
             let res = false;
             if(vTiles.checkTile(vTiles.currentTileId)){
-                //let data = {id: vTiles.currentTileId};
-                let arr = String(arg).match(/(?:[^\/\\]+|\\.)+/gm) || [];
+                let arr = String(arg).match(/(?:[^;\\]+|\\.)+/gm) || [];
                 let params = {};
                 arr.forEach(function (item) {
                     let param = item.match(/(?:[^=\\]+|\\.)+/)[0];
                     params[param.toLowerCase()] = item.slice(param.length + 1);
                 });
-                //data.params = params;
                 Vue.set(vTiles.tiles[vTiles.currentTileId], 'params', params);
                 res = true;
             }
@@ -294,9 +338,3 @@ Vue.component('tile-second-settings', {
     },
     template: '<h3>SECOND settings{{  }}</h3>'
 });
-/*
-setTimeout(()=>console.log(3), 3);
-setTimeout(()=>console.log(2), 2);
-setTimeout(()=>console.log(4), 4);
-setTimeout(()=>console.log(0), 0);
-*/

@@ -19,7 +19,7 @@ Object.defineProperty(module.exports, 'User', {
 
 module.exports.set = function (user, password) {
     if(! user)
-        throw new Error('User name is empty');
+        throw('User name is empty');
 
     db.querySync("UPDATE Authentication SET User = $user, Password = $password", {$user: user, $password: password});
 

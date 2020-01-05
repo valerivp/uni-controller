@@ -300,7 +300,7 @@ function uninitTable(table, data){
                     diff = true;
             }
             if (diff)
-                throw new Error('Table structure differs from expected');
+                throw('Table structure differs from expected');
 
             db.querySync(`DROP TABLE ${table}`);
         }

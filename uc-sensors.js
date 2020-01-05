@@ -24,18 +24,17 @@ sensors.currentSensor = undefined;
 wscli.commands.add('Sensor',
     function (arg) {
         arg = 0 | arg;
-        if (checkRangeSensorID(arg) && wscli.context.setCurrent(wscli.context.sensor)) {
-            sensors.currentSensor = arg;
-            return true;
-        }
-        return false;
+        checkRangeSensorID(arg);
+        wscli.context.current = wscli.context.sensor;
+        sensors.currentSensor = arg;
+        return true;
     },
     'Set sensor as current');
 
 
 wscli.commands.add('SetName',
     function (arg) {
-        if(wscli.context.getCurrent() !== wscli.context.sensor)
+        if(wscli.context.current !== wscli.context.sensor)
             return undefined;
 
         if(arg) {
@@ -71,7 +70,7 @@ wscli.commands.add('SensorsNames',
                 res = true;
             });
             if(!res)
-                wscli.setError("Sensor name not defined");
+                throw("Sensor name not defined");
         }
         return res;
     },
@@ -81,6 +80,7 @@ wscli.commands.add('SensorsData',
     function(arg){
         let arg_arr = arg.split('>');
 
+        // noinspection JSBitwiseOperatorUsage
         let id = ((0 | arg_arr[0]) ? 0 | arg_arr[0] : 0);
         let timeFilter = ((arg_arr[1] && arg_arr[1].length === 15) ? utils.DateFromShotXMLString(arg_arr[1]).getTime(): 0);
 
@@ -90,14 +90,14 @@ wscli.commands.add('SensorsData',
             let TimeLabel = new Date(row.TimeLabel);
             /** @namespace row.Type */
             data += `#Sensor:0x${Number(row.ID).toHex()},Type:${row.Type},TimeLabel:${utils.DateToShotXMLString(TimeLabel)}`;
-            data += ',SensorData';
-            let delimiter = ':';
+            data += ',SensorData:';
+            let delimiter = '';
             let rows_param = db.querySync("SELECT Param, Value FROM mem.SensorsParams WHERE ID = $ID", {$ID: row.ID});
             rows_param.forEach(function (row_param) {
                 /** @namespace row_param.Param */
                 /** @namespace row_param.Value */
                 data += `${delimiter}${row_param.Param}=${row_param.Value}`;
-                delimiter = '/';
+                delimiter = ';';
             });
             wscli.sendClientData(data);
         });

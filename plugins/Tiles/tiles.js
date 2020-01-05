@@ -24,14 +24,16 @@ wscli.commands.add('Tile', 'Set current tile. Tile as param.',
     function(arg){
         let res = false;
         arg = 0 | arg;
-        if(wscli.context.setCurrent(wscli.context.tile) && (!arg || checkRangeTile(arg))) // noinspection CommaExpressionJS
+        //wscli.context.current = (wscli.context.tile) &&
+        wscli.context.current = wscli.context.tile;
+        if((!arg || checkRangeTile(arg))) // noinspection CommaExpressionJS
             currentTile = arg, res = true;
         return res;
     });
 
 // noinspection JSUnusedLocalSymbols
 function GetInfo(info, arg) {
-    if(wscli.context.getCurrent() === wscli.context.tile){
+    if(wscli.context.current === wscli.context.tile){
         let res = false;
         // noinspection JSUnresolvedVariable
         let TilesCount = db.querySync("SELECT TilesCount FROM TilesSettings")[0].TilesCount;
@@ -51,7 +53,7 @@ wscli.commands.add('GetType', 'Get current tile type.', GetInfo.bind(undefined, 
 wscli.commands.add('GetParams', 'Get current tile params.', GetInfo.bind(undefined, 'Params'));
 
 function SetInfo(info, arg) {
-    if(wscli.context.getCurrent() === wscli.context.tile){
+    if(wscli.context.current === wscli.context.tile){
         let res = false;
         if(checkRangeTile(currentTile)){
             let qp = {$ID: currentTile};
@@ -72,38 +74,8 @@ function SetInfo(info, arg) {
 }
 wscli.commands.add('SetName', 'Set current tile name.', SetInfo.bind(undefined, 'Name'));
 wscli.commands.add('SetType', 'Set current tile type.', SetInfo.bind(undefined, 'Type'));
-/*
-    function(arg){
-        if(wscli.context.getCurrent() === wscli.context.tile){
-            let res = false;
-            if(checkRangeTile(currentTileId)){
-                let qp = {$ID: currentTileId, $Component: arg};
-                db.querySync("UPDATE TilesParams SET Component = $Component, Params = '' WHERE ID = $ID and Component != $Component", qp);
-                let row = db.querySync("SELECT ID, Component FROM TilesParams WHERE ID = $ID", qp)[0];
-                let data = `#Tile:${row.ID},Type:${row.Component}`;
-                wscli.sendData(data);
-                res = true;
-            }
-            return res;
-        }
-    });
-*/
-wscli.commands.add('SetParams', 'Set current tile params.', SetInfo.bind(undefined, 'Params'));/*
-    function(arg){
-        if(wscli.context.getCurrent() === wscli.context.tile) {
-            let res = false;
-            if (checkRangeTile(currentTileId)) {
-                let qp = {$ID: currentTileId, $Params: arg};
-                db.querySync("UPDATE TilesParams SET Params = $Params WHERE ID = $ID", qp);
-                let row = db.querySync("SELECT ID, Params FROM TilesParams WHERE ID = $ID", qp)[0];
-                let data = `#Tile:${row.ID},Params:${row.Params}`;
-                wscli.sendData(data);
-                res = true;
-            }
-            return res;
-        }
-    });
-*/
+wscli.commands.add('SetParams', 'Set current tile params.', SetInfo.bind(undefined, 'Params'));
+
 // noinspection JSUnusedLocalSymbols
 wscli.commands.add('GetTilesCount', 'Get tiles count.',
     function(arg){
@@ -125,13 +97,9 @@ wscli.commands.add('SetTilesCount', 'Set tiles count. Count as param.',
         let res = false;
         arg = 0 | arg;
         if(checkRangeTile(arg)){
-//            let q = `UPDATE TilesSettings SET TilesCount = $TilesCount;
-//                     SELECT TilesCount FROM TilesSettings`;
             db.querySync("UPDATE TilesSettings SET TilesCount = $TilesCount", {$TilesCount: arg});
             let row = db.querySync("SELECT TilesCount FROM TilesSettings")[0];
-//            let row = db.querySync(q, {$TilesCount: arg})[0];
-            //let row = db.querySync("SELECT TilesCount FROM TilesSettings")[0];
-            // noinspection JSUnresolvedVariable
+            /** @namespace row.TilesCount */
             wscli.sendData(`#TileCount:${row.TilesCount}`);
             res = true;
         }

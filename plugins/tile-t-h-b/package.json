@@ -2,7 +2,8 @@
   "name": "tile-temperature-humidity-battery",
   "version": "0.0.1",
   "dependencies": {
-    "tiles":""
+    "tiles":"",
+    "sensor-data-sender":""
   },
   "node": "",
   "web":{

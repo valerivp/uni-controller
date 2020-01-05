@@ -21,14 +21,13 @@ Vue.component('tile-temperature', {
 });
 
 Vue.component('tile-temperature-settings', {
-    data: ()=>({
-        params: {},
-        //_isActive: false
-    }),
     props: {
         type: String,
     },
     computed:{
+        params(){
+            return vTileSettings.selectedTile.params;
+        },
         sensors(){
             let res = vSensors.sensors.toArray().filter((sd)=> (sd.param('temperature') !== undefined));
             if(this.sensor && !res[this.sensor]){
@@ -39,15 +38,44 @@ Vue.component('tile-temperature-settings', {
         },
         sensor: {
             get(){
-                return (vTileSettings.selectedTile.params || {}).sensor
+                return this.params.sensor;
             },
-            set(s) {
-                this.params.sensor = s;
-                vTiles.setParams(vTileSettings.selectedTileId, this.params);
+            set(val) {
+                this.setParam({sensor: val});
+            }
+        },
+        showTemperature: {
+            get(){
+                return String(this.params['show-temperature']) === 'true';
+            },
+            set(val) {
+                this.setParam({'show-temperature': val});
+            }
+        },
+        showHumidity: {
+            get(){
+                return String(this.params['show-humidity']) === 'true';
+            },
+            set(val) {
+                this.setParam({'show-humidity': val});
+            }
+        },
+        showBattery: {
+            get(){
+                return String(this.params['show-battery']) === 'true';
+            },
+            set(val) {
+                this.setParam({'show-battery': val});
             }
         },
     },
     methods: {
+        setParam(param){
+            let params = Object.assign(this.params);
+            for(let key in param)
+                params[key] = param[key];
+            vTiles.setParams(vTileSettings.selectedTileId, params);
+        },
         onShow(){
             if(!this._isActive) {
                 this._isActive = !this._isActive;
@@ -72,6 +100,18 @@ Vue.component('tile-temperature-settings', {
                     <select v-model="sensor">
                         <option v-for="sensor in sensors" v-bind:value="sensor.id">{{sensor.toString()}}</option>
                     </select>
+                </div>
+                <div>
+                    <span>Отображать температуру</span>
+                    <input type="checkbox" v-model="showTemperature">
+                </div>
+                <div>
+                    <span>Отображать влажность</span>
+                    <input type="checkbox" v-model="showHumidity">
+                </div>
+                <div>
+                    <span>Отображать батарею</span>
+                    <input type="checkbox" v-model="showBattery">
                 </div>
             </div>
         `

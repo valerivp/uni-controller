@@ -14,7 +14,7 @@ module.exports.init = function () {
 
 wscli.commands.add('SetAutosend',
     function (arg) {
-        if(wscli.context.getCurrent() !== wscli.context.sensor)
+        if(wscli.context.current !== wscli.context.sensor)
             return undefined;
         arg = 0 | arg;
 
