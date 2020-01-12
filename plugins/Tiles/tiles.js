@@ -19,8 +19,8 @@ wscli.context.add('tile');         /** @namespace wscli.context.tile */
 
 wscli.commands.add({Tile: Number}, (arg)=>{
         wscli.context.current = wscli.context.tile;
-        if( !arg || checkRangeTile(arg)) // noinspection CommaExpressionJS
-            wscli.current.tile = arg;
+        checkRangeTile(arg, true);
+        wscli.current.tile = arg;
         return true;
     },
     'Set current tile. Tile as param.'
@@ -29,6 +29,7 @@ wscli.commands.add({Tile: Number}, (arg)=>{
 // noinspection JSUnusedLocalSymbols
 function GetInfo(info, arg) {
     if(wscli.context.current === wscli.context.tile){
+        checkRangeTile(wscli.current.tile, true);
         let res = false;
         // noinspection JSUnresolvedVariable
         let TilesCount = db.querySync("SELECT TilesCount FROM TilesSettings")[0].TilesCount;
@@ -69,29 +70,37 @@ wscli.commands.add({SetType: String}, SetInfo.bind(undefined, 'Type'), 'Set tile
 wscli.commands.add({SetParams: String}, SetInfo.bind(undefined, 'Params'), 'Set tile params.');
 
 // noinspection JSUnusedLocalSymbols
-wscli.commands.add({GetTilesCount: null},(arg) =>{
-        let row = db.querySync("SELECT TilesCount FROM TilesSettings")[0];
-        // noinspection JSUnresolvedVariable
-        wscli.sendClientData(`#TileCount:${row.TilesCount}`);
-        return true;
+wscli.commands.add({GetCount: null},(arg) => {
+        if (wscli.context.current === wscli.context.tile) {
+            wscli.checkInRange(wscli.current.tile, 0, 0, 'Tile');
+            let row = db.querySync("SELECT TilesCount FROM TilesSettings")[0];
+            // noinspection JSUnresolvedVariable
+            wscli.sendClientData(`#Tile,Count:${row.TilesCount}`);
+            return true;
+        }
     },
     'Get tiles count.'
 );
 
-function checkRangeTile(arg) {
+function checkRangeTile(arg, allowZero) {
     // noinspection JSUnresolvedVariable
-    return wscli.checkInRange(arg, 1,
-        db.querySync("SELECT MaxTilesCount FROM TilesSettings")[0].MaxTilesCount,
-        'Tile');
+    let arr = [];
+    if(allowZero)
+        arr.push([0, 0]);
+    arr.push([1, db.querySync("SELECT MaxTilesCount FROM TilesSettings")[0].MaxTilesCount]);
+    return wscli.checkInRange(arg, arr, 'Tile');
 }
 
-wscli.commands.add({SetTilesCount: Number}, (arg)=>{
-        checkRangeTile(arg);
-        db.querySync("UPDATE TilesSettings SET TilesCount = $TilesCount", {$TilesCount: arg});
-        let row = db.querySync("SELECT TilesCount FROM TilesSettings")[0];
-        /** @namespace row.TilesCount */
-        wscli.sendData(`#TileCount:${row.TilesCount}`);
-        return true;
+wscli.commands.add({SetCount: Number}, (arg)=>{
+        if (wscli.context.current === wscli.context.tile) {
+            wscli.checkInRange(wscli.current.tile, 0, 0, 'Tile');
+            checkRangeTile(arg);
+            db.querySync("UPDATE TilesSettings SET TilesCount = $TilesCount", {$TilesCount: arg});
+            let row = db.querySync("SELECT TilesCount FROM TilesSettings")[0];
+            /** @namespace row.TilesCount */
+            wscli.sendData(`#Tile,Count:${row.TilesCount}`);
+            return true;
+        }
     },
     'Set tiles count. Count as param.'
 );

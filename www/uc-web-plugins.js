@@ -287,7 +287,7 @@ const vTiles = new Vue({
                 return this.tiles.length();
             },
             set(val){
-                wscli.send(`#SetTilesCount:${val}`);
+                wscli.send(`#Tile,SetCount:${val}`);
             }
         },
     },
@@ -308,8 +308,12 @@ const vTiles = new Vue({
         changeTileSetting(id){
             vContent.setTab('tile-settings', {tileId: id});
         },
-        checkTile(t){
-            return checkInRange(t, 1, this.tiles.length(), "Tile id");
+        checkTile(t, allowZero){
+            let arr = [];
+            if(allowZero)
+                arr.push([0, 0]);
+            arr.push([1, this.tiles.length()]);
+            return checkInRange(t, arr, "Tile id");
         },
 
         getCSSClass(id){
@@ -338,7 +342,7 @@ const vTiles = new Vue({
     created: function() {
         module.exports.setParams = this.setParams;
         ws.on('open', ()=>{
-            wscli.send("#GetTilesCount");
+            wscli.send("#Tile,GetCount");
         });
     },
     template:`
@@ -470,7 +474,7 @@ vContent.addTab({component: vTileSettings, id: 'tile-settings'}, {after: 'tiles'
 wscli.context.add('tile');
 wscli.commands.add({Tile: Number}, (arg) => {
         wscli.context.current = wscli.context.tile;
-        vTiles.checkTile(arg);
+        vTiles.checkTile(arg, true);
         wscli.current.tile = arg;
         return true;
     }
@@ -495,10 +499,13 @@ wscli.commands.add({Params: Object}, (arg) =>{
     }
 );
 
-wscli.commands.add({TileCount: Number}, (arg) => {
-        vTiles.setTilesCount(arg);
-        doResizeTilesContent();
-        return true;
+wscli.commands.add({Count: Number}, (arg) => {
+        if (wscli.context.current === wscli.context.tile) {
+            checkInRange(wscli.current.tile, 0, 0, 'Tile');
+            vTiles.setTilesCount(arg);
+            doResizeTilesContent();
+            return true;
+        }
     }
 );
 
@@ -515,10 +522,13 @@ document.write(`
 
 
 function doResizeTilesContent() {
+
     if (doResizeTilesContent.timeoutHandle)
         clearTimeout(doResizeTilesContent.timeoutHandle);
     doResizeTilesContent.timeoutHandle = setTimeout(() => {
         doZoom('.tile-caption .zoomed-content');
+        vTiles.$emit('resize');
+
     }, 100);
 }
 
@@ -617,12 +627,12 @@ Vue.component('tile-temperature', {
         ws.on('open', () => {
             this.fetchSensorData();
         });
-        this.$parent.$on('show', this.onShow);
+        this.$parent.$on('resize', doResizeTilesContent);
     },
     methods: {
-        onShow() {
+        /*onShow() {
             doResizeTilesContent();
-        },
+        },*/
         fetchSensorData() {
             if (this.sensorId) {
                 wscli.send(`#Sensor:0x${Number(this.sensorId).toHex()},GetName,GetData`);
@@ -729,16 +739,18 @@ function doResizeTilesContent() {
         doZoom('.tile-humidity-data.only .zoomed-content');
     }, 100);
 }
-
+/*
 window.addEventListener('resize', doResizeTilesContent, false);
 
 // noinspection JSUnusedLocalSymbols
-wscli.commands.add({TileCount: Number}, (arg) => {
-        doResizeTilesContent();
-        return true;
+wscli.commands.add({Count: Number}, (arg) => {
+        if (wscli.context.current === wscli.context.tile) {
+            doResizeTilesContent();
+            return true;
+        }
     }
 );
-
+*/
 
 Vue.component('tile-temperature-settings', {
     props: {
@@ -890,7 +902,8 @@ Vue.component('tile-energy-monitor', {
         ws.on('open', ()=>{
             this.fetchSensorData();
         });
-        this.$parent.$on('show', this.onShow);
+        //this.$parent.$on('show', this.onShow);
+        this.$parent.$on('resize', doResizeTilesContent);
         setInterval(function () {
             this.energyTN++;
         }.bind(this), 4000);
@@ -901,9 +914,9 @@ Vue.component('tile-energy-monitor', {
             res = (res !== undefined) ? res / div : undefined;
             return res;
         },
-        onShow(){
-            doResizeTilesContent();
-        },
+        /*onShow(){
+            //doResizeTilesContent();
+        },*/
         fetchSensorData(){
             if(this.sensorId) {
                 wscli.send(`#Sensor:0x${Number(this.sensorId).toHex()},GetName,GetData`);
@@ -975,15 +988,17 @@ function doResizeTilesContent() {
         doZoom('.tile-energy-monitor-data .zoomed-content');
     }, 100);
 }
-window.addEventListener('resize', doResizeTilesContent, false);
+//window.addEventListener('resize', doResizeTilesContent, false);
 
 // noinspection JSUnusedLocalSymbols
-wscli.commands.add({TileCount: Number}, (arg) => {
-        doResizeTilesContent();
-        return true;
+/*wscli.commands.add({Count: Number}, (arg) => {
+        if (wscli.context.current === wscli.context.tile) {
+            doResizeTilesContent();
+            return true;
+        }
     }
 );
-
+*/
 
 Vue.component('tile-energy-monitor-settings', {
     props: {

@@ -41,7 +41,8 @@ Vue.component('tile-energy-monitor', {
         ws.on('open', ()=>{
             this.fetchSensorData();
         });
-        this.$parent.$on('show', this.onShow);
+        //this.$parent.$on('show', this.onShow);
+        this.$parent.$on('resize', doResizeTilesContent);
         setInterval(function () {
             this.energyTN++;
         }.bind(this), 4000);
@@ -52,9 +53,9 @@ Vue.component('tile-energy-monitor', {
             res = (res !== undefined) ? res / div : undefined;
             return res;
         },
-        onShow(){
-            doResizeTilesContent();
-        },
+        /*onShow(){
+            //doResizeTilesContent();
+        },*/
         fetchSensorData(){
             if(this.sensorId) {
                 wscli.send(`#Sensor:0x${Number(this.sensorId).toHex()},GetName,GetData`);
@@ -126,15 +127,17 @@ function doResizeTilesContent() {
         doZoom('.tile-energy-monitor-data .zoomed-content');
     }, 100);
 }
-window.addEventListener('resize', doResizeTilesContent, false);
+//window.addEventListener('resize', doResizeTilesContent, false);
 
 // noinspection JSUnusedLocalSymbols
-wscli.commands.add({TileCount: Number}, (arg) => {
-        doResizeTilesContent();
-        return true;
+/*wscli.commands.add({Count: Number}, (arg) => {
+        if (wscli.context.current === wscli.context.tile) {
+            doResizeTilesContent();
+            return true;
+        }
     }
 );
-
+*/
 
 Vue.component('tile-energy-monitor-settings', {
     props: {
