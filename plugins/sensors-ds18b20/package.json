@@ -1,7 +1,7 @@
 {
   "name": "sensors-ds18b20",
   "version": "0.0.1",
-  "dependencies": {
+  "plugins-dependencies": {
   },
   "node": "",
   "web":{

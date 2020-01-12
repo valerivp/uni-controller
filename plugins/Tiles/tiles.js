@@ -15,21 +15,16 @@ module.exports.init = function () {
     }
 };
 
-let currentTile;
-
 wscli.context.add('tile');         /** @namespace wscli.context.tile */
 
-
-wscli.commands.add('Tile', 'Set current tile. Tile as param.',
-    function(arg){
-        let res = false;
-        arg = 0 | arg;
-        //wscli.context.current = (wscli.context.tile) &&
+wscli.commands.add({Tile: Number}, (arg)=>{
         wscli.context.current = wscli.context.tile;
-        if((!arg || checkRangeTile(arg))) // noinspection CommaExpressionJS
-            currentTile = arg, res = true;
-        return res;
-    });
+        if( !arg || checkRangeTile(arg)) // noinspection CommaExpressionJS
+            wscli.current.tile = arg;
+        return true;
+    },
+    'Set current tile. Tile as param.'
+);
 
 // noinspection JSUnusedLocalSymbols
 function GetInfo(info, arg) {
@@ -38,52 +33,50 @@ function GetInfo(info, arg) {
         // noinspection JSUnresolvedVariable
         let TilesCount = db.querySync("SELECT TilesCount FROM TilesSettings")[0].TilesCount;
         let q = `SELECT * FROM TilesParams WHERE (ID = $ID OR ($ID = 0 AND ID <= $TilesCount))`;
-        let rows = db.querySync(q, {$ID: currentTile, $TilesCount: TilesCount});
+        let rows = db.querySync(q, {$ID: wscli.current.tile, $TilesCount: TilesCount});
         rows.forEach(function (row) { // noinspection JSUnresolvedVariable
             let data = `#Tile:${row.ID},${info}:${row[info]}`;
             wscli.sendClientData(data);
             res = true;
         });
         // noinspection JSConstructorReturnsPrimitive
+        if(!res)
+            throw ('No data');
         return res;
     }
 }
 
-wscli.commands.add('GetType', 'Get current tile type.', GetInfo.bind(undefined, 'Type'));
-wscli.commands.add('GetParams', 'Get current tile params.', GetInfo.bind(undefined, 'Params'));
+wscli.commands.add({GetType: null}, GetInfo.bind(undefined, 'Type'), 'Get tile type.');
+wscli.commands.add({GetParams: null}, GetInfo.bind(undefined, 'Params'), 'Get tile params.');
 
 function SetInfo(info, arg) {
     if(wscli.context.current === wscli.context.tile){
-        let res = false;
-        if(checkRangeTile(currentTile)){
-            let qp = {$ID: currentTile};
-            qp[`\$${info}`] = arg;
-            db.querySync(`UPDATE TilesParams
-                SET ${info} = \$${info}${(info === 'Type' ? ", Params = ''" : "")}
-                WHERE ID = $ID and ${info} != \$${info}`, qp);
-            let row = db.querySync("SELECT * FROM TilesParams WHERE ID = $ID", qp)[0];
-            /** @namespace row.Component */
-            let data = `#Tile:${row.ID},${info}:${row[info]}`;
-            wscli.sendData(data);
-            res = true;
-        }
+        checkRangeTile(wscli.current.tile);
+        let qp = {$ID: wscli.current.tile};
+        qp[`\$${info}`] = arg;
+        db.querySync(`UPDATE TilesParams
+            SET ${info} = \$${info}${(info === 'Type' ? ", Params = ''" : "")}
+            WHERE ID = $ID and ${info} != \$${info}`, qp); // проверка на изменение типа чтобы параметры не затереть
+        let row = db.querySync("SELECT * FROM TilesParams WHERE ID = $ID", qp)[0];
+        wscli.sendData(`#Tile:${row.ID},${info}:${row[info]}`);
         // noinspection JSConstructorReturnsPrimitive
-        return res;
+        return true;
     }
 
 }
-wscli.commands.add('SetName', 'Set current tile name.', SetInfo.bind(undefined, 'Name'));
-wscli.commands.add('SetType', 'Set current tile type.', SetInfo.bind(undefined, 'Type'));
-wscli.commands.add('SetParams', 'Set current tile params.', SetInfo.bind(undefined, 'Params'));
+wscli.commands.add({SetName: String}, SetInfo.bind(undefined, 'Name'), 'Set tile name.');
+wscli.commands.add({SetType: String}, SetInfo.bind(undefined, 'Type'), 'Set tile type.');
+wscli.commands.add({SetParams: String}, SetInfo.bind(undefined, 'Params'), 'Set tile params.');
 
 // noinspection JSUnusedLocalSymbols
-wscli.commands.add('GetTilesCount', 'Get tiles count.',
-    function(arg){
+wscli.commands.add({GetTilesCount: null},(arg) =>{
         let row = db.querySync("SELECT TilesCount FROM TilesSettings")[0];
         // noinspection JSUnresolvedVariable
         wscli.sendClientData(`#TileCount:${row.TilesCount}`);
         return true;
-    });
+    },
+    'Get tiles count.'
+);
 
 function checkRangeTile(arg) {
     // noinspection JSUnresolvedVariable
@@ -92,19 +85,16 @@ function checkRangeTile(arg) {
         'Tile');
 }
 
-wscli.commands.add('SetTilesCount', 'Set tiles count. Count as param.',
-    function(arg){
-        let res = false;
-        arg = 0 | arg;
-        if(checkRangeTile(arg)){
-            db.querySync("UPDATE TilesSettings SET TilesCount = $TilesCount", {$TilesCount: arg});
-            let row = db.querySync("SELECT TilesCount FROM TilesSettings")[0];
-            /** @namespace row.TilesCount */
-            wscli.sendData(`#TileCount:${row.TilesCount}`);
-            res = true;
-        }
-        return res;
-    });
+wscli.commands.add({SetTilesCount: Number}, (arg)=>{
+        checkRangeTile(arg);
+        db.querySync("UPDATE TilesSettings SET TilesCount = $TilesCount", {$TilesCount: arg});
+        let row = db.querySync("SELECT TilesCount FROM TilesSettings")[0];
+        /** @namespace row.TilesCount */
+        wscli.sendData(`#TileCount:${row.TilesCount}`);
+        return true;
+    },
+    'Set tiles count. Count as param.'
+);
 
 
 // noinspection JSUnusedLocalSymbols

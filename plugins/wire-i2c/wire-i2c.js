@@ -3,10 +3,11 @@
 const basedir = require('path').dirname(process.mainModule.filename);
 const utils = require(`${basedir}/uc-utils`);
 
-const i2c = (process.platform === 'linux' ? require('./i2cs/i2cs') : undefined);
-
-if(!i2c){
-    utils.file.log('i2c not use');
+let i2c;
+try {
+    i2c = require('./i2cs/i2cs');
+}catch (err){
+    utils.file.log(err.message);
 }
 
 

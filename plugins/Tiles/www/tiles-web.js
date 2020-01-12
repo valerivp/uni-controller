@@ -5,6 +5,7 @@ TilesComponentsTypes.prototype.add = function(name, params){
     this[name].name = name;
 };
 const vTilesComponentsTypes = new TilesComponentsTypes;
+module.exports.components = {types: vTilesComponentsTypes};
 
 function Tile(pId) {
     this.params = {};
@@ -68,7 +69,6 @@ Tiles.prototype.length = function () {
 
 const vTiles = new Vue({
     data: {
-        currentTileId: undefined,
         tiles: new Tiles(),
     },
     computed:{
@@ -99,7 +99,7 @@ const vTiles = new Vue({
             vContent.setTab('tile-settings', {tileId: id});
         },
         checkTile(t){
-            return wscli.checkInRange(t, 1, this.tiles.length(), "Tile id");
+            return checkInRange(t, 1, this.tiles.length(), "Tile id");
         },
 
         getCSSClass(id){
@@ -117,24 +117,24 @@ const vTiles = new Vue({
             }
         },
         setParams(id, params){
-            let data = `#Tile:${id},SetParams:`;
-            let delimiter = '';
-            for(let key in params){ // noinspection JSUnfilteredForInLoop
-                data += `${delimiter}${key}=${params[key]}`;
-                delimiter = ';';
-            }
+            let data = `#Tile:${id},SetParams:${wscli.data.toString(params)}`;
             wscli.send(data);
-        }
+        },
+        onShow(params){
+            this.$emit('show');
+            doResizeTilesContent();
+        },
     },
     created: function() {
+        module.exports.setParams = this.setParams;
         ws.on('open', ()=>{
-            wscli.send("#GetTilesCount,Tile,GetType,GetParams");
+            wscli.send("#GetTilesCount");
         });
     },
     template:`
     <div id="tab-content-tiles" title="Состояние">
         <div v-for="tile in tiles.toArray()" v-bind:class="getCSSClass(tile.id) + ' sTileWrap'" v-on:click="changeTileSetting(tile.id)">
-            <div class="sTile border3d">{{tile.name}}: {{tile.id}} x {{tile.type}}
+            <div class="sTile border3d">
                 <div v-bind:params="tile.params" v-bind:is="tile.type">
                 
                 </div>
@@ -245,7 +245,9 @@ const vTileSettings = new Vue({
                     </select>
                 </div>
             </div>
-            <div v-bind:is="selectedTypeName + '-settings'" v-if="selectedTypeName" v-bind:type="selectedTypeName + '-settings'">
+            <div v-bind:is="selectedTypeName + '-settings'" v-if="selectedTypeName"
+                v-bind:type="selectedTypeName + '-settings'"
+                v-bind:tile="selectedTile">
             
             </div>
         </div>
@@ -256,61 +258,61 @@ const vTileSettings = new Vue({
 vContent.addTab({component: vTileSettings, id: 'tile-settings'}, {after: 'tiles'});
 
 wscli.context.add('tile');
-wscli.commands.add(
-    'Tile',
-    (arg) => {
-        arg = 0 | arg;
-        let res = false;
-        if(wscli.context.current = (wscli.context.tile)){
-            if(vTiles.checkTile(arg)){
-                vTiles.currentTileId = arg;
-                res = true;
-            }
-        }
-        return res;
-    }
-);
-
-wscli.commands.add('Type', function (arg) {
-        if(wscli.context.current === wscli.context.tile){
-            let res = false;
-            if(vTiles.checkTile(vTiles.currentTileId)){
-                if(vTiles.tiles[vTiles.currentTileId].type !== arg){
-                    Vue.set(vTiles.tiles[vTiles.currentTileId], "type", arg);
-                }
-                res = true;
-            }
-            return res;
-        }
-    }
-);
-
-wscli.commands.add('Params', function (arg) {
-        if(wscli.context.current === wscli.context.tile){
-            let res = false;
-            if(vTiles.checkTile(vTiles.currentTileId)){
-                let arr = String(arg).match(/(?:[^;\\]+|\\.)+/gm) || [];
-                let params = {};
-                arr.forEach(function (item) {
-                    let param = item.match(/(?:[^=\\]+|\\.)+/)[0];
-                    params[param.toLowerCase()] = item.slice(param.length + 1);
-                });
-                Vue.set(vTiles.tiles[vTiles.currentTileId], 'params', params);
-                res = true;
-            }
-            return res;
-        }
-    }
-);
-
-wscli.commands.add(
-    'TileCount',
-    (arg) => {
-        arg = 0 | arg;
-        vTiles.setTilesCount(arg);
+wscli.commands.add({Tile: Number}, (arg) => {
+        wscli.context.current = wscli.context.tile;
+        vTiles.checkTile(arg);
+        wscli.current.tile = arg;
         return true;
     }
 );
+
+wscli.commands.add({Type: String}, (arg)=> {
+        if(wscli.context.current === wscli.context.tile){
+            vTiles.checkTile(wscli.current.tile);
+            if(vTiles.tiles[wscli.current.tile].type !== arg)
+                Vue.set(vTiles.tiles[wscli.current.tile], "type", arg);
+            return true;
+        }
+    }
+);
+
+wscli.commands.add({Params: Object}, (arg) =>{
+        if(wscli.context.current === wscli.context.tile){
+            vTiles.checkTile(wscli.current.tile);
+            Vue.set(vTiles.tiles[wscli.current.tile], 'params', arg);
+            return true;
+        }
+    }
+);
+
+wscli.commands.add({TileCount: Number}, (arg) => {
+        vTiles.setTilesCount(arg);
+        doResizeTilesContent();
+        return true;
+    }
+);
+
+
+// noinspection CssUnusedSymbol
+document.write(`
+<style type="text/css">
+.tile-caption .zoomed-content{
+    zoom: 1;
+    --max-zoom: 2;
+}
+</style>
+`);
+
+
+function doResizeTilesContent() {
+    if (doResizeTilesContent.timeoutHandle)
+        clearTimeout(doResizeTilesContent.timeoutHandle);
+    doResizeTilesContent.timeoutHandle = setTimeout(() => {
+        doZoom('.tile-caption .zoomed-content');
+    }, 100);
+}
+
+window.addEventListener('resize', doResizeTilesContent, false);
 
 
 Vue.component('tile-test', {

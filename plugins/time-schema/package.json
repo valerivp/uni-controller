@@ -1,15 +1,14 @@
 {
-  "name": "tiles",
+  "name": "time-schema",
   "version": "0.0.1",
   "plugins-dependencies": {
   },
-  "node": "tiles",
+  "node": "time-schema",
   "web":{
     "js":[
-      "www/tiles-web.js"
+      "www/time-schema-web.js"
     ],
     "css":[
-      "www/tiles.css"
 
     ]
   }

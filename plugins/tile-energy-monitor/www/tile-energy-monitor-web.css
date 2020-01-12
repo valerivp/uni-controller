@@ -1,0 +1,57 @@
+.tile-energy-monitor .tile-caption-data{
+    display: flex;
+}
+
+.tile-energy-monitor .tile-data{
+    display: flex;
+    flex-direction: column;
+}
+
+.tile-energy-monitor-data-energy > span:after{
+    content: 'кВт*ч';
+    font-size: 50%;
+}
+.tile-energy-monitor-data-energy .energy-t1:before{
+    content: 'T1 ';
+    font-size: 50%;
+}
+.tile-energy-monitor-data-energy .energy-t2:before{
+    content: 'T ';
+    font-size: 50%;
+}
+.tile-energy-monitor-data-energy .energy-t:before{
+    content: 'T ';
+    font-size: 50%;
+}
+
+.tile-energy-monitor-data-voltage, .tile-energy-monitor-data-current{
+    flex-grow: 2;
+    display: flex;
+    align-items: center;
+    /*margin-top: -1ex;*/
+    /*margin-bottom: -1ex;*/
+    text-shadow: 0.2ex 0.2ex 0.2ex rgba( 0,0,0,0.17 );
+}
+.tile-energy-monitor-data-voltage{
+    justify-content: flex-start;;
+
+}
+.tile-energy-monitor-data-current{
+    justify-content: flex-end;
+
+}
+.tile-energy-monitor-data-voltage span:after{
+    content: 'В';
+    font-size: 50%;
+}
+.tile-energy-monitor-data-current span:after{
+    content: 'А';
+    font-size: 50%;
+}
+
+.tile-energy-monitor-data{
+    display: flex;
+}
+.tile-energy-monitor-data > div{
+    flex-grow: 1;
+}

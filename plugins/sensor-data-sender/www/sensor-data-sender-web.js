@@ -1,7 +1,4 @@
-wscli.commands.add(
-    'Autosend',
-    (arg) => {
-//        arg = 0 | arg;
+wscli.commands.add({Autosend: Number}, (arg) => {
         if(wscli.context.current === wscli.context.sensor)
             return true;
     }

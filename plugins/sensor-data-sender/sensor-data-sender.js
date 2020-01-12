@@ -12,51 +12,53 @@ module.exports.init = function () {
 
 
 
-wscli.commands.add('SetAutosend',
-    function (arg) {
-        if(wscli.context.current !== wscli.context.sensor)
-            return undefined;
-        arg = 0 | arg;
-
-        if(arg) {
-            let q = `REPLACE INTO mem.SensorsSendTimeouts (ID, MaxTimeLabel)
+wscli.commands.add({SetAutosend: Number}, (arg)=> {
+        if(wscli.context.current === wscli.context.sensor){
+            sensors.checkRangeSensorID(wscli.current.sensor);
+            if(arg) {
+                let q = `REPLACE INTO mem.SensorsSendTimeouts (ID, MaxTimeLabel)
                 VALUES ($ID, datetime($TimeLabel / 1000, 'unixepoch', 'localtime'))`;
-            db.querySync(q, {$ID: sensors.currentSensor, $TimeLabel: 1000 * arg + new Date().getTime()});
-        } else {
-            db.querySync('DELETE FROM mem.SensorsSendTimeouts WHERE ID = $ID', {$ID: sensors.currentSensor});
+                db.querySync(q, {$ID: wscli.current.sensor, $TimeLabel: 1000 * arg + new Date().getTime()});
+            } else {
+                db.querySync('DELETE FROM mem.SensorsSendTimeouts WHERE ID = $ID', {$ID: wscli.current.sensor});
+            }
+            wscli.sendData(`#Sensor:0x${Number(wscli.current.sensor).toHex()},Autosend:${arg}`);
+            //if(arg)
+            //    sendSensorData({ID: wscli.current.sensor});
+            return true;
         }
-        wscli.sendData(`#Sensor:0x${Number(sensors.currentSensor).toHex()},Autosend:${arg}`);
-        return true;
+
     },
-    'Set timeout for autosend sensor data');
+    'Set timeout for autosend sensor data.');
 
+function sendSensorData(data) {
+    db.querySync(`DELETE FROM mem.SensorsSendTimeouts
+        WHERE MaxTimeLabel < datetime($TimeLabel / 1000, 'unixepoch', 'localtime')`, {$TimeLabel: new Date().getTime()});
 
-
-sensors.onSensorDataReceived(function (data) {
-    let q = `DELETE FROM mem.SensorsSendTimeouts WHERE MaxTimeLabel > datetime($TimeLabel / 1000, 'unixepoch', 'localtime');
-        SELECT ID, Type, TimeLabel FROM mem.SensorsData AS SensorsData
+    let q = `SELECT SensorsData.ID AS ID, Type, TimeLabel FROM mem.SensorsData AS SensorsData
         INNER JOIN mem.SensorsSendTimeouts AS SensorsSendTimeouts
             ON SensorsData.ID = SensorsSendTimeouts.ID
         WHERE SensorsData.ID = $ID`;
-    const qp = {$ID: data.ID, $TimeLabel: new Date().getTime()};
-    let rows = db.querySync(q, qp);
+    let rows = db.querySync(q, {$ID: data.id});
     rows.forEach(function (row) {
         let data = '';
         let TimeLabel = new Date(row.TimeLabel);
         /** @namespace row.Type */
         data += `#Sensor:0x${Number(row.ID).toHex()},Type:${row.Type},TimeLabel:${utils.DateToShotXMLString(TimeLabel)}`;
-        data += ',SensorData';
-        let delimiter = ':';
+        data += ',Data:';
+        let params = {};
         let rows_param = db.querySync("SELECT Param, Value FROM mem.SensorsParams WHERE ID = $ID", {$ID: row.ID});
         rows_param.forEach(function (row_param) {
             /** @namespace row_param.Param */
             /** @namespace row_param.Value */
-            data += `${delimiter}${row_param.Param}=${row_param.Value}`;
-            delimiter = '/';
+            params[row_param.Param] = row_param.Value;
         });
+        data += wscli.data.toString(params);
         wscli.sendData(data);
     });
-});
+}
+
+sensors.onSensorDataReceived(sendSensorData);
 
 
 

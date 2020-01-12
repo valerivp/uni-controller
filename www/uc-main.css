@@ -95,6 +95,11 @@ body.hidden {
     background-color: #808080;
 }
 
+.zoom-place{
+    position: absolute;
+}
+.zoomed-content{
+}
 
 
 /* turquoise */

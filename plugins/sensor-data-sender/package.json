@@ -1,7 +1,7 @@
 {
   "name": "sensor-data-sender",
   "version": "0.0.1",
-  "dependencies": {
+  "plugins-dependencies": {
   },
   "node": "sensor-data-sender.js",
   "web":{

@@ -1,7 +1,7 @@
 {
   "name": "sensors-pzem004t",
   "version": "0.0.1",
-  "dependencies": {
+  "plugins-dependencies": {
   },
   "node": "",
   "web":{

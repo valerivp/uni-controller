@@ -16,16 +16,34 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 // TODO: async
 
-function mixin(target, source) {
-  for (var name in source) {
-    if (source.hasOwnProperty(name))
-      target[name] = source[name];
-  }
-}
-var bindings = require('./' + process.platform + "/" + "sqlite3_bindings");
+var bindings;
+//bindings = require('./' + process.platform + "/" + "sqlite3_bindings");
+if(!bindings)
+    try{
+        bindings = require("./rpi/sqlite3_bindings.node");
+    }catch(err){}
+if(!bindings)
+    try{
+        bindings = require("./win32/sqlite3_bindings.node");
+    }catch(err){}
+if(!bindings)
+    try{
+        bindings = require("./omega2/sqlite3_bindings.node");
+    }catch(err){}
+
+if(!bindings)
+    throw new Error('sqlite3_bindings not loaded');
+
+
 mixin(global, bindings);
 mixin(exports, bindings);
 
+function mixin(target, source) {
+    for (var name in source) {
+        if (source.hasOwnProperty(name))
+            target[name] = source[name];
+    }
+}
 
 // Conform somewhat to http://dev.w3.org/html5/webdatabase/#sql
 

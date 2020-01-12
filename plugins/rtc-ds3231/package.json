@@ -1,7 +1,9 @@
 {
   "name": "rtc-ds3231",
   "version": "0.0.1",
-  "dependencies": {"wire-i2c":""
+    "plugins-dependencies": {"wire-i2c":""
+  },
+  "dependencies": {
   },
   "node": "rtc-ds3231",
   "web":{

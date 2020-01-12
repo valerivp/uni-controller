@@ -1,3 +1,4 @@
+
 #tab-content-tiles {
     height: calc(100vh - 3.5em);
     display: flex;
@@ -17,13 +18,51 @@
     box-shadow: 0 2px 2px 0 rgba(0,0,0,0.14), 0 3px 1px -2px rgba(0,0,0,0.2), 0 1px 5px 0 rgba(0,0,0,0.12);
     border-top: 0.4ex solid;
     height: 100%;
-    display: flex;
-    flex-direction: column;
+    /*display: flex;*/
+    /*flex-direction: column;*/
     margin-right: 1ex;
     cursor: pointer;
 }
 
+.tile{
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+.tile > div {
+    margin-top: 1ex;
+    margin-right: 1ex;
+    margin-left: 1ex;
+    margin-bottom: 0ex;
+}
+.tile > div:last-child{
+    margin-bottom: 1ex;
+}
 
+.tile-caption{
+    flex-grow: 1;
+    min-height: 1em;
+    max-height: 2em;
+}
+.tile-caption > div{
+    width: 100%;
+}
+.tile-caption-data >span:first-child {
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.tile-data{
+    flex-grow: 8;
+}
+
+/*
+.sTile > div {
+    height: inherit;
+}
+*/
 /* --------------------------- */
 /* -- landscape - Zone info -- */
 /* --------------------------- */

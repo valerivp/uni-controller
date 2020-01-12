@@ -1,0 +1,153 @@
+
+.tile-t-h-b .tile-caption-data{
+    display: flex;
+}
+
+.tile-t-h-b .tile-data{
+    display: flex;
+    flex-direction: column;
+}
+
+.tile-temperature-data{
+    flex-grow: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: -1ex;
+    margin-bottom: -1ex;
+
+    text-shadow:  0.2ex 0.2ex 0.2ex rgba( 0,0,0,0.17 );
+}
+.temperature.cold{
+    color: #28b7c8;
+}
+.temperature.warm{
+    color: #ff9d5e;
+}
+
+.temperature:after{
+    content: "°";
+    position: absolute;
+    font-size: 50%;
+    top: 0.25em;
+}
+.temperature{
+    margin-right: 0.5ex;
+}
+
+.tile-t-h-trend-up, .tile-t-h-trend-down{
+    position: absolute;
+    height: 0.3em;
+    width: 0.3em;
+}
+
+
+.tile-t-h-trend-up:before, .tile-t-h-trend-up:after, .tile-t-h-trend-down:before, .tile-t-h-trend-down:after {
+    height: 0.1em;
+    width: 0.1em;
+    position: absolute;
+    content: '';
+    border-radius: 0.5px;
+    border-left: 0.5px solid;
+    border-bottom: 0.5px solid;
+
+}
+.tile-t-h-trend-up:before {
+    animation: animationArrUp 3s linear infinite;
+}
+.tile-t-h-trend-up:after {
+    animation: animationArrUp 3s linear infinite -1.5s;
+}
+.tile-t-h-trend-down:before {
+    animation: animationArrDown 3s linear infinite;
+}
+.tile-t-h-trend-down:after {
+    animation: animationArrDown 3s linear infinite -1.5s;
+}
+
+
+
+.temperature .tile-t-h-trend-up, .temperature .tile-t-h-trend-down{
+    bottom: 0.2em;
+}
+.humidity .tile-t-h-trend-up, .humidity .tile-t-h-trend-down{
+    top: 0.2em;
+}
+
+.tile-humidity-data{
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    margin-top: -1ex;
+    text-shadow: 0.2ex 0.2ex 0.2ex rgba( 0,0,0,0.17 );
+
+}
+
+.humidity:after{
+    content: "%";
+    position: absolute;
+    font-size: 50%;
+    bottom: 0.3em;
+}
+.humidity{
+    margin-right: 0.5ex;
+}
+
+
+.sensor-battery{
+    display: flex;
+    justify-content: center;
+}
+
+.sensor-battery div{
+    width: 1em;
+    height: 1em;
+    background-repeat: no-repeat;
+}
+.sensor-battery .ok{
+    background: url("data:image/svg+xml;base64,PCEtLT94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPy0tPgo8c3ZnIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHZpZXdCb3g9IjAgMCAyNCAyNCIgdmVyc2lvbj0iMS4xIj4KPGc+CjxwYXRoIHN0eWxlPSJmaWxsOiM1MWNjOTYiIGQ9Ik0gMTAgMiBDIDkuMzk4NDM4IDIgOSAyLjM5ODQzOCA5IDMgTCA5IDQgTCA4IDQgQyA2Ljg5ODQzOCA0IDYgNC44OTg0MzggNiA2IEwgNiAyMCBDIDYgMjEuMTAxNTYzIDYuODk4NDM4IDIyIDggMjIgTCAxNiAyMiBDIDE3LjEwMTU2MyAyMiAxOCAyMS4xMDE1NjMgMTggMjAgTCAxOCA2IEMgMTggNC44OTg0MzggMTcuMTAxNTYzIDQgMTYgNCBMIDE1IDQgTCAxNSAzIEMgMTUgMi4zOTg0MzggMTQuNjAxNTYzIDIgMTQgMiBaIE0gMTEgNCBMIDEzIDQgTCAxMyA2IEwgMTYgNiBMIDE2IDcgTCA4IDcgTCA4IDYgTCAxMSA2IFogIj48L3BhdGg+CjwvZz4KPC9zdmc+");
+}
+.sensor-battery .low{
+    background: url("data:image/svg+xml;base64,PCEtLT94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPy0tPgo8c3ZnIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHZpZXdCb3g9IjAgMCAyNCAyNCIgdmVyc2lvbj0iMS4xIj4KPGc+CjxwYXRoIHN0eWxlPSJmaWxsOiNlODViNDAiIGQ9Ik0gMTAgMiBDIDkuMzk4NDM4IDIgOSAyLjM5ODQzOCA5IDMgTCA5IDQgTCA4IDQgQyA2Ljg5ODQzOCA0IDYgNC44OTg0MzggNiA2IEwgNiAyMCBDIDYgMjEuMTAxNTYzIDYuODk4NDM4IDIyIDggMjIgTCAxNiAyMiBDIDE3LjEwMTU2MyAyMiAxOCAyMS4xMDE1NjMgMTggMjAgTCAxOCA2IEMgMTggNC44OTg0MzggMTcuMTAxNTYzIDQgMTYgNCBMIDE1IDQgTCAxNSAzIEMgMTUgMi4zOTg0MzggMTQuNjAxNTYzIDIgMTQgMiBaIE0gMTEgNCBMIDEzIDQgTCAxMyA2IEwgMTYgNiBMIDE2IDE3IEwgOCAxNyBMIDggNiBMIDExIDYgWiAiPjwvcGF0aD4KPC9nPgo8L3N2Zz4=");
+}
+
+
+@keyframes animationArrUp {
+    0% {
+        border-color: transparent;
+        transform: translate(22%, 130%) rotate(135deg);
+    }
+    40% {
+        border-color: red;
+    }
+    50% {
+        transform: translate(22%, 65%) rotate(135deg);
+    }
+    60% {
+        border-color: red;
+    }
+    100% {
+        border-color: transparent;
+        transform: translate(22%, 0px) rotate(135deg);
+    }
+}
+@keyframes animationArrDown {
+    100% {
+        border-color: transparent;
+        transform: translate(22%, 130%) rotate(-45deg);
+    }
+    60% {
+        border-color: blue;
+    }
+    50% {
+        transform: translate(22%, 65%) rotate(-45deg);
+    }
+    40% {
+        border-color: blue;
+    }
+    0% {
+        border-color: transparent;
+        transform: translate(22%, 0px) rotate(-45deg);
+    }
+}

@@ -5,6 +5,7 @@ const serverLocation = location.protocol === 'file:' ? 'localhost:8080' : locati
 
 if (!Array.prototype.last){ Array.prototype.last = function(){ return this[this.length - 1]; } }
 
+let mm = {};
 
 const $store = new Vuex.Store({
     state: {
@@ -199,7 +200,8 @@ const vTerminal = new Vue({
             this.ReceivedText = this.ReceivedText.split('\n').slice(-500).join('\n');
             if (this.AutoScroll) {
                 let el = document.getElementById('terminal-received-text');
-                el.scrollTop = el.scrollHeight;
+                if(el)
+                    el.scrollTop = el.scrollHeight;
             }
         },
         log: function(text) {this.writeLog(text + '\n');},
@@ -210,7 +212,9 @@ vContent.addTab({component: vTerminal, id: 'terminal'});
 
 
 function SensorData(id) {
-    this.id = id;
+    this.id = Number(id);
+    checkInRange(this.id, 1, 0xFFFF, 'Sensor');
+
     this.type = undefined;
     this.name = '';
     this.editName = false;
@@ -220,7 +224,7 @@ function SensorData(id) {
     this.toString = ()=> (this.name === '' ? '' : this.name +', ') + this.id2hex();
     this.dataAge =  ()=> (this.timeLabel ? ($store.state.time - this.timeLabel) / 1000 : '-');
     this.timelabel2string = ()=> this.timeLabel ? this.timeLabel.toLocaleString() : '–';
-    this.nameInputElementId = 'sensorNameInput_' + this.id2hex();
+    this.nameInputElementId = 'sensor-name-input-' + this.id2hex();
 
     this.params = {};
     this.param = (pname) => this.params[pname.toLowerCase()];
@@ -281,11 +285,11 @@ sensorsTypes.add( undefined, {
 
 const sensorsInfoQuery = new function(){
     this._timerHandle = undefined;
-    this._sendTextSensorsInfo = () => wscli.send('#SensorsData:>' + vSensors.maxTimeLabel);
+    this._sendTextSensorsInfo = () => wscli.send('#Sensor,GetData:>' + wscli.data.toString(vSensors.maxTimeLabel));
     this.count = 0;
     this.start = () => {
         if(!this.count++){
-            wscli.send("#SensorsNames");
+            wscli.send("#Sensor,GetName,GetData");
             this._timerHandle = setInterval(this._sendTextSensorsInfo, 3000);
             console.log("Start fetching sensors data");
         }
@@ -313,7 +317,6 @@ const vSensors = new Vue({
     data: {
         types: sensorsTypes,
         maxTimeLabel: '0',
-        currentSensor : 0,
         sensors: new Sensors(),
     },
 
@@ -321,7 +324,7 @@ const vSensors = new Vue({
         onShow: ()=> {sensorsInfoQuery.start();},
         onHide: ()=> {sensorsInfoQuery.stop();},
         setName(sensor) {
-            wscli.send("#Sensor:" + sensor.id2hex() + ",SetName:" + sensor.name);
+            wscli.send("#Sensor:" + sensor.id2hex() + ",SetName:" + wscli.data.toString(sensor.name));
             sensor.editName = false;
         },
         doEditName(sensor){
@@ -330,30 +333,31 @@ const vSensors = new Vue({
                 document.getElementById(sensor.nameInputElementId).focus();
             }, 1);
         },
-        getCurrentSensor: function(){
-            if(!this.currentSensor)
+        /*getSensor: function(id, addToSensors){
+            addToSensors = addToSensors === undefined ? true : addToSensors;
+            if(!id)
                 return undefined;
-            /*
-            for(let s = 0; s < this.sensors.length; s++){
-                if(this.sensors[s].id === this.currentSensor)
-                    return this.sensors[s];
-            }
-            this.sensors.push(new SensorData(this.currentSensor));
-            return this.sensors.last();*/
-            let sensor = this.sensors[this.currentSensor];
+            let sensor = this.sensors[id];
             if(!sensor){
-                sensor = new SensorData(this.currentSensor);
-                Vue.set(this.sensors, this.currentSensor, sensor);
+                sensor = new SensorData(id);
+                if(addToSensors)
+                    Vue.set(this.sensors, id, sensor);
             }
             return sensor;
-        },
-        setSensorInfo: function (param, val){
-            if(wscli.context.current === wscli.context.sensor)
+        },*/
+        setSensorInfo(id, param, val){
+            let sensor = this.sensors[id];
+            if(!sensor){
+                sensor = new SensorData(id);
+                Vue.set(this.sensors, id, sensor);
+            }
+            Vue.set(sensor, param, val);
+/*            if(wscli.context.current === wscli.context.sensor)
                 Vue.set(vSensors.getCurrentSensor(), param, val);
             else
-                return false;
+                return false;*/
         },
-        eraseCurrentSensor(what){
+        /*eraseCurrentSensor(what){
             if(this.currentSensor){
                 let sensor = this.sensors[this.currentSensor];
                 if(sensor){
@@ -365,7 +369,7 @@ const vSensors = new Vue({
                         wscli.send('#SensorsNames:' + sensor.idHex);
                 }
             }
-        },
+        },*/
         getSensorsByType(type){
 
             let arr = this.sensors.toArray().filter((item) =>
@@ -503,7 +507,8 @@ vSettings.add(
                 for(let i = 0; i < this.themes.length; i++)
                     if(this.themes[i].name && body.classList.contains(this.themes[i].name))
                         body.classList.remove(this.themes[i].name);
-                body.classList.add(this.selectedTheme);
+                if(this.selectedTheme)
+                    body.classList.add(this.selectedTheme);
             },
             onFetch: function () {
                 //this.onSelectTheme();
@@ -578,69 +583,47 @@ document.addEventListener('DOMContentLoaded', wscli.init);
 
 
 wscli.context.add('cmd');
-wscli.commands.add(
-    'Cmd',
-    (arg) => {
-        if(wscli.context.current = (wscli.context.cmd)){
-            wscli.lastCmd = arg;
-            return true;
-        }else
-            return false;
+wscli.commands.add({Cmd: String}, (arg) => {
+        wscli.context.current = wscli.context.cmd;
+        wscli.current.cmd = arg;
+        return true;
     }
 );
 
-wscli.commands.add(
-    'CmdRes',
-    (arg) => true
-);
-wscli.commands.add(
-    'Value',
-    (arg) => true
-);
-
-wscli.commands.add(
-    'Error',
-    (arg) => {
+wscli.commands.add({CmdRes: String}, (arg) => true);
+wscli.commands.add({Error: String}, (arg) => {
         if(wscli.context.current === wscli.context.cmd){
-            vToasts.add(`Cmd ${wscli.lastCmd} error: ${arg}`);
+            vToasts.add(`Cmd '${wscli.current.cmd}' error: ${arg}`);
             return true;
         }
     }
 );
 
-wscli.commands.add(
-    'Time',
-    (arg) => {$store.commit($store.mutation.setTime, DateFromShotXMLString(arg)); return true}
+wscli.commands.add({Time: Date}, (arg) => {
+        $store.commit($store.mutation.setTime, arg); return true;
+    }
 );
 
 
 
 wscli.context.add('sensor');
-wscli.commands.add(
-    'Sensor',
-    (arg) => {
+wscli.commands.add({Sensor: Number}, (arg) => {
         /** @namespace wscli.context.sensor */
-        if(wscli.context.current = (wscli.context.sensor)){
-            vSensors.currentSensor = Number(arg);
-            return true;
-        }else
-            return false;
+        wscli.context.current = wscli.context.sensor;
+        wscli.current.sensor = arg;
+        return true;
     }
 );
-wscli.commands.add(
-    'Type',
-    (arg) => {
+wscli.commands.add({Type: String},  (arg) => {
         if(wscli.context.current === wscli.context.sensor){
-            Vue.set(vSensors.getCurrentSensor(), 'type', String(arg).toUpperCase());
+            vSensors.setSensorInfo(wscli.current.sensor, 'type', arg.toUpperCase());
             return true;
         }
     }
 );
-wscli.commands.add(
-    'TimeLabel',
-    (arg) => {
+wscli.commands.add({TimeLabel: Date}, (arg) => {
         if(wscli.context.current === wscli.context.sensor){
-            Vue.set(vSensors.getCurrentSensor(), 'timeLabel', DateFromShotXMLString(arg));
+            vSensors.setSensorInfo(wscli.current.sensor, 'timeLabel', arg);
             if(arg > vSensors.maxTimeLabel)
                 vSensors.maxTimeLabel = arg;
             return true;
@@ -648,46 +631,43 @@ wscli.commands.add(
     }
 );
 
-wscli.commands.add(
-    'SensorData',
-    (arg) => {
+wscli.commands.add({Data: Object}, (arg) => {
         if(wscli.context.current === wscli.context.sensor){
-
-            let arr = String(arg).match(/(?:[^;\\]+|\\.)+/gm) || [];
-            let params = {};
-            arr.forEach(function (item) {
-                let param = item.match(/(?:[^=\\]+|\\.)+/)[0];
-                params[param.toLowerCase()] = item.slice(param.length + 1);
-            });
-            Vue.set(vSensors.getCurrentSensor(), 'params', params);
+            vSensors.setSensorInfo(wscli.current.sensor, 'params', arg);
             return true;
         }
     }
 );
 
-wscli.commands.add(
-    'Name',
-    (arg) => {
+wscli.commands.add({Name: String}, (arg) => {
         if(wscli.context.current === wscli.context.sensor){
-            Vue.set(vSensors.getCurrentSensor(), 'name', arg);
+            if(arg)
+                vSensors.setSensorInfo(wscli.current.sensor,  'name', arg);
+            else if (vSensors.sensors[wscli.current.sensor] && !vSensors.sensors[wscli.current.sensor].type)
+                Vue.delete(vSensors.sensors, wscli.current.sensor);
             return true;
         }
     }
 );
-
 
 
 function WSCli (ws){
     this.ws = ws;
-
-    this.lastCmd = undefined;
+    this._wscliCurrentObject = {};
 
     this.commands = {
-        add: function (name, func) {
+        add: function (nameAndArgType, func) {
+            let name, type;
+            for(name in nameAndArgType)
+                type = nameAndArgType[name];
+
             const _name = 'cmd-' + name.toLowerCase();
 
             if(!this[_name])
-                this[_name] = {name: name, funcs: []};
+                this[_name] = {name: name, type: type, funcs: []};
+            else if(this[_name].type !== type)
+                throw new Error(`Command is already registered with a different type of parameter: ${name}`)
+
             this[_name].funcs.push(func);
         }
     };
@@ -696,6 +676,11 @@ function WSCli (ws){
         if(this.ws)
             this.ws._SendText(text);
     };
+
+    Object.defineProperty(this, 'current', {
+        get() {return this._wscliCurrentObject;},
+        set: (val) => {throw("Property is read only");}
+    });
 
     this.context = {
         _current: undefined,
@@ -712,19 +697,22 @@ function WSCli (ws){
             return this._current;
         },
         set(val) {
-            if ( !this._current || !val)
+            if ( !this._current || !val) {
                 this._current = val;
-            else
-                throw("Context already set");
-        }});
+                wscli._wscliCurrentObject = {};
+                if(val)
+                    wscli._wscliCurrentObject[val] = undefined;
+                Object.seal(wscli._wscliCurrentObject);
 
-    //this.setError = (err) => this._error = err;
+            }else
+                throw("Context already set");
+        }
+    });
 
     this._onCommand = function(cmdStrings) {
         (String(cmdStrings).match(/(^#.*$)/gm) || []).forEach(
              (cmdString)=> {
                 this.context.current = this.context.none;
-                //this.setError('');
 
                 if (cmdString.slice(0, 1) === '#'){
 
@@ -736,6 +724,7 @@ function WSCli (ws){
                                 this.executeCmd(cmd);
                             } catch (err) {
                                 let message = `Cmd executing error: ${cmd} ${err.message || err}`;
+                                vTerminal.log(message);
                                 vToasts.add(message);
                                 console.error(message);
                                 break;
@@ -759,6 +748,7 @@ function WSCli (ws){
         let command = this.commands['cmd-' + cmd.toLowerCase()];
         if(command){
             let result = undefined;
+            arg = this.data.fromString(arg, command.type);
             for(let i = 0; i < command.funcs.length; i++) {
                 let res = command.funcs[i](arg);
                 if (res === true) {
@@ -779,26 +769,60 @@ function WSCli (ws){
         this.ws.init();
     };
 
-    this.checkInRange = function (arg, lv, rv, desc){
-        if ((lv <= arg) && (arg <= rv))
-            return true;
-        let err = desc + ' ' + arg + ' not in range ' + lv + '-' + rv;
-        throw(err);
+    this.data = {
+        _charsForShielding: '\\,:=;',
+        toString(data) {
+            let res;
+            if(typeof data === "string" || data instanceof String){
+                res = data;
+                for (let i = 0; i < this._charsForShielding.length; i++)
+                    res = res.replaceAll(this._charsForShielding[i], '\\' + this._charsForShielding[i]);
+
+            }else if(typeof data === "date" || data instanceof Date){
+                 res = new Date(data).toFormatString('yyyymmddThhiiss');
+
+            }else{
+                let arr = [];
+                for (let key in data)
+                    arr.push(`${this.toString(String(key))}=${this.toString(String(data[key]))}`);
+                res = arr.join(';');
+            }
+            return res;
+        },
+        fromString(data, type) {
+            let res;
+            if (type === Object) {
+                let arr = String(data).match(/(?:[^;\\]+|\\.)+/gm) || [];
+                res = {};
+                arr.forEach(function (item) {
+                    let key = item.match(/(?:[^=\\]+|\\.)+/)[0];
+
+                    let val = wscli.data.fromString(item.slice(key.length + 1), String);
+                    if(val === "undefined")
+                        val = undefined;
+                    else if(val === "true")
+                        val = true;
+                    else if(val === "false")
+                        val = false;
+
+                    res[wscli.data.fromString(key, String)] = val;
+                });
+            } else if(type === String){
+                res = data;
+                for (let i = 0; i < this._charsForShielding.length; i++)
+                    res = res.replaceAll('\\' + this._charsForShielding[i], this._charsForShielding[i]);
+            } else if(type === Number){
+                res = 0 | data;
+            } else if(type === Date){
+                res = DateFromShotXMLString(data);
+            }else
+                throw new Error(`Unknown type of parameter: ${type}`);
+
+            return res;
+        }
     };
 
 }
-
-
-function doOnResizeStateItems() {
-    let rule = getCssRule('vInnerZoneHeader');
-    if(rule) rule.style.width = 'auto';
-    doZoom('vZoneHeader', 2);
-    if(rule) rule.style.width = '100%';
-
-    doZoom('vCurrentStateInner', 5);
-}
-window.addEventListener('resize', doOnResizeStateItems , false );
-
 
 function WSConnection (server, terminal) {
     this._server = server;
@@ -871,17 +895,12 @@ function WSConnection (server, terminal) {
         else
             this._terminal.log('WebSocket not connected');
 
-        this._terminal.log(String(String(text).replace('#', '>')).trim());
+        this._terminal.log(String('\n' + text).replaceAll('\n#', '\n>').trim());
     };
 
     this._SendText = (text)=> {
         text += (String(text).endsWith('\n') ? '' : '\n');
-
-/*        if(this._textBufferForSend && this._textBufferForSend.endsWith('\n')) {
-            this._textBufferForSend = this._textBufferForSend.substr(0, this._textBufferForSend.length - 1) + ',';
-            text = text.substr(1);
-        }
-*/        this._textBufferForSend = this._textBufferForSend ? this._textBufferForSend + text : text;
+        this._textBufferForSend = this._textBufferForSend ? this._textBufferForSend + text : text;
 
         setTimeout(this._SendTextBuffer, 0);
     };

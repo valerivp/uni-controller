@@ -1,7 +1,7 @@
 {
   "name": "mqtt-udp-receiver",
   "version": "0.0.1",
-  "dependencies": {
+  "plugins-dependencies": {
   },
   "node": "mqtt-udp-receiver",
   "web":{

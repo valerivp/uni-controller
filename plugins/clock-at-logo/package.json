@@ -1,7 +1,7 @@
 {
   "name": "clock-at-logo",
   "version": "0.0.6",
-  "dependencies": {
+  "plugins-dependencies": {
   },
   "node": "clock-at-logo.js",
   "web":{

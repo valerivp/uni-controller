@@ -1,5 +1,5 @@
 {
-  "name": "tile-temperature-humidity-battery",
+  "name": "tile-energy-monitor",
   "version": "0.0.1",
   "plugins-dependencies": {
     "tiles":"",
@@ -8,10 +8,10 @@
   "node": "",
   "web":{
     "js":[
-      "www/tile-t-h-b-web.js"
+      "www/tile-energy-monitor-web.js"
     ],
     "css":[
-      "www/tile-t-h-b-web.css"
+      "www/tile-energy-monitor-web.css"
 
     ]
   }

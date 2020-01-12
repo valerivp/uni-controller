@@ -43,7 +43,7 @@ module.exports.DateFromShotXMLString = function (ds){
     return new Date(ds.substr(0, 4), Number(ds.substr(4, 2)) - 1, ds.substr(6, 2), ds.substr(9, 2), ds.substr(11, 2), ds.substr(13, 2));
 };
 module.exports.DateToShotXMLString = function (d){
-    return ('number' == typeof d ? new Date(d) : d) .toFormatString('yyyymmddThhiiss');
+    return ('number' == typeof d ? new Date(d) : d).toFormatString('yyyymmddThhiiss');
 };
 
 
@@ -108,6 +108,20 @@ Date.prototype.toFormatString = function(format, utc) {
     return format;
 };
 
+String.prototype.replaceAll = function(search, replacement) {
+    return this.split(search).join(replacement);
+};
+
+String.prototype.toKebab = function(){
+    return this
+        .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
+        .replace(/([A-Z])([A-Z])(?=[a-z])/g, '$1-$2')
+        .toLowerCase();
+};
+
+String.prototype.toCamel = function(){
+    return this.replace(/[-_]([a-z])/g, function (g) { return g[1].toUpperCase(); })
+};
 
 function initExitHandler(exitHandler) {
 //do something when app is closing
@@ -158,3 +172,4 @@ module.exports.spawnAnything = function (apps, cb, opt) {
         }
     }
 };
+

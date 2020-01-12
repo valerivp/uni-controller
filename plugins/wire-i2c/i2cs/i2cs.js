@@ -5,7 +5,19 @@
 
   //_ = require('underscore');
 
-  wire = require('./i2c.node');
+  //wire = require('./i2c.node');
+    if(!wire)
+        try{
+            wire = require("./rpi/i2c.node");
+        }catch(err){}
+    if(!wire)
+        try{
+            wire = require("./omega2/i2c.node");
+        }catch(err){}
+
+    if(!wire)
+        throw new Error('i2c.node not loaded');
+
 
   EventEmitter = require('events').EventEmitter;
 

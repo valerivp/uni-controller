@@ -38,7 +38,6 @@ module.exports["web-plugins.js"] = "./www/uc-web-plugins.js";
 module.exports["web-plugins.css"] = "./www/uc-plugins.css";
 
 module.exports.init = function(){
-
     fs.writeFileSync(module.exports["web-plugins.js"], "'use strict';\n\n");
     fs.writeFileSync(module.exports["web-plugins.css"], "");
 
@@ -76,7 +75,15 @@ module.exports.init = function(){
             if(obj.web && obj.web.js)
                 obj.web.js.forEach(function (file) {
                     fs.appendFileSync(module.exports["web-plugins.js"], about);
+                    let start = `\nfunction ${row.Name.toCamel()}_class(){
+                        \nlet module = {exports: this};\n`;
+                    fs.appendFileSync(module.exports["web-plugins.js"], start);
+
                     fs.appendFileSync(module.exports["web-plugins.js"], fs.readFileSync(row.Directory + '/' + file));
+
+                    let end = `\n}
+                    \nmm['${row.Name}'] = new ${row.Name.toCamel()}_class();\n`;
+                    fs.appendFileSync(module.exports["web-plugins.js"], end);
                 });
 
             if(obj.web && obj.web.css)
@@ -139,7 +146,7 @@ function cmdUpdate(dirName) {
     }
 
     let q = "CREATE TABLE mem.dependencies AS\nSELECT '' as Name WHERE 1 = 0\n";
-    for(let d in obj["dependencies"]){
+    for(let d in obj["plugins-dependencies"]){
         q = q + `UNION\n
                  SELECT '${d}'\n`;
     }

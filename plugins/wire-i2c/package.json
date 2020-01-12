@@ -1,7 +1,7 @@
 {
   "name": "wire-i2c",
   "version": "0.0.1",
-  "dependencies": {
+  "plugins-dependencies": {
   },
   "node": "wire-i2c",
   "web":{

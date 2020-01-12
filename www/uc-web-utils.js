@@ -1,4 +1,16 @@
 
+function checkInRange(arg, lv, rv, desc){
+
+    if(lv instanceof Array){
+        if(!lv.some(item=> ((item[0] <= arg) && (arg <= item[1])) )){
+            let arrDesc = lv.map(item => item[0] === item[1] ? `${item[0]}` : `${item[0]}…${item[1]}`).join('; ');
+            throw(`${rv} ${arg} not in range (${arrDesc})`);
+        }
+    }else
+    if (!((lv <= arg) && (arg <= rv)))
+        throw(`${desc} ${arg} not in range ${lv}…${rv}`);
+    return true;
+};
 
 const navigationHistory = {
     get state(){
@@ -84,14 +96,14 @@ function addElement(whatTag, toId){
 
 
 
-function getCssRule(className) {
-    for(var i = 0; i < document.styleSheets.length; i++) {
-        var ss = document.styleSheets[i];
+function getCssRule(selector) {
+    for(let i = 0; i < document.styleSheets.length; i++) {
+        let ss = document.styleSheets[i];
         if (String(ss.ownerNode.localName) === 'style') {
-            var rules = ss.cssRules || ss.rules;
+            let rules = ss.cssRules || ss.rules;
 
-            for(var r = 0; r < rules.length; r++){
-                if(rules[r].selectorText == ('.' + className)){
+            for(let r = 0; r < rules.length; r++){
+                if(rules[r].selectorText == (selector)){
                     return rules[r];
                 }
             }
@@ -101,25 +113,21 @@ function getCssRule(className) {
     return null;
 }
 
-function doZoom(className, initZoom) {
-    var rule = getCssRule(className);
+function doZoom(selector) {
+    let rule = getCssRule(selector);
     if(! rule) return false;
-    rule.style.zoom = initZoom;
 
-    var zoom = initZoom;
+    rule.style.zoom = rule.style.getPropertyValue('--max-zoom');
 
-    var list = document.getElementsByClassName(className);
-    for (var item of list) {
-        var parent = item.parentNode;
-        var place = parent.parentNode;
-        var newZoom = Math.min(place.offsetHeight * zoom / parent.offsetHeight , place.offsetWidth * zoom / parent.offsetWidth);
+    let zoom = rule.style.zoom;
+    let elements = document.querySelectorAll(selector);
+    for (let elem of elements) {
+        let parent = elem.parentNode;
+        let place = parent.parentNode;
+        let newZoom = Math.min(place.offsetHeight * rule.style.zoom / parent.offsetHeight , place.offsetWidth * rule.style.zoom / parent.offsetWidth);
         zoom = Math.max(isNaN(newZoom) ? 1 : Math.min(zoom, newZoom), 1);
-        rule.style.zoom = zoom;
-        /*while(initZoom > 1 && (parent.offsetHeight > place.offsetHeight || parent.offsetWidth > place.offsetWidth) ){
-            initZoom -= deltaZoom;
-            rule.style.zoom = initZoom;
-        }*/
     }
+    rule.style.zoom = Math.min(zoom, rule.style.zoom);
 }
 
 function DateFromShotXMLString(ds){
@@ -165,6 +173,10 @@ Date.prototype.toFormatString = function(format, utc) {
         format = format.replace(/ss/g, (ss[1] ? ss : "0" + ss[0]));
     }
     return format;
+};
+
+String.prototype.replaceAll = function(search, replacement) {
+    return this.split(search).join(replacement);
 };
 
 
