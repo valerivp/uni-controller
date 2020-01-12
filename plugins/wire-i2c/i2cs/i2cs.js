@@ -8,7 +8,11 @@
   //wire = require('./i2c.node');
     if(!wire)
         try{
-            wire = require("./rpi/i2c.node");
+            wire = require("./rpi.dietpi/i2c.node");
+        }catch(err){}
+    if(!wire)
+        try{
+            wire = require("./rpi.openwrt/i2c.node");
         }catch(err){}
     if(!wire)
         try{

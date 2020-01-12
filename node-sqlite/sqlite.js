@@ -20,7 +20,11 @@ var bindings;
 //bindings = require('./' + process.platform + "/" + "sqlite3_bindings");
 if(!bindings)
     try{
-        bindings = require("./rpi/sqlite3_bindings.node");
+        bindings = require("./rpi.openwrt/sqlite3_bindings.node");
+    }catch(err){}
+if(!bindings)
+    try{
+        bindings = require("./rpi.dietpi/sqlite3_bindings.node");
     }catch(err){}
 if(!bindings)
     try{
