@@ -16,7 +16,7 @@
     font-size: 50%;
 }
 .tile-energy-monitor-data-energy .energy-t2:before{
-    content: 'T ';
+    content: 'T2 ';
     font-size: 50%;
 }
 .tile-energy-monitor-data-energy .energy-t:before{
