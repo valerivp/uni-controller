@@ -10,7 +10,6 @@ try {
     utils.file.log(err.message);
 }
 
-
 const wire_cashe = {};
 function wire(addres) {
     let res = wire_cashe[addres];
