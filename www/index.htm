@@ -46,9 +46,7 @@
         <div id="menu-items" v-bind:class="!isMenuShow ? '' : ' sMenuButtonOpen'"
              v-on:click="isMenuShow = !isMenuShow">
             <div class="sMenuItem" v-for="tab in tabsList" v-on:click.stop="setTab(tab.id)"
-                 v-bind:class="(isShow(tab)?'sMenuItemSelected':'')">
-                {{tab.title}}
-            </div>
+                 v-bind:class="(isShow(tab)?'sMenuItemSelected':'')">{{tab.title}}</div>
         </div>
     </div>
     <!--<div id="tabs-content" v-bind:class="(!isConnected?'zzStBlur':'')">v-show="isShow(tab)"-->
@@ -69,20 +67,15 @@
             <!--<div v-for="data in getTypeData()">-->
                 <table class="sSensorsTable">
                     <tr>
-                        <th>
-                            {{'undefined' == String(type)  ? '#' : type}}
-                        </th>
-                        <th v-for="data in types.data(type)" v-bind:style="data.align ? 'text-align: ' + data.align : ''">
-                            {{data.title}}
-                        </th>
+                        <th>{{'undefined' == String(type)  ? '#' : type}}</th>
+                        <th v-for="data in types.data(type)" v-bind:style="data.align ? 'text-align: ' + data.align : ''">{{data.title}}</th>
                     </tr>
                     <tr v-for="sensor in getSensorsByType(type)">
                         <td class="sSensorName">
                             <span v-show="!sensor.editName" v-on:click="doEditName(sensor)">{{ String(sensor) }}</span>
                             <input v-show="sensor.editName" v-bind:id="sensor.nameInputElementId" type="text" v-model.lazy="sensor.name" v-on:change="setName(sensor)" v-on:blur="sensor.editName = false">
                         </td>
-                        <td  v-for="data in types.data(type)" v-bind:style="data.align ? 'text-align: ' + data.align : ''">
-                            {{data.data(sensor)}}<span v-if="data.html" v-html="data.html(sensor)"></span>
+                        <td  v-for="data in types.data(type)" v-bind:style="data.align ? 'text-align: ' + data.align : ''">{{data.data(sensor)}}<span v-if="data.html" v-html="data.html(sensor)"></span>
                         </td>
                     </tr>
                 </table>
@@ -220,9 +213,7 @@
             <span>Тема оформления</span>
 
             <select v-model="selectedTheme" v-on:change="onSelectTheme">
-                <option v-for="theme in themes" v-bind:value="theme.name">
-                    {{theme.title}}
-                </option>
+                <option v-for="theme in themes" v-bind:value="theme.name">{{theme.title}}</option>
             </select>
 
         </div>
@@ -258,7 +249,7 @@
 
 <div id="toasts">
     <div class="toast" v-for="item in toasts" v-bind:style="{bottom:item.pos}">
-        <div> {{item.title}} </div>
+        <div>{{item.title}}</div>
     </div>
 </div>
 

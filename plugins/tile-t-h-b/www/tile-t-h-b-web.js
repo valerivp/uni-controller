@@ -92,9 +92,7 @@ Vue.component('tile-temperature', {
                 v-if="String(params['show-temperature']) === 'true'">
                 <div class="zoom-place">
                     <div class="zoomed-content">
-                        <nobr v-bind:class="temperature === undefined ? '' : (temperature > 0 ? 'temperature warm' : 'temperature cold')">
-                            {{temperature === undefined ? '-.-' : String(Number(temperature).toFixed(1)).trim()}}
-                            <span v-if="trend('temperature') !== undefined" 
+                        <nobr v-bind:class="temperature === undefined ? '' : (temperature > 0 ? 'temperature warm' : 'temperature cold')">{{temperature === undefined ? '-.-' : String(Number(temperature).toFixed(1)).trim()}}<span v-if="trend('temperature') !== undefined" 
                                 v-bind:class="trend('temperature') ? 'tile-t-h-trend-up' : 'tile-t-h-trend-down'"></span>
                          </nobr>
                     </div>
@@ -104,9 +102,7 @@ Vue.component('tile-temperature', {
                 v-if="String(params['show-humidity']) === 'true'">
                 <div class="zoom-place">
                     <div class="zoomed-content">
-                        <div v-bind:class="humidity === undefined ? '' : 'humidity'">
-                            {{humidity === undefined ? '-.-' : String(humidity) }}
-                            <span v-if="trend('humidity') !== undefined" 
+                        <div v-bind:class="humidity === undefined ? '' : 'humidity'">{{humidity === undefined ? '-.-' : String(humidity) }}<span v-if="trend('humidity') !== undefined" 
                                 v-bind:class="trend('humidity') ? 'tile-t-h-trend-up' : 'tile-t-h-trend-down'"></span>
                         </div>
                     </div>
@@ -242,9 +238,7 @@ Vue.component('tile-temperature-settings', {
             <div>
                 <span>Датчик</span>
                 <select v-model="sensor">
-                    <option v-for="sensor in sensors" v-bind:value="sensor.id">
-                        {{String(sensor)}}{{sensor ? ', ' + sensor.param('temperature')/10 + '°C' : ''}}
-                    </option>
+                    <option v-for="sensor in sensors" v-bind:value="sensor.id">{{String(sensor)}}{{sensor ? ', ' + sensor.param('temperature')/10 + '°C' : ''}}</option>
                 </select>
             </div>
             <div>

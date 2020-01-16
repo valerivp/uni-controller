@@ -75,15 +75,15 @@ wscli.commands.add({GetData: String}, (arg)=>{
             let arg_arr = arg.split('>');
 
             // noinspection JSBitwiseOperatorUsage
-            let timeFilter = ((arg_arr[1] && arg_arr[1].length === 15) ? wscli.data.fromString(arg_arr[1], Date).getTime() : 0);
+            let timeFilter = ((arg_arr[1] && arg_arr[1].length === 15) ? wscli.data.fromString(arg_arr[1], Date).getTime() / 1000 | 0: 0);
 
-            let rows = db.querySync("SELECT ID, Type, TimeLabel FROM mem.SensorsData WHERE (ID = $ID OR $ID = 0) AND TimeLabel > datetime($TimeLabel / 1000, 'unixepoch', 'localtime')", {
+            let rows = db.querySync("SELECT ID, Type, TimeLabel FROM mem.SensorsData WHERE (ID = $ID OR $ID = 0) AND TimeLabel > $TimeLabel", {
                 $ID: wscli.current.sensor,
                 $TimeLabel: timeFilter
             });
             rows.forEach(function (row) {
                 let data = '';
-                let TimeLabel = new Date(row.TimeLabel);
+                let TimeLabel = new Date(row.TimeLabel * 1000);
                 /** @namespace row.Type */
                 data += `#Sensor:0x${Number(row.ID).toHex()},Type:${row.Type},TimeLabel:${utils.DateToShotXMLString(TimeLabel)}`;
                 data += ',Data:';
@@ -104,9 +104,19 @@ wscli.commands.add({GetData: String}, (arg)=>{
 
 
 module.exports.updateSensorData = function(sensor, params){
-    const qp = {$ID: sensor.ID, $Type: sensor.Type, $TimeLabel: new Date(sensor.TimeLabel).getTime()};
-    let q = `DELETE FROM mem.SensorsParams WHERE ID = $ID;
-        REPLACE INTO mem.SensorsData (ID, Type, TimeLabel) VALUES ($ID, $Type, datetime($TimeLabel / 1000, 'unixepoch', 'localtime'));\n`;
+    const qp = {$ID: sensor.ID, $Type: sensor.Type, $TimeLabel: new Date(sensor.TimeLabel).getTime() / 1000 | 0};
+    let q = `SELECT SensorsData.ID,
+                abs(TimeLabel - $TimeLabel) as dif,
+                TimeLabel,
+                $TimeLabel
+            FROM mem.SensorsData as SensorsData, SensorsSettings as SensorsSettings
+            WHERE SensorsData.ID = $ID
+                AND abs(TimeLabel - $TimeLabel) <= SensorsSettings.MaxTimeDivergence`;
+    if(db.querySync(q, qp).length)
+        return;
+
+    q = `DELETE FROM mem.SensorsParams WHERE ID = $ID;
+        REPLACE INTO mem.SensorsData (ID, Type, TimeLabel) VALUES ($ID, $Type, $TimeLabel);\n`;
 
     let kebab_params = {};
     for(let key in params)
@@ -118,24 +128,18 @@ module.exports.updateSensorData = function(sensor, params){
         // noinspection JSUnfilteredForInLoop
         q += `INSERT INTO mem.SensorsParams (ID, Param, Value) VALUES ($ID, '${key}', ${kebab_params[key]});\n`;
     }
-    let isNewData = undefined;
     try{
         db.beginTransaction();
-        isNewData = !db.querySync("SELECT ID FROM mem.SensorsData WHERE ID = $ID AND TimeLabel = datetime($TimeLabel / 1000, 'unixepoch', 'localtime')", qp).length;
-        if(isNewData)
-            db.querySync(q, qp);
+        db.querySync(q, qp);
         db.commitTransaction();
     }catch (err){
-        isNewData = undefined;
         if(db.isTransaction())
             db.rollbackTransaction();
         throw(err);
     }
 
-    if(isNewData){
-        EventEmitter.emit(EventEmitter.events.SensorDataReceived,
-            {id: sensor.ID, type: sensor.Type, timelabel: new Date(sensor.TimeLabel), params: kebab_params});
-    }
+    EventEmitter.emit(EventEmitter.events.SensorDataReceived,
+        {id: sensor.ID, type: sensor.Type, timelabel: new Date(sensor.TimeLabel), params: kebab_params});
 
 };
 
@@ -158,13 +162,22 @@ function getDbInitData() {
             "SensorsNames": {
               "ID": "INTEGER PRIMARY KEY NOT NULL",
               "Name": "CHAR(32) NOT NULL ON CONFLICT REPLACE DEFAULT ''"
+            },
+            "SensorsSettings": {
+              "schema": {
+                "ID": "INTEGER PRIMARY KEY AUTOINCREMENT",
+                "MaxTimeDivergence": "INTEGER"
+              },
+              "data": [
+                {"ID": 0, "MaxTimeDivergence": 2}
+              ]
             }
           },
           "mem":{
             "SensorsData": {
               "ID": "INTEGER PRIMARY KEY NOT NULL",
               "Type": "CHAR(16) NOT NULL",
-              "TimeLabel": "DATETIME NOT NULL"
+              "TimeLabel": "INTEGER NOT NULL"
             },
             "SensorsParams": {
               "ID": "INTEGER NOT NULL CONSTRAINT [SensorID] REFERENCES [SensorsData]([ID]) ON DELETE CASCADE",

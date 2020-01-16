@@ -3,22 +3,22 @@
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
     __hasProp = {}.hasOwnProperty;
 
-  //_ = require('underscore');
-
-  //wire = require('./i2c.node');
-    if(!wire)
-        try{
-            wire = require("./rpi.dietpi/i2c.node");
-        }catch(err){}
-    if(!wire)
-        try{
-            wire = require("./rpi.openwrt/i2c.node");
-        }catch(err){}
-    if(!wire)
-        try{
-            wire = require("./omega2/i2c.node");
-        }catch(err){}
-
+    const fs = require('fs');
+    module.dirname = require('path').dirname(module.filename);
+    var dirs = fs.readdirSync(module.dirname);
+    dirs.some(function(dir) {
+            try {
+                if (fs.statSync(`${module.dirname}/${dir}`).isDirectory()) {
+                    console.log(`Try load ./${dir}/i2c.node...`);
+                    wire = require(`./${dir}/i2c.node`);
+                    console.log('...module load successfully.');
+                    return true;
+                }
+            } catch (err) {
+                console.log(err.message);
+            }
+        }
+    );
     if(!wire)
         throw new Error('i2c.node not loaded');
 

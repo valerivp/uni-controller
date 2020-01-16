@@ -17,8 +17,8 @@ wscli.commands.add({SetAutosend: Number}, (arg)=> {
             sensors.checkRangeSensorID(wscli.current.sensor);
             if(arg) {
                 let q = `REPLACE INTO mem.SensorsSendTimeouts (ID, MaxTimeLabel)
-                VALUES ($ID, datetime($TimeLabel / 1000, 'unixepoch', 'localtime'))`;
-                db.querySync(q, {$ID: wscli.current.sensor, $TimeLabel: 1000 * arg + new Date().getTime()});
+                VALUES ($ID, $TimeLabel)`;
+                db.querySync(q, {$ID: wscli.current.sensor, $TimeLabel: (arg + new Date().getTime() / 1000) | 0});
             } else {
                 db.querySync('DELETE FROM mem.SensorsSendTimeouts WHERE ID = $ID', {$ID: wscli.current.sensor});
             }
@@ -33,7 +33,7 @@ wscli.commands.add({SetAutosend: Number}, (arg)=> {
 
 function sendSensorData(data) {
     db.querySync(`DELETE FROM mem.SensorsSendTimeouts
-        WHERE MaxTimeLabel < datetime($TimeLabel / 1000, 'unixepoch', 'localtime')`, {$TimeLabel: new Date().getTime()});
+        WHERE MaxTimeLabel < $TimeLabel`, {$TimeLabel: new Date().getTime() / 1000 | 0});
 
     let q = `SELECT SensorsData.ID AS ID, Type, TimeLabel FROM mem.SensorsData AS SensorsData
         INNER JOIN mem.SensorsSendTimeouts AS SensorsSendTimeouts
@@ -42,7 +42,7 @@ function sendSensorData(data) {
     let rows = db.querySync(q, {$ID: data.id});
     rows.forEach(function (row) {
         let data = '';
-        let TimeLabel = new Date(row.TimeLabel);
+        let TimeLabel = new Date(row.TimeLabel * 1000);
         /** @namespace row.Type */
         data += `#Sensor:0x${Number(row.ID).toHex()},Type:${row.Type},TimeLabel:${utils.DateToShotXMLString(TimeLabel)}`;
         data += ',Data:';
@@ -76,7 +76,7 @@ function getDbInitData() {
           "mem":{
             "SensorsSendTimeouts": {
               "ID": "INTEGER PRIMARY KEY NOT NULL CONSTRAINT [SensorID] REFERENCES [SensorsData]([ID]) ON DELETE CASCADE",
-              "MaxTimeLabel": "DATETIME NOT NULL"
+              "MaxTimeLabel": "INTEGER NOT NULL"
             }
           }
         }`;

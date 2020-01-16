@@ -10,9 +10,7 @@ new Vue({
     <div id="clock-at-logo" onclick="vContent.setTab(vContent.tabsList[0].id)">
         <span class="sFontBold sColorContrast">UNI</span>Controller
         <span v-if="!time">--:--</span>
-        <span v-if="time" class="sFontBold sColorContrast">
-            {{String('00' + time.getHours()).substr(-2)}}<span v-bind:style="(time.getSeconds() % 2 ? 'opacity:0.4;' : '')">:</span>{{String('00' + time.getMinutes()).substr(-2)}}
-        </span>
+        <span v-if="time" class="sFontBold sColorContrast">{{String('00' + time.getHours()).substr(-2)}}<span v-bind:style="(time.getSeconds() % 2 ? 'opacity:0.4;' : '')">:</span>{{String('00' + time.getMinutes()).substr(-2)}}</span>
         <span v-if="time" >{{['воскресенье', 'понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота'][time.getDay()]}}</span>
     </div>  `
 

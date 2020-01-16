@@ -83,9 +83,7 @@ Vue.component('tile-energy-monitor', {
                             <span>{{ sensor ? sensor.name || String(sensor) : 'no sensor'}}</span>
                             <span style="flex-grow: 1;">&nbsp;</span>
                             <span class="tile-energy-monitor-data-energy">
-                                <span v-if="energyTN %3 === 1" class="energy-t1">{{Number(energyT1).toFixed(0)}}</span>
-                                <span v-else-if="energyTN %3 === 2" class="energy-t2">{{Number(energyT2).toFixed(0)}}</span>
-                                <span v-else class="energy-t">{{Number(energy).toFixed(0)}}</span>
+                                <span>{{Number(this['energy' + (energyTN % 3 ? 'T' + (energyTN % 3) : '')]).toFixed(0)}}</span><span>T{{energyTN % 3 || ''}}</span>
                             </span>
                         </nobr>
                     </div>
@@ -192,9 +190,7 @@ Vue.component('tile-energy-monitor-settings', {
                 <div>
                     <span>Датчик</span>
                     <select v-model="sensor">
-                        <option v-for="sensor in sensors" v-bind:value="sensor.id">
-                            {{String(sensor)}}{{sensor ? ', ' + sensor.param('voltage')/10 + 'B' : ''}}
-                        </option>
+                        <option v-for="sensor in sensors" v-bind:value="sensor.id">{{String(sensor)}}{{sensor ? ', ' + sensor.param('voltage')/10 + 'B' : ''}}</option>
                     </select>
                 </div>
             </div>

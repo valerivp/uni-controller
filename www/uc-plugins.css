@@ -165,14 +165,13 @@
     color: #ff9d5e;
 }
 
-.temperature:after{
+.temperature::after{
     content: "°";
-    position: absolute;
     font-size: 50%;
-    top: 0.25em;
+    vertical-align: super;
 }
 .temperature{
-    margin-right: 0.5ex;
+    /*margin-right: 0.5ex;*/
 }
 
 .tile-t-h-trend-up, .tile-t-h-trend-down{
@@ -182,7 +181,7 @@
 }
 
 
-.tile-t-h-trend-up:before, .tile-t-h-trend-up:after, .tile-t-h-trend-down:before, .tile-t-h-trend-down:after {
+.tile-t-h-trend-up::before, .tile-t-h-trend-up::after, .tile-t-h-trend-down::before, .tile-t-h-trend-down::after {
     height: 0.1em;
     width: 0.1em;
     position: absolute;
@@ -192,16 +191,16 @@
     border-bottom: 0.5px solid;
 
 }
-.tile-t-h-trend-up:before {
+.tile-t-h-trend-up::before {
     animation: animationArrUp 3s linear infinite;
 }
-.tile-t-h-trend-up:after {
+.tile-t-h-trend-up::after {
     animation: animationArrUp 3s linear infinite -1.5s;
 }
-.tile-t-h-trend-down:before {
+.tile-t-h-trend-down::before {
     animation: animationArrDown 3s linear infinite;
 }
-.tile-t-h-trend-down:after {
+.tile-t-h-trend-down::after {
     animation: animationArrDown 3s linear infinite -1.5s;
 }
 
@@ -224,14 +223,14 @@
 
 }
 
-.humidity:after{
+.humidity::after{
     content: "%";
-    position: absolute;
+    /*position: absolute;*/
     font-size: 50%;
-    bottom: 0.3em;
+    /*bottom: 0.3em;*/
 }
 .humidity{
-    margin-right: 0.5ex;
+    /*margin-right: 0.5ex;*/
 }
 
 
@@ -302,23 +301,28 @@
     flex-direction: column;
 }
 
-.tile-energy-monitor-data-energy > span:after{
+.tile-energy-monitor-data-energy>span:last-child{
+    position: absolute;
+    font-size: 50%;
+}
+.tile-energy-monitor-data-energy:last-child::after{
     content: 'кВт*ч';
     font-size: 50%;
 }
-.tile-energy-monitor-data-energy .energy-t1:before{
+/*
+.tile-energy-monitor-data-energy >span:not(:last-child)::after {
+    font-size: 50%;
+}
+.tile-energy-monitor-data-energy .energy-t1::after{
     content: 'T1 ';
-    font-size: 50%;
 }
-.tile-energy-monitor-data-energy .energy-t2:before{
+.tile-energy-monitor-data-energy .energy-t2::after{
+    content: 'T2 ';
+}
+.tile-energy-monitor-data-energy .energy-t::after{
     content: 'T ';
-    font-size: 50%;
 }
-.tile-energy-monitor-data-energy .energy-t:before{
-    content: 'T ';
-    font-size: 50%;
-}
-
+*/
 .tile-energy-monitor-data-voltage, .tile-energy-monitor-data-current{
     flex-grow: 2;
     display: flex;
@@ -335,11 +339,11 @@
     justify-content: flex-end;
 
 }
-.tile-energy-monitor-data-voltage span:after{
+.tile-energy-monitor-data-voltage span::after{
     content: 'В';
     font-size: 50%;
 }
-.tile-energy-monitor-data-current span:after{
+.tile-energy-monitor-data-current span::after{
     content: 'А';
     font-size: 50%;
 }

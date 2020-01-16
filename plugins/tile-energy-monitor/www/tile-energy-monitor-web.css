@@ -7,23 +7,28 @@
     flex-direction: column;
 }
 
-.tile-energy-monitor-data-energy > span:after{
+.tile-energy-monitor-data-energy>span:last-child{
+    position: absolute;
+    font-size: 50%;
+}
+.tile-energy-monitor-data-energy:last-child::after{
     content: 'кВт*ч';
     font-size: 50%;
 }
-.tile-energy-monitor-data-energy .energy-t1:before{
+/*
+.tile-energy-monitor-data-energy >span:not(:last-child)::after {
+    font-size: 50%;
+}
+.tile-energy-monitor-data-energy .energy-t1::after{
     content: 'T1 ';
-    font-size: 50%;
 }
-.tile-energy-monitor-data-energy .energy-t2:before{
+.tile-energy-monitor-data-energy .energy-t2::after{
     content: 'T2 ';
-    font-size: 50%;
 }
-.tile-energy-monitor-data-energy .energy-t:before{
+.tile-energy-monitor-data-energy .energy-t::after{
     content: 'T ';
-    font-size: 50%;
 }
-
+*/
 .tile-energy-monitor-data-voltage, .tile-energy-monitor-data-current{
     flex-grow: 2;
     display: flex;
@@ -40,11 +45,11 @@
     justify-content: flex-end;
 
 }
-.tile-energy-monitor-data-voltage span:after{
+.tile-energy-monitor-data-voltage span::after{
     content: 'В';
     font-size: 50%;
 }
-.tile-energy-monitor-data-current span:after{
+.tile-energy-monitor-data-current span::after{
     content: 'А';
     font-size: 50%;
 }

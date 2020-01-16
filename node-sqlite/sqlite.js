@@ -17,6 +17,23 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 // TODO: async
 
 var bindings;
+const fs = require('fs');
+module.dirname = require('path').dirname(module.filename);
+var dirs = fs.readdirSync(module.dirname);
+dirs.some(function(dir) {
+        try {
+            if (fs.statSync(`${module.dirname}/${dir}`).isDirectory()) {
+                console.log(`Try load ./${dir}/sqlite3_bindings.node...`);
+                bindings = require(`./${dir}/sqlite3_bindings.node`);
+                console.log('...module load successfully.');
+                return true;
+            }
+        } catch (err) {
+            console.log(err.message);
+        }
+    }
+);
+/*
 //bindings = require('./' + process.platform + "/" + "sqlite3_bindings");
 if(!bindings)
     try{
@@ -34,7 +51,7 @@ if(!bindings)
     try{
         bindings = require("./omega2/sqlite3_bindings.node");
     }catch(err){}
-
+*/
 if(!bindings)
     throw new Error('sqlite3_bindings not loaded');
 
