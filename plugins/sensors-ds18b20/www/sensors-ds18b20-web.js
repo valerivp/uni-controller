@@ -5,12 +5,7 @@ sensorsTypes.add( 'DS18B20', {
         align: 'right',
         data: (sd) => Number(sd.param('temperature') / 10).toFixed(1)
     },
-/*    timeLabel: {
-        title: 'Данные получены',
-        align: 'right',
-        data: (sd) => sd.timelabel2string()
-    },
-*/    dataAge:{
+    dataAge:{
         title: 'Сек. назад',
         align: 'right',
         data: (sd) => sd.dataAge()

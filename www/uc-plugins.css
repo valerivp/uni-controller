@@ -137,6 +137,18 @@
 
 }
 
+/* time-schema v.0.0.1 */
+#tab-content-time-schema-settings .values-short input[type="text"] {
+    flex-grow: 1;
+    max-width: 7ex;
+    min-width: 5ex;
+}
+
+#tab-content-time-schema-settings .values-short >div:not(:first-child) span {
+    flex-grow: 1;
+    max-width: 20ex;
+    min-width: 15ex;
+}
 /* tile-temperature-humidity-battery v.0.0.1 */
 
 .tile-t-h-b .tile-caption-data{

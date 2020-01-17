@@ -8,7 +8,7 @@ module.exports.init = function () {
     db.init(getDbInitData());
 
     // noinspection JSUnresolvedVariable
-    let MaxTimeSchemasCount = db.querySync("SELECT MaxTimeSchemasCount FROM TimeSchemasSettings")[0].MaxTimeSchemasCount;
+    let MaxTimeSchemasCount = db.querySync("SELECT MaxCount FROM TimeSchemasSettings")[0].MaxCount;
     db.querySync("DELETE FROM TimeSchemasParams WHERE ID > $MaxTimeSchemasCount", {$MaxTimeSchemasCount: MaxTimeSchemasCount});
     for(let i = 1; i <= MaxTimeSchemasCount; i++){
         db.querySync("INSERT OR IGNORE INTO TimeSchemasParams (ID) VALUES ($ID)", {$ID: i});
@@ -18,21 +18,23 @@ module.exports.init = function () {
 wscli.context.add('TimeSchema');         /** @namespace wscli.context.TimeSchema */
 
 
-wscli.commands.add('TimeSchema', 'Set current TimeSchema. TimeSchema as param.',
+wscli.commands.add({TimeSchema: Number},
     function(arg){
         arg = 0 | arg;
         wscli.context.current = wscli.context.TimeSchema;
         if( !arg || checkRangeTimeSchema(arg)) // noinspection CommaExpressionJS
             wscli.current.TimeSchema = arg;
         return true;
-    });
+    },
+    'Set current TimeSchema.'
+);
 
 // noinspection JSUnusedLocalSymbols
 function GetInfo(info, arg) {
     if(wscli.context.current === wscli.context.TimeSchema){
         let res = false;
         // noinspection JSUnresolvedVariable
-        let TimeSchemasCount = db.querySync("SELECT TimeSchemasCount FROM TimeSchemasSettings")[0].TimeSchemasCount;
+        let TimeSchemasCount = db.querySync("SELECT Count FROM TimeSchemasSettings")[0].Count;
         let q = `SELECT * FROM TimeSchemasParams WHERE (ID = $ID OR ($ID = 0 AND ID <= $TimeSchemasCount))`;
         let rows = db.querySync(q, {$ID: wscli.current.TimeSchema, $TimeSchemasCount: TimeSchemasCount});
         rows.forEach(function (row) { // noinspection JSUnresolvedVariable
@@ -47,8 +49,8 @@ function GetInfo(info, arg) {
     }
 }
 
-wscli.commands.add('GetType', 'Get current TimeSchema type.', GetInfo.bind(undefined, 'Type'));
-wscli.commands.add('GetParams', 'Get current TimeSchema params.', GetInfo.bind(undefined, 'Params'));
+wscli.commands.add({GetName: null}, GetInfo.bind(undefined, 'Name'), 'Get TimeSchema name.');
+wscli.commands.add({GetParams: null}, GetInfo.bind(undefined, 'Params'), 'Get TimeSchema params.');
 
 function SetInfo(info, arg) {
     if(wscli.context.current === wscli.context.TimeSchema){
@@ -65,36 +67,39 @@ function SetInfo(info, arg) {
     }
 
 }
-wscli.commands.add('SetName', 'Set current TimeSchema name.', SetInfo.bind(undefined, 'Name'));
-wscli.commands.add('SetType', 'Set current TimeSchema type.', SetInfo.bind(undefined, 'Type'));
-wscli.commands.add('SetParams', 'Set current TimeSchema params.', SetInfo.bind(undefined, 'Params'));
+wscli.commands.add({SetName: String}, SetInfo.bind(undefined, 'Name'), 'Set TimeSchema name.');
+wscli.commands.add({SetParams:String}, SetInfo.bind(undefined, 'Params'), 'Set TimeSchema params.');
 
 // noinspection JSUnusedLocalSymbols
-wscli.commands.add('GetTimeSchemasCount', 'Get TimeSchemas count.',
+wscli.commands.add({GetCount: null},
     function(arg){
-        let row = db.querySync("SELECT TimeSchemasCount FROM TimeSchemasSettings")[0];
+        let row = db.querySync("SELECT Count FROM TimeSchemasSettings")[0];
         // noinspection JSUnresolvedVariable
-        wscli.sendClientData(`#TimeSchemaCount:${row.TimeSchemasCount}`);
+        wscli.sendClientData(`#TimeSchema,Count:${row.Count}`);
         return true;
-    });
+    },
+    'Get TimeSchemas count.'
+);
 
-function checkRangeTimeSchema(arg) {
+function checkRangeTimeSchema(arg, allowZero) {
     // noinspection JSUnresolvedVariable
-    return wscli.checkInRange(arg, 1,
-        db.querySync("SELECT MaxTimeSchemasCount FROM TimeSchemasSettings")[0].MaxTimeSchemasCount,
+    return wscli.checkInRange(arg, allowZero ? 0 : 1,
+        db.querySync("SELECT MaxCount FROM TimeSchemasSettings")[0].MaxCount,
         'TimeSchema');
 }
 
-wscli.commands.add('SetTimeSchemasCount', 'Set TimeSchemas count. Count as param.',
+wscli.commands.add({SetCount:Number},
     function(arg){
         arg = 0 | arg;
-        checkRangeTimeSchema(arg);
-        db.querySync("UPDATE TimeSchemasSettings SET TimeSchemasCount = $TimeSchemasCount", {$TimeSchemasCount: arg});
-        let row = db.querySync("SELECT TimeSchemasCount FROM TimeSchemasSettings")[0];
-        /** @namespace row.TimeSchemasCount */
-        wscli.sendData(`#TimeSchemaCount:${row.TimeSchemasCount}`);
+        checkRangeTimeSchema(arg, true);
+        db.querySync("UPDATE TimeSchemasSettings SET Count = $TimeSchemasCount", {$TimeSchemasCount: arg});
+        let row = db.querySync("SELECT Count FROM TimeSchemasSettings")[0];
+        /** @namespace row.Count */
+        wscli.sendData(`#TimeSchema,Count:${row.Count}`);
         return true;
-    });
+    },
+    'Set TimeSchemas count.'
+);
 
 
 // noinspection JSUnusedLocalSymbols
@@ -110,11 +115,11 @@ function getDbInitData() {
             "TimeSchemasSettings": {
               "schema": {
                 "ID": "INTEGER PRIMARY KEY AUTOINCREMENT",
-                "MaxTimeSchemasCount": "INTEGER NOT NULL",
-                "TimeSchemasCount": "INTEGER NOT NULL"
+                "MaxCount": "INTEGER NOT NULL",
+                "Count": "INTEGER NOT NULL"
               },
               "data": [
-                {"ID": 0, "TimeSchemasCount": 0, "MaxTimeSchemasCount": 8}
+                {"ID": 0, "Count": 0, "MaxCount": 8}
               ]
             },
             "TimeSchemasParams": {

@@ -8,7 +8,7 @@ module.exports.init = function () {
     db.init(getDbInitData());
 
     // noinspection JSUnresolvedVariable
-    let MaxTilesCount = db.querySync("SELECT MaxTilesCount FROM TilesSettings")[0].MaxTilesCount;
+    let MaxTilesCount = db.querySync("SELECT MaxCount FROM TilesSettings")[0].MaxCount;
     db.querySync("DELETE FROM TilesParams WHERE ID > $MaxTilesCount", {$MaxTilesCount: MaxTilesCount});
     for(let i = 1; i <= MaxTilesCount; i++){
         db.querySync("INSERT OR IGNORE INTO TilesParams (ID) VALUES ($ID)", {$ID: i});
@@ -23,7 +23,7 @@ wscli.commands.add({Tile: Number}, (arg)=>{
         wscli.current.tile = arg;
         return true;
     },
-    'Set current tile. Tile as param.'
+    'Set current tile.'
 );
 
 // noinspection JSUnusedLocalSymbols
@@ -32,7 +32,7 @@ function GetInfo(info, arg) {
         checkRangeTile(wscli.current.tile, true);
         let res = false;
         // noinspection JSUnresolvedVariable
-        let TilesCount = db.querySync("SELECT TilesCount FROM TilesSettings")[0].TilesCount;
+        let TilesCount = db.querySync("SELECT Count FROM TilesSettings")[0].Count;
         let q = `SELECT * FROM TilesParams WHERE (ID = $ID OR ($ID = 0 AND ID <= $TilesCount))`;
         let rows = db.querySync(q, {$ID: wscli.current.tile, $TilesCount: TilesCount});
         rows.forEach(function (row) { // noinspection JSUnresolvedVariable
@@ -65,7 +65,7 @@ function SetInfo(info, arg) {
     }
 
 }
-wscli.commands.add({SetName: String}, SetInfo.bind(undefined, 'Name'), 'Set tile name.');
+//wscli.commands.add({SetName: String}, SetInfo.bind(undefined, 'Name'), 'Set tile name.');
 wscli.commands.add({SetType: String}, SetInfo.bind(undefined, 'Type'), 'Set tile type.');
 wscli.commands.add({SetParams: String}, SetInfo.bind(undefined, 'Params'), 'Set tile params.');
 
@@ -73,9 +73,9 @@ wscli.commands.add({SetParams: String}, SetInfo.bind(undefined, 'Params'), 'Set 
 wscli.commands.add({GetCount: null},(arg) => {
         if (wscli.context.current === wscli.context.tile) {
             wscli.checkInRange(wscli.current.tile, 0, 0, 'Tile');
-            let row = db.querySync("SELECT TilesCount FROM TilesSettings")[0];
+            let row = db.querySync("SELECT Count FROM TilesSettings")[0];
             // noinspection JSUnresolvedVariable
-            wscli.sendClientData(`#Tile,Count:${row.TilesCount}`);
+            wscli.sendClientData(`#Tile,Count:${row.Count}`);
             return true;
         }
     },
@@ -84,25 +84,22 @@ wscli.commands.add({GetCount: null},(arg) => {
 
 function checkRangeTile(arg, allowZero) {
     // noinspection JSUnresolvedVariable
-    let arr = [];
-    if(allowZero)
-        arr.push([0, 0]);
-    arr.push([1, db.querySync("SELECT MaxTilesCount FROM TilesSettings")[0].MaxTilesCount]);
-    return wscli.checkInRange(arg, arr, 'Tile');
+    return wscli.checkInRange(arg, allowZero ? 0 : 1,
+        db.querySync("SELECT MaxCount FROM TilesSettings")[0].MaxCount, 'Tile');
 }
 
 wscli.commands.add({SetCount: Number}, (arg)=>{
         if (wscli.context.current === wscli.context.tile) {
             wscli.checkInRange(wscli.current.tile, 0, 0, 'Tile');
             checkRangeTile(arg);
-            db.querySync("UPDATE TilesSettings SET TilesCount = $TilesCount", {$TilesCount: arg});
-            let row = db.querySync("SELECT TilesCount FROM TilesSettings")[0];
-            /** @namespace row.TilesCount */
-            wscli.sendData(`#Tile,Count:${row.TilesCount}`);
+            db.querySync("UPDATE TilesSettings SET Count = $TilesCount", {$TilesCount: arg});
+            let row = db.querySync("SELECT Count FROM TilesSettings")[0];
+            /** @namespace row.Count */
+            wscli.sendData(`#Tile,Count:${row.Count}`);
             return true;
         }
     },
-    'Set tiles count. Count as param.'
+    'Set tiles count.'
 );
 
 
@@ -119,11 +116,11 @@ function getDbInitData() {
             "TilesSettings": {
               "schema": {
                 "ID": "INTEGER PRIMARY KEY AUTOINCREMENT",
-                "MaxTilesCount": "INTEGER NOT NULL",
-                "TilesCount": "INTEGER NOT NULL"
+                "MaxCount": "INTEGER NOT NULL",
+                "Count": "INTEGER NOT NULL"
               },
               "data": [
-                {"ID": 0, "TilesCount": 1, "MaxTilesCount": 8}
+                {"ID": 0, "Count": 1, "MaxCount": 8}
               ]
             },
             "TilesParams": {

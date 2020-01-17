@@ -83,7 +83,7 @@ module.exports.init = function(){
                     fs.appendFileSync(module.exports["web-plugins.js"], fs.readFileSync(row.Directory + '/' + file));
 
                     let end = `\n}
-                    \nmm['${row.Name}'] = new ${row.Name.toCamel()}_class();\n`;
+                        \nmm['${row.Name}'] = new ${row.Name.toCamel()}_class();\n`;
                     fs.appendFileSync(module.exports["web-plugins.js"], end);
                 });
 

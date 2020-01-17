@@ -32,6 +32,7 @@ Object.defineProperty(Tile.prototype, 'type', {
     },
 });
 
+/*
 Tile.prototype = {
     get id() {
         return this._id;
@@ -49,7 +50,7 @@ Tile.prototype = {
         }
     },
 };
-
+*/
 
 function Tiles() {
 }
@@ -99,11 +100,7 @@ const vTiles = new Vue({
             vContent.setTab('tile-settings', {tileId: id});
         },
         checkTile(t, allowZero){
-            let arr = [];
-            if(allowZero)
-                arr.push([0, 0]);
-            arr.push([1, this.tiles.length()]);
-            return checkInRange(t, arr, "Tile id");
+            return checkInRange(t, allowZero ? 0 : 1, this.tiles.length(), "Tile id");
         },
 
         getCSSClass(id){

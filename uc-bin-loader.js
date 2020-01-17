@@ -5,6 +5,7 @@ const basedir = require('path').dirname(process.mainModule.filename);
 const utils = require(`${basedir}/uc-utils`);
 
 module.exports = function (mod, bin) {
+    let errors = '';
     const fs = require('fs');
     let dirname = require('path').dirname(mod.filename);
     var dirs = fs.readdirSync(dirname);
@@ -12,13 +13,12 @@ module.exports = function (mod, bin) {
     dirs.some(function(dir) {
             try {
                 if (fs.statSync(`${dirname}/${dir}`).isDirectory()) {
-                    utils.file.log(`Try load ./${dir}/${bin}.node...`);
                     res = require(`${dirname}/${dir}/${bin}.node`);
-                    utils.file.log('...module load successfully.');
+                    utils.file.log(`Load ./${dir}/${bin}.node`);
                     return true;
                 }
             } catch (err) {
-                utils.file.log(err.message);
+                errors += `${err.message}\n`;
             }
         }
     );
