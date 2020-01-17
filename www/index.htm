@@ -49,7 +49,6 @@
                  v-bind:class="(isShow(tab)?'sMenuItemSelected':'')">{{tab.title}}</div>
         </div>
     </div>
-    <!--<div id="tabs-content" v-bind:class="(!isConnected?'zzStBlur':'')">v-show="isShow(tab)"-->
     <div id="tabs-content">
         <div v-for="tab in tabsList" v-show="isShow(tab)" v-bind:id="'tab-wrap-' + tab.id" v-bind:key="tab.id">
             <div v-bind:id="'tab-' + tab.id">
@@ -60,7 +59,7 @@
 </div>
 
 
-<script type="text/x-template"  id="tab-content-sensors">
+<script type="text/x-template" id="tab-content-sensors">
     <div id="tab-content-sensors" title="Датчики">
         <div id="content-sensors">
             <div v-for="type in types.types()" v-if="getSensorsByType(type).length" >
@@ -68,7 +67,7 @@
                 <table class="sSensorsTable">
                     <tr>
                         <th>{{'undefined' == String(type)  ? '#' : type}}</th>
-                        <th v-for="data in types.data(type)" v-bind:style="data.align ? 'text-align: ' + data.align : ''">{{data.title}}</th>
+                        <th v-for="data in types.data(type)" v-bind:style="data.align ? 'text-align: ' + data.align : ''">{{data.title}}<span style="font-size: 75%">{{data.unit ? ', ' + data.unit : ''}}</span></th>
                     </tr>
                     <tr v-for="sensor in getSensorsByType(type)">
                         <td class="sSensorName">
@@ -88,7 +87,7 @@
 
 
 
-<script type="text/x-template"  id="tab-content-terminal">
+<script type="text/x-template" id="tab-content-terminal">
     <div id="tab-content-terminal" title="Терминал">
         <div id="terminal" class="flex">
             <div class="flex wrap">
@@ -124,7 +123,7 @@
 
 
 <script type="text/x-template"  id="tab-content-about">
-    <div id="tab-content-about" title="О системе">
+    <div title="О системе">
         <properties-panel id="about"></properties-panel>
     </div>
 </script>
@@ -140,11 +139,10 @@
     </div>
     <div>
         <span>Валерий Просвирнин</span>
-        <span><a href="mailto:valerivp@vehs.ru" target="_blank" rel="noopener noreferrer">valerivp@vehs.ru</a></span>
+        <span><a href="mailto:valerivp@google.com" target="_blank" rel="noopener noreferrer">valerivp@google.com</a></span>
     </div>
     <div>
-        <span></span>
-        <span><a href="http://www.vehs.ru" target="_blank" rel="noopener noreferrer">www.vehs.ru</a></span>
+        <span style="max-width: fit-content;"><a href="https://github.com/valerivp/uni-controller" target="_blank" rel="noopener noreferrer">github.com/valerivp/uni-controller</a></span>
     </div>
 </script>
 
@@ -167,11 +165,11 @@
         <span>Режим приложения</span>
     </div>
     <div>
-            <span style="max-width: fit-content;">
-                <span style="font-size: 75%;">Режим без строки адреса работает в Chrome для Android.<br>
-                    Для запуска в этом режиме необходимо добавить ярлык страницы на главный экран из меню браузера и запускать с помощью ярлыка на главном экране.<br>
-                </span>
+        <span style="max-width: fit-content;">
+            <span style="font-size: 75%;">Режим без строки адреса работает в Chrome для Android.<br>
+                Для запуска в этом режиме необходимо добавить ярлык страницы на главный экран из меню браузера и запускать с помощью ярлыка на главном экране.<br>
             </span>
+        </span>
     </div>
 </script>
 
@@ -192,6 +190,20 @@
         <div>
             <span>Дата и время</span>
             <span>{{time && time.toString ? time.toFormatString('dd.mm.yyyy hh:ii:ss') : ''}}</span>
+        </div>
+    </div>
+
+</script>
+
+<script type="text/x-template" id="about-plugins">
+    <div>
+        <div>
+            <span>Модуль</span>
+            <span>Версия</span>
+        </div>
+        <div v-for="plugin in plugins" style="line-height: 0.5em;">
+            <span><span style="font-size: 75%;">{{plugin.name}}</span></span>
+            <span><span style="font-size: 75%;">{{plugin.version}}</span></span>
         </div>
     </div>
 

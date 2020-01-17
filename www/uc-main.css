@@ -374,6 +374,9 @@ body.dark{
 /* -- Content pages -- */
 /* ----------------------------- */
 
+.sProperties > div > div:first-child > span:first-child{
+    font-weight: bolder
+}
 .sProperties > div:not(:first-child){
     border: 0;
     border-top: 1px;

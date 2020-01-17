@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const utils = require("./uc-utils").init(false);
 const db = require("./uc-db").init(getDbInitData());
+const router = require("./uc-router");
 
 const mm = module.exports;
 
@@ -337,3 +338,17 @@ function uninit(uninitData){
     }
 
 }
+
+let urlPlugins = "/plugins";
+router.get(urlPlugins,
+    function (req, res) {
+        res.writeHead(200, {'Content-Type': 'text/json'});
+        let q = `SELECT Name AS name, Version as version
+            FROM mem.LoadedPlugins AS LoadedPlugins
+            LEFT JOIN Plugins AS Plugins
+                ON LoadedPlugins.PluginID = Plugins.ID
+            ORDER BY [Order]`;
+        res.write(JSON.stringify(db.querySync(q)));
+        res.end();
+    },
+    'get plugins info');

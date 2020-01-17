@@ -165,10 +165,10 @@ const vTerminal = new Vue({
         cmdHistoryPos:0,
     },
     methods: {
-        clear: function (event) {
+        clear(event) {
             this.ReceivedText = ''
         },
-        send: function (event) {
+        send(event) {
             wscli.send(this.TextForSend);
             if(this.cmdHistory[this.cmdHistoryPos] !== this.TextForSend) {
                 if(this.cmdHistory[this.cmdHistory.length - 1] !== this.TextForSend)
@@ -179,19 +179,19 @@ const vTerminal = new Vue({
 
             this.TextForSend = '';
         },
-        prevCmd: function (event) {
+        prevCmd(event) {
             if(this.cmdHistoryPos) {
                 this.cmdHistoryPos--;
                 this.TextForSend = this.cmdHistory[this.cmdHistoryPos];
             }
         },
-        nextCmd: function (event) {
+        nextCmd(event) {
             if((this.cmdHistoryPos + 1) < this.cmdHistory.length) {
                 this.cmdHistoryPos++;
                 this.TextForSend = this.cmdHistory[this.cmdHistoryPos];
             }
         },
-        writeLog: function (text) {
+        writeLog(text) {
             if (String(text).indexOf("#time:") === 0) {
                 if (this.NoPeriodicInfoLog)
                     return;
@@ -204,7 +204,9 @@ const vTerminal = new Vue({
                     el.scrollTop = el.scrollHeight;
             }
         },
-        log: function(text) {this.writeLog(text + '\n');},
+        log(text) {
+            this.writeLog(text + '\n');
+        },
     }
 });
 
@@ -454,6 +456,7 @@ vAbout.add(
             platform:'',
             chipID:'',
             uptimeText:'',
+            plugins:[],
         }},
         computed: {
             time: () => $store.state.time,
@@ -463,12 +466,12 @@ vAbout.add(
             fetchInfo() {
                 axios.get(`http://${serverLocation}/system`).then(response => {
                     this.platform = response.data.trim();
-                }).catch(function (error) {vToasts.addHttpError(error); console.log(error);});
+                }).catch(function (error) {vToasts.addHttpError(error); vTerminal.log(error);});
             },
             fetchUptime() {
                 axios.get(`http://${serverLocation}/uptime`).then(response => {
                     this.uptimeText = response.data;
-                }).catch(function (error) {vToasts.addHttpError(error); console.log(error);});
+                }).catch(function (error) {vToasts.addHttpError(error); vTerminal.log(error);});
             },
             onFetch: function () {
                 this.fetchInfo();
@@ -479,6 +482,29 @@ vAbout.add(
             this.$parent.$on('fetch', this.onFetch);
         },
         template:    "#about-system"
+    })
+);
+
+
+vAbout.add(
+    Vue.component('about-plugins', {
+        data:()=> {return {
+            plugins:[],
+        }},
+        methods: {
+            fetchPlugins() {
+                axios.get(`http://${serverLocation}/plugins`).then(response => {
+                    this.plugins = response.data;
+                }).catch(function (error) {vToasts.addHttpError(error); vTerminal.log(error);});
+            },
+            onFetch: function () {
+                this.fetchPlugins();
+            },
+        },
+        created: function() {
+            this.$parent.$on('fetch', this.onFetch);
+        },
+        template:    "#about-plugins"
     })
 );
 
@@ -538,18 +564,18 @@ vSettings.add(
                         data: bodyFormData,
                         config: { headers: {'Content-Type': 'multipart/form-data' }}})
                     .then(function (response) {
-                        console.log(response);
+                        vTerminal.log(response);
                         vToasts.add(response.data);})
                     .catch(function (error) {
                         vToasts.addHttpError(error);
-                        console.log(error);});
+                        vTerminal.log(error);});
             },
             onFetch: function () {
                 axios.get(`http://${serverLocation}/user?format=json`)
                     .then(response => {
                         this.httpUserName = response.data.name;})
                     .catch(function (error) {
-                        vToasts.addHttpError(error); console.log(error);});
+                        vToasts.addHttpError(error); vTerminal.log(error);});
             },
         },
         created: function() {
@@ -566,8 +592,8 @@ vSettings.add(
         methods: {
             sendReboot:()=>{
                 axios.post(`http://${serverLocation}/reboot`)
-                    .then((response) => { console.log(response); vToasts.add(response.data);})
-                    .catch((error) => {console.log(error);});
+                    .then((response) => { vTerminal.log(response); vToasts.add(response.data);})
+                    .catch((error) => {vTerminal.log(error);});
             },
         },
         template: "#settings-reboot"
@@ -726,7 +752,6 @@ function WSCli (ws){
                                 let message = `Cmd executing error: ${cmd} ${err.message || err}`;
                                 vTerminal.log(message);
                                 vToasts.add(message);
-                                console.error(message);
                                 break;
                             }
                         }
