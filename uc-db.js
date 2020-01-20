@@ -39,10 +39,12 @@ function querySync(query, par) {
     if(query.match(/^BEGIN|^COMMIT|^ROLLBACK/mi))
         throw("do not use SQL transactions");
 
-    let result = undefined;
-    db.query(query, par, function (rows) {
-        result = rows;
+    let result = db.query(query, par);
+/*
+    db.query(query, par, function (rows, all) {
+        result = all[all.length -1];
     });
+*/
     return result;
 }
 

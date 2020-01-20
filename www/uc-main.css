@@ -39,6 +39,9 @@ input, button, select{
     margin-left: 1ex;
     margin-top: 1ex;
 }
+label input{
+    margin: 0;
+}
 
 input:last-child, button:last-child, select:last-child, label:last-child{
     margin-right: 1ex;
@@ -374,8 +377,8 @@ body.dark{
 /* -- Content pages -- */
 /* ----------------------------- */
 
-.sProperties > div > div:first-child > span:first-child{
-    font-weight: bolder
+.sProperties > div > div:first-child > *:first-child{
+    font-weight: normal;
 }
 .sProperties > div:not(:first-child){
     border: 0;
@@ -393,22 +396,18 @@ body.dark{
 .sProperties > div > div:last-child{
     margin-bottom: 1ex;
 }
-.sProperties  span{
+.sProperties span, .sProperties label{
     margin-left: 1ex;
     margin-top: 1ex;
     flex-grow: 1;
     max-width: 30ex;
 }
-.sProperties span span{
+.sProperties label span{
     margin: 0ex;
 }
-.sProperties  span:last-child{
+.sProperties span:last-child{
     margin-right: 1ex;
     flex-grow: 0;
-}
-
-.sProperties > div > div{
-    align-items: center;
 }
 
 .sProperties input:not([type="checkbox"], [type="file"]), .sProperties select  {

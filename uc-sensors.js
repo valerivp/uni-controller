@@ -34,16 +34,8 @@ wscli.commands.add({SetName: String}, (arg) =>{
         if(wscli.context.current === wscli.context.sensor){
             sensors.checkRangeSensorID(wscli.current.sensor);
             if(arg) {
-                try {
-                    db.beginTransaction();
-                    let q = `REPLACE INTO SensorsNames (ID, Name) VALUES ($ID, $Name)`;
-                    db.querySync(q, {$ID: wscli.current.sensor, $Name: arg});
-                    db.commitTransaction();
-                }catch (err){
-                    if(db.isTransaction())
-                        db.rollbackTransaction();
-                    throw err;
-                }
+                let q = `REPLACE INTO SensorsNames (ID, Name) VALUES ($ID, $Name)`;
+                db.querySync(q, {$ID: wscli.current.sensor, $Name: arg});
             } else {
                 db.querySync('DELETE FROM SensorsNames WHERE ID = $ID', {$ID: wscli.current.sensor});
             }
@@ -128,15 +120,7 @@ module.exports.updateSensorData = function(sensor, params){
         // noinspection JSUnfilteredForInLoop
         q += `INSERT INTO mem.SensorsParams (ID, Param, Value) VALUES ($ID, '${key}', ${kebab_params[key]});\n`;
     }
-    try{
-        db.beginTransaction();
-        db.querySync(q, qp);
-        db.commitTransaction();
-    }catch (err){
-        if(db.isTransaction())
-            db.rollbackTransaction();
-        throw(err);
-    }
+    db.querySync(q, qp);
 
     EventEmitter.emit(EventEmitter.events.SensorDataReceived,
         {id: sensor.ID, type: sensor.Type, timelabel: new Date(sensor.TimeLabel), params: kebab_params});

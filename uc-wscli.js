@@ -124,10 +124,10 @@ wscli.commands = {
         const _name = 'cmd-' + name.toLowerCase();
 
         if(!this[_name])
-            this[_name] = {name: name, type: type, funcs: [], about: []};
-        else if(this[_name].type !== type)
-            throw new Error(`Command is already registered with a different type of parameter: ${name}`)
-        this[_name].funcs.push(func);
+            this[_name] = {name: name, funcs: [], about: []};
+        //else if(this[_name].type !== type)
+        //    throw new Error(`Command is already registered with a different type of parameter: ${name}`)
+        this[_name].funcs.push({cb: func, type: type});
         this[_name].about.push(about);
     }
 };
@@ -139,7 +139,7 @@ wscli.commands.add({Help: null}, (arg)=> {
             if (key.slice(0, 4) === 'cmd-'){
                 // noinspection JSUnfilteredForInLoop
                 let command = wscli.commands[key];
-                data += `${command.name}:${command.type === null ? 'none' : command.type.name} \t${command.about.join(' ')}\n`;
+                data += `${command.name}: \t${command.about.join(' ')}\n`;
             }
         }
         wscli.sendClientData(data);
@@ -174,9 +174,10 @@ function executeCmd(cmdText) {
     let command = wscli.commands['cmd-' + cmd.toLowerCase()];
     if(command){
         let result = undefined;
-        arg = wscli.data.fromString(arg, command.type);
         for(let i = 0; i < command.funcs.length; i++) {
-            let res = command.funcs[i](arg);
+            let func = command.funcs[i];
+            let arg1 = wscli.data.fromString(arg, func.type);
+            let res = func.cb(arg1);
             if (res === true) {
                 wscli.sendClientData(`#Cmd:${command.name},CmdRes:Ok`);
                 result = true;
@@ -246,6 +247,8 @@ wscli.data = {
         }else if(typeof data === "date" || data instanceof Date){
             res = new Date(data).toFormatString('yyyymmddThhiiss');
 
+        }else if(typeof data === "array" || data instanceof Array){
+            res = data.map((item)=>this.toString(item)).join(',');
         }else{
             let arr = [];
             for (let key in data)
@@ -261,8 +264,20 @@ wscli.data = {
             res = {};
             arr.forEach(function (item) {
                 let key = item.match(/(?:[^=\\]+|\\.)+/)[0];
-                res[wscli.data.fromString(key, String)] = wscli.data.fromString(item.slice(key.length + 1), String);
+
+                let val = wscli.data.fromString(item.slice(key.length + 1), String);
+                if (val === "undefined")
+                    val = undefined;
+                else if (val === "true")
+                    val = true;
+                else if (val === "false")
+                    val = false;
+
+                res[wscli.data.fromString(key, String)] = val;
             });
+        }else if(type === Array){
+            res = String(data).match(/(?:[^,\\]+|\\.)+/gm) || [];
+
         } else if(type === String){
             res = data;
             for (let i = 0; i < this._charsForShielding.length; i++)

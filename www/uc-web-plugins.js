@@ -216,6 +216,14 @@ TilesComponentsTypes.prototype.add = function(name, params){
     this[name] = params;
     this[name].name = name;
 };
+
+TilesComponentsTypes.prototype.length = function () {
+    let res = 0;
+    // noinspection JSCheckFunctionSignatures
+    Object.keys(this).forEach(() => res++);
+    return res;
+};
+
 const vTilesComponentsTypes = new TilesComponentsTypes;
 module.exports.components = {types: vTilesComponentsTypes};
 
@@ -382,16 +390,16 @@ const vTileSettings = new Vue({
             if(this.selectedTypeName)
                 setTimeout(this.$emit.bind(this, `hide-${this.selectedTypeName}-settings`), 1);
         },
+    },
+    computed:{
         types(){
             let res = vTilesComponentsTypes;
             if(this.selectedTypeName && !res[this.selectedTypeName]){
                 res = Object.assign(new TilesComponentsTypes(), res);
-                res.add(this.selectedTypeName, {title: this.selectedTypeName + ', not instaled'});
+                res.add(this.selectedTypeName, {title: this.selectedTypeName + ', not installed'});
             }
             return res;
         },
-    },
-    computed:{
         //isActive: () => vContent.
         tiles: ()=> vTiles.tiles,
         tilesCount: {
@@ -454,7 +462,8 @@ const vTileSettings = new Vue({
                 <div>
                     <span>Тип данных</span>
                     <select v-model="selectedTypeName">
-                        <option v-for="type in types()" v-bind:value="type.name">{{type.title}}</option>
+                        <option disabled value="" v-if="!types.length()">не выбрано</option>
+                        <option v-for="type in types" v-bind:value="type.name">{{type.title}}</option>
                     </select>
                 </div>
             </div>
@@ -479,24 +488,36 @@ wscli.commands.add({Tile: Number}, (arg) => {
     }
 );
 
-wscli.commands.add({Type: String}, (arg)=> {
-        if(wscli.context.current === wscli.context.tile){
-            vTiles.checkTile(wscli.current.tile);
-            if(vTiles.tiles[wscli.current.tile].type !== arg)
-                Vue.set(vTiles.tiles[wscli.current.tile], "type", arg);
-            return true;
-        }
-    }
-);
+function SetInfo(info, arg) {
+     if(wscli.context.current === wscli.context.tile){
+         vTiles.checkTile(wscli.current.tile);
+         Vue.set(vTiles.tiles[wscli.current.tile], info, arg);
+         return true;
+     }
+}
 
-wscli.commands.add({Params: Object}, (arg) =>{
-        if(wscli.context.current === wscli.context.tile){
-            vTiles.checkTile(wscli.current.tile);
-            Vue.set(vTiles.tiles[wscli.current.tile], 'params', arg);
-            return true;
-        }
-    }
-);
+wscli.commands.add({Name: String}, SetInfo.bind(undefined, 'name'));
+wscli.commands.add({Type: String}, SetInfo.bind(undefined, 'type'));
+wscli.commands.add({Params: Object}, SetInfo.bind(undefined, 'params'));
+
+// wscli.commands.add({Type: String}, (arg)=> {
+//         if(wscli.context.current === wscli.context.tile){
+//             vTiles.checkTile(wscli.current.tile);
+//             if(vTiles.tiles[wscli.current.tile].type !== arg)
+//                 Vue.set(vTiles.tiles[wscli.current.tile], "type", arg);
+//             return true;
+//         }
+//     }
+// );
+//
+// wscli.commands.add({Params: Object}, (arg) =>{
+//         if(wscli.context.current === wscli.context.tile){
+//             vTiles.checkTile(wscli.current.tile);
+//             Vue.set(vTiles.tiles[wscli.current.tile], 'params', arg);
+//             return true;
+//         }
+//     }
+// );
 
 wscli.commands.add({Count: Number}, (arg) => {
         if (wscli.context.current === wscli.context.tile) {
@@ -584,28 +605,47 @@ mm['sensor-data-sender'] = new sensorDataSender_class();
 function timeSchema_class(){
                         
 let module = {exports: this};
+const TimeSchemaComponentsTypes = function () {
+};
+TimeSchemaComponentsTypes.prototype.add = function(name, params){
+    this[name] = params;
+    this[name].name = name;
+};
+TimeSchemaComponentsTypes.prototype.length = function () {
+    let res = 0;
+    // noinspection JSCheckFunctionSignatures
+    Object.keys(this).forEach(() => res++);
+    return res;
+};
 
-
-const config = {};
+const vTimeSchemaComponentsTypes = new TimeSchemaComponentsTypes;
+module.exports.components = {types: vTimeSchemaComponentsTypes};
 
 
 function TimeSchema(pId) {
     this.params = {};
     this._id = pId;
-    this._name = '';
+    this._type = undefined;
+    this.name = '';
 }
 Object.defineProperty(TimeSchema.prototype, 'id', {
     get() { return this._id; },
     set(val) { throw('Property is read only'); },
 });
-Object.defineProperty(TimeSchema.prototype, 'name', {
+Object.defineProperty(TimeSchema.prototype, 'type', {
     get() {
-        return this._name;
+        return this._type;
     },
     set(val) {
-        this._name = val;
+        if(val !== this._type){
+            this.params = {};
+            this._type = val;
+        }
     },
 });
+TimeSchema.prototype.toString = function(){
+    return this.name.trim() === '' ? this.id : this.name;
+};
 
 
 function TimeSchemas() {
@@ -624,37 +664,27 @@ TimeSchemas.prototype.length = function () {
     return res;
 };
 
-function DataItem() {
-    this.time = 0;
-    this.value = undefined;
-}
-function DOWData(pdow) {
-    this._dow = pdow;
-    this.use = false;
-    this.data = [new DataItem(), new DataItem()];
-}
-Object.defineProperty(DOWData.prototype, 'dow', {
-    get() { return this._dow; },
-    set(val) { throw('Property is read only'); },
-});
 
 
 const vTimeSchemaSettings = new Vue({
     data: {
-        //_isActive: false,
-        _selectedTimeSchemaId: undefined,
+        _isActive: false,
+        _selectedTimeSchemaId: 0,
         timeSchemas: new TimeSchemas(),
-        dowData:[]
     },
 
     methods: {
         onShow(params){
-            //this.$data._isActive = true;
+            this.$data._isActive = true;
             if(params && params.TimeSchemaId)
                 this.selectedTimeSchemaId = params.TimeSchemaId;
+            if(this.selectedTypeName)
+                setTimeout(this.$emit.bind(this, `show-${this.selectedTypeName}-settings`), 2);
         },
         onHide(){
-            //this.$data._isActive = false;
+            this.$data._isActive = false;
+            if(this.selectedTypeName)
+                setTimeout(this.$emit.bind(this, `hide-${this.selectedTypeName}-settings`), 2);
         },
         checkTimeSchema(t, allowZero){
             return checkInRange(t, allowZero ? 0 : 1, this.timeSchemas.length(), "Time schema id");
@@ -665,7 +695,7 @@ const vTimeSchemaSettings = new Vue({
                 while (count < val){
                     count++;
                     Vue.set(this.timeSchemas, count, new TimeSchema(count));
-                    wscli.send(`#TimeSchema:${count},GetName,GetParams`);
+                    wscli.send(`#TimeSchema:${count},GetName`);
                 }
                 while (count > val)
                     Vue.delete(this.timeSchemas, count--);
@@ -676,33 +706,41 @@ const vTimeSchemaSettings = new Vue({
                 this.selectedTimeSchemaId = 0;
 
         },
+/*
         setParams(id, params){
             let data = `#TimeSchema:${id},SetParams:${wscli.data.toString(params)}`;
             wscli.send(data);
         },
+*/
         setName(id, name){
             let data = `#TimeSchema:${id},SetName:${wscli.data.toString(name)}`;
             wscli.send(data);
         },
     },
     computed:{
+        types(){
+            let res = vTimeSchemaComponentsTypes;
+            if(this.selectedTypeName && !res[this.selectedTypeName]){
+                res = Object.assign(new TimeSchemaComponentsTypes(), res);
+                res.add(this.selectedTypeName, {title: this.selectedTypeName + ', not installed'});
+            }
+            return res;
+        },
         timeSchemasCount: {
             get(){ return this.timeSchemas.length();},
             set(val){
                 wscli.send(`#TimeSchema,SetCount:${val}`);
-                if(val && this.selectedTimeSchemaId > val)
-                    this.selectedTimeSchemaId = val;
             }
         },
         selectedTimeSchema(){
-            return this.TimeSchemas[this.selectedTimeSchemaId] || {}; // для старта, когда нет схем
+            return this.timeSchemas[this.selectedTimeSchemaId] || {}; // для старта, когда нет схем
         },
         selectedTimeSchemaId: {
             get(){ return this.$data._selectedTimeSchemaId; },
             set(id){
                 this.$data._selectedTimeSchemaId = id;
                 if(id)
-                    wscli.send(`#TimeSchema:${id},GetName,GetParams`);
+                    wscli.send(`#TimeSchema:${id},GetName,GetType`);
             }
         },
         selectedTimeSchemaName: {
@@ -712,10 +750,28 @@ const vTimeSchemaSettings = new Vue({
                     : ''; },
             set(val){ this.setName(this.selectedTimeSchemaId, val); }
         },
+        selectedTypeName: {
+            get: function(){ return this.selectedTimeSchema.type; },
+            set: function(val){
+                if(val && this.selectedTimeSchema.type !== val){
+                    wscli.send(`#TimeSchema:${this.selectedTimeSchemaId},SetType:${val}`);
+                }
+            }
+        },
+    },
+    watch:{
+        selectedTypeName: function (newVal, oldVal) {
+            if(this.$data._isActive){
+                if(oldVal)
+                    setTimeout(this.$emit.bind(this, `hide-${oldVal}-settings`), 1);
+                if(newVal)
+                    setTimeout(this.$emit.bind(this, `show-${newVal}-settings`), 2);
+            }
+        }
     },
     created: function() {
-        for(let i = 0; i <= 7; i++)
-            this.dowData.push(new DOWData(i));
+        //for(let i = 0; i <= 7; i++)
+        //    this.dowData.push(new DOWData(i));
     },
     template:`
     <div id="tab-content-time-schema-settings" title="Настройка схемы">
@@ -724,7 +780,8 @@ const vTimeSchemaSettings = new Vue({
                 <div>
                     <span>Схема</span>
                     <select v-model="selectedTimeSchemaId">
-                        <option v-for="timeSchema in timeSchemas" v-bind:value="timeSchema.id">{{timeSchema.id}}</option>
+                        <option disabled value="0" v-if="!timeSchemas.length()">не выбрано</option>
+                        <option v-for="timeSchema in timeSchemas" v-bind:value="timeSchema.id">{{String(timeSchema)}}</option>
                     </select>
                     <div class="button-inc-dec">
                         <span> из </span>
@@ -738,33 +795,22 @@ const vTimeSchemaSettings = new Vue({
                     <input type="text" v-model.lazy="selectedTimeSchemaName">
                 </div>
             </div>
-            <div v-for="dow in dowData" v-show="selectedTimeSchemaId" class="values-short">
-                <div> <!--v-on:change="setParams(dow.)"-->
-                    <input v-if="dow.dow >= 1" type="checkbox" v-model="dow.use" >
-                    <span>{{['Общая настройка', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'][dow.dow]}}</span>
+            <div v-show="selectedTimeSchemaId">
+                <div>
+                    <span>Тип данных</span>
+                    <select v-model="selectedTypeName">
+                        <option disabled value="" v-if="!types.length()">не выбрано</option>
+                        <option v-for="type in types" v-bind:value="type.name">{{type.title}}</option>
+                    </select>
                 </div>
-
-                <div v-show="(!dow.dow) || dow.use">
-                    <span>время</span>
-                    <div>
-                    <!--v-model="settings[dow - 1][(int - 1)].begin_time"
-                               v-on:change="set_begin_time(dow - 1, int)"v-m    odel="settings[dow - 1][(int - 1)].temperature"
-                               v-on:change="set_temperature(dow - 1, int)"
-                    -->
-                        <input v-for="item in dow.data" type="text" placeholder="hh:mm"
-                               >
-                    </div>
-                </div>
-                <div v-show="(!dow.dow) || dow.use">
-                    <span>температура,&deg;C</span>
-                    <div>
-                        <input v-for="item in dow.data" type="text" placeholder="00.0"
-                               >
-                    </div>
-                </div>
-
             </div>
+            <div v-bind:is="selectedTypeName"
+                v-bind:type="selectedTypeName"
+                v-bind:time-schema="selectedTimeSchema"
+                v-bind:time-schema-id="selectedTimeSchemaId"
+                >
             
+            </div>
         </div>
     </div>`
 
@@ -781,23 +827,45 @@ wscli.commands.add({TimeSchema: Number}, (arg) => {
     }
 );
 
-wscli.commands.add({Name: String}, (arg)=> {
-        if(wscli.context.current === wscli.context.timeSchema){
-            vTimeSchemaSettings.checkTimeSchema(wscli.current.timeSchema);
-            Vue.set(vTimeSchemaSettings.timeSchemas[wscli.current.timeSchema], "name", arg);
-            return true;
-        }
+function SetInfo(info, arg) {
+    if(wscli.context.current === wscli.context.timeSchema){
+        vTimeSchemaSettings.checkTimeSchema(wscli.current.timeSchema);
+        Vue.set(vTimeSchemaSettings.timeSchemas[wscli.current.timeSchema], info, arg);
+        return true;
     }
-);
+}
 
-wscli.commands.add({Params: Object}, (arg) =>{
-        if(wscli.context.current === wscli.context.timeSchema){
-            vTimeSchemaSettings.checkTimeSchema(wscli.current.timeSchema);
-            Vue.set(vTimeSchemaSettings.timeSchemas[wscli.current.timeSchema], 'params', arg);
-            return true;
-        }
-    }
-);
+
+wscli.commands.add({Name: String}, SetInfo.bind(undefined, 'name'));
+wscli.commands.add({Type: String}, SetInfo.bind(undefined, 'type'));
+//wscli.commands.add({Params: Object}, SetInfo.bind(undefined, 'params'));
+// arg)=> {
+//         if(wscli.context.current === wscli.context.timeSchema){
+//             vTimeSchemaSettings.checkTimeSchema(wscli.current.timeSchema);
+//             Vue.set(vTimeSchemaSettings.timeSchemas[wscli.current.timeSchema], "name", arg);
+//             return true;
+//         }
+//     }
+// );
+//
+// wscli.commands.add({Name: String}, (arg)=> {
+//         if(wscli.context.current === wscli.context.timeSchema){
+//             vTimeSchemaSettings.checkTimeSchema(wscli.current.timeSchema);
+//             Vue.set(vTimeSchemaSettings.timeSchemas[wscli.current.timeSchema], "name", arg);
+//             return true;
+//         }
+//     }
+// );
+//
+//
+// wscli.commands.add({Params: Object}, (arg) =>{
+//         if(wscli.context.current === wscli.context.timeSchema){
+//             vTimeSchemaSettings.checkTimeSchema(wscli.current.timeSchema);
+//             Vue.set(vTimeSchemaSettings.timeSchemas[wscli.current.timeSchema], 'params', arg);
+//             return true;
+//         }
+//     }
+// );
 
 wscli.commands.add({Count: Number}, (arg) => {
         if (wscli.context.current === wscli.context.timeSchema) {
@@ -808,9 +876,212 @@ wscli.commands.add({Count: Number}, (arg) => {
     }
 );
 
+
+
 }
                         
 mm['time-schema'] = new timeSchema_class();
+
+/* time-schema-temperature v.0.0.1 */
+
+function timeSchemaTemperature_class(){
+                        
+let module = {exports: this};
+
+mm["time-schema"].components.types.add('time-schema-temperature', {title: 'Температура'});
+
+function DataItem() {
+    this.time = undefined;
+    this.value = undefined;
+//    this.index = (par || {}).index;
+/*    this.check = function () {
+        let v = Number.parseFloat(item.value);
+        this.value = isNaN(v) ? undefined : Number(v).toFixed(1);
+        let t = String(item.time).replaceAll(':', '');
+        t = Number.parseInt(t) % 10000;
+        this.time = isNaN(t) ? undefined
+            : `${String('00' + Math.trunc(t / 100)).slice(-2)}:${String('00' + (t % 100)).slice(-2)}`;
+        return this;
+    }
+*/
+}
+
+DataItem.prototype._toString = DataItem.prototype.toString;
+DataItem.prototype.toString = function(par){
+    if(par === undefined)
+        return this._toString();
+    else if(par === 'time'){
+        if(this.time !== undefined) {
+            let t = String(this.time).replaceAll(':', '');
+            t = Number.parseInt(t) % 10000;
+            t = isNaN(t) ? undefined : (t > 2359 ? 2359 : (t < 0 ? 0 : t));
+            t = t === undefined ? undefined
+                : `${String('00' + Math.trunc(t / 100)).slice(-2)}:${String('00' + (t % 100)).slice(-2)}`;
+            return t;
+        }
+    }else if(par === 'value'){
+        if(this.value !== undefined) {
+            let v = Number.parseFloat(this.value);
+            v = isNaN(v) ? undefined : v;
+            v = v === undefined ? undefined
+                : Number(v).toFixed(1);
+            return v;
+        }
+    }
+};
+
+
+function DOWData(pdow) {
+    this._dow = pdow;
+    this.use = false;
+    this.data = [];
+}
+Object.defineProperty(DOWData.prototype, 'dow', {
+    get() { return this._dow; },
+    set(val) { throw('Property is read only'); },
+});
+
+
+Vue.component('time-schema-temperature', {
+    data: function(){ return {
+            dowData:[]
+        };
+    },
+    props: {
+        type: String,
+        timeSchema: Object,
+        timeSchemaId: Number,
+    },
+    computed: {
+    },
+    methods: {
+        onShow() {
+            if (!this._isActive) {
+                this._isActive = !this._isActive;
+                wscli.send(`#TimeSchema:${this.timeSchemaId},GetParams`);
+            }
+        },
+        onHide() {
+            if (this._isActive) {
+                this._isActive = !this._isActive;
+            }
+
+        },
+        setDOWs(){
+            let mask = "";
+            for (var dow = 0; dow < 7; dow++) {
+                mask = (this.dowData[dow + 1].use ? "1" : "0") + mask;
+            }
+            mask = Number('0b' + mask);
+            wscli.send(`#TimeSchema:${this.timeSchemaId},SetParams:${wscli.data.toString({DOWs: mask})}`);
+        },
+        setParams(dow, item){
+            let data = this.dowData[dow].data;
+            data = data
+                .filter((item)=>(item.time !== undefined ||item.value !== undefined))
+                .map((item)=>{
+                    let t = item.toString('time'), v = item.toString('value');
+                    return {
+                        time: t === undefined ? undefined : String(t).replaceAll(':', ''),
+                        value: v === undefined ? undefined : 10 * v
+                    }
+                });
+            let data1 = {};
+            data1[`dow=${dow}`] = data.map((item)=>wscli.data.toString(item));
+            wscli.send(`#TimeSchema:${this.timeSchemaId},SetParams:${wscli.data.toString(data1)}`);
+
+        },
+        setCmdParams(arg){
+            if(wscli.context.current === wscli.context.timeSchema){
+                if(wscli.current.timeSchema === this.timeSchemaId){
+                    for(let key in arg){
+                        if(key === 'DOWs'){
+                            let use = arg.DOWs | 0;
+                            Vue.set(this.dowData[0], 'use', true);
+                            for(let i = 0; i < 7; i++)
+                                Vue.set(this.dowData[i + 1], 'use', (use & (0x1 << i)) !== 0);
+                        }else if(key.startsWith('dow=')){
+                            let dow = wscli.data.fromString(key, Object).dow;
+                            let data = wscli.data.fromString(arg[key], Array);
+                            data = data.map((item) => wscli.data.fromString(item, Object));
+                            data = data.map((item, index) => {
+                                let obj = new DataItem();
+                                obj.time = item.time;
+                                obj.time = obj.toString('time');
+                                obj.value = item.value / 10;
+                                obj.value = obj.toString('value');
+                                return obj;
+                            });
+
+                            data = data.filter((item)=>( item.time !== undefined || item.value !== undefined))
+                                .sort((item1, item2)=> {
+                                    if(item1.time === item2.time)
+                                        return 0;
+                                    else if(item1.time === undefined)
+                                        return -1;
+                                    else if(item2.time === undefined)
+                                        return -1;
+                                    else
+                                        return item1.time < item2.time ? -1 : 1;
+                                })
+                                .concat(new DataItem());
+
+                            Vue.set(this.dowData[dow], 'data', data);
+                        }
+                    }
+                    return true;
+                }
+            }
+        }
+    },
+    created() {
+        this.$parent.$on(`show-${this.type}-settings`, this.onShow);
+        this.$parent.$on(`hide-${this.type}-settings`, this.onHide);
+        for(let i = 0; i <= 7; i++)
+            this.dowData.push(new DOWData(i));
+
+        wscli.commands.add({Params: Object}, this.setCmdParams);
+    },
+    watch:{
+        timeSchemaId: function (newVal, oldVal) {
+            if(newVal)
+                wscli.send(`#TimeSchema:${newVal},GetParams`);
+
+        }
+    },
+    template: `
+        <div  class="sProperties">
+            <div v-for="dow in dowData" class="values-short" style="border-style: none;">
+                <div> 
+                    <label><input v-if="dow.dow >= 1" type="checkbox" v-model="dow.use" 
+                        v-on:change="setDOWs()">
+                    <span>{{['Общая настройка', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'][dow.dow]}}</span>
+                    </label>
+                </div>
+            
+                <div v-show="(!dow.dow) || dow.use">
+                    <span>время</span>
+                    <div>
+                        <input v-for="item in dow.data" type="text" placeholder="hh:mm"
+                              v-model="item.time" v-on:change="setParams(dow.dow, item)">
+                    </div>
+                </div>
+                <div v-show="(!dow.dow) || dow.use">
+                    <span>температура<span style="font-size: 0.75em; margin: 0;">,&deg;C</span></span>
+                    <div>
+                        <input v-for="item in dow.data" type="text" placeholder="00.0"
+                              v-model="item.value" v-on:change="setParams(dow.dow, item)">
+                    </div>
+                </div>
+            </div>
+        </div>`
+});
+
+
+
+}
+                        
+mm['time-schema-temperature'] = new timeSchemaTemperature_class();
 
 /* tile-temperature-humidity-battery v.0.0.1 */
 

@@ -94,7 +94,7 @@ DatabaseSync.prototype.query = function (sql, bindings, callback) {
       resultset.rows = {item: function (index) { return resultset[index]; },
                         length: resultset.length};
     }
-    var result = all[0];
+    var result = all[all.length - 1];
   }
   if (typeof(callback) == "function") {
     callback.apply(result, all);

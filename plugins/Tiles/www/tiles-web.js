@@ -4,6 +4,14 @@ TilesComponentsTypes.prototype.add = function(name, params){
     this[name] = params;
     this[name].name = name;
 };
+
+TilesComponentsTypes.prototype.length = function () {
+    let res = 0;
+    // noinspection JSCheckFunctionSignatures
+    Object.keys(this).forEach(() => res++);
+    return res;
+};
+
 const vTilesComponentsTypes = new TilesComponentsTypes;
 module.exports.components = {types: vTilesComponentsTypes};
 
@@ -170,16 +178,16 @@ const vTileSettings = new Vue({
             if(this.selectedTypeName)
                 setTimeout(this.$emit.bind(this, `hide-${this.selectedTypeName}-settings`), 1);
         },
+    },
+    computed:{
         types(){
             let res = vTilesComponentsTypes;
             if(this.selectedTypeName && !res[this.selectedTypeName]){
                 res = Object.assign(new TilesComponentsTypes(), res);
-                res.add(this.selectedTypeName, {title: this.selectedTypeName + ', not instaled'});
+                res.add(this.selectedTypeName, {title: this.selectedTypeName + ', not installed'});
             }
             return res;
         },
-    },
-    computed:{
         //isActive: () => vContent.
         tiles: ()=> vTiles.tiles,
         tilesCount: {
@@ -242,7 +250,8 @@ const vTileSettings = new Vue({
                 <div>
                     <span>Тип данных</span>
                     <select v-model="selectedTypeName">
-                        <option v-for="type in types()" v-bind:value="type.name">{{type.title}}</option>
+                        <option disabled value="" v-if="!types.length()">не выбрано</option>
+                        <option v-for="type in types" v-bind:value="type.name">{{type.title}}</option>
                     </select>
                 </div>
             </div>
@@ -267,24 +276,36 @@ wscli.commands.add({Tile: Number}, (arg) => {
     }
 );
 
-wscli.commands.add({Type: String}, (arg)=> {
-        if(wscli.context.current === wscli.context.tile){
-            vTiles.checkTile(wscli.current.tile);
-            if(vTiles.tiles[wscli.current.tile].type !== arg)
-                Vue.set(vTiles.tiles[wscli.current.tile], "type", arg);
-            return true;
-        }
-    }
-);
+function SetInfo(info, arg) {
+     if(wscli.context.current === wscli.context.tile){
+         vTiles.checkTile(wscli.current.tile);
+         Vue.set(vTiles.tiles[wscli.current.tile], info, arg);
+         return true;
+     }
+}
 
-wscli.commands.add({Params: Object}, (arg) =>{
-        if(wscli.context.current === wscli.context.tile){
-            vTiles.checkTile(wscli.current.tile);
-            Vue.set(vTiles.tiles[wscli.current.tile], 'params', arg);
-            return true;
-        }
-    }
-);
+wscli.commands.add({Name: String}, SetInfo.bind(undefined, 'name'));
+wscli.commands.add({Type: String}, SetInfo.bind(undefined, 'type'));
+wscli.commands.add({Params: Object}, SetInfo.bind(undefined, 'params'));
+
+// wscli.commands.add({Type: String}, (arg)=> {
+//         if(wscli.context.current === wscli.context.tile){
+//             vTiles.checkTile(wscli.current.tile);
+//             if(vTiles.tiles[wscli.current.tile].type !== arg)
+//                 Vue.set(vTiles.tiles[wscli.current.tile], "type", arg);
+//             return true;
+//         }
+//     }
+// );
+//
+// wscli.commands.add({Params: Object}, (arg) =>{
+//         if(wscli.context.current === wscli.context.tile){
+//             vTiles.checkTile(wscli.current.tile);
+//             Vue.set(vTiles.tiles[wscli.current.tile], 'params', arg);
+//             return true;
+//         }
+//     }
+// );
 
 wscli.commands.add({Count: Number}, (arg) => {
         if (wscli.context.current === wscli.context.tile) {

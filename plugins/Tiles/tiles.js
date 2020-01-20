@@ -48,7 +48,7 @@ function GetInfo(info, arg) {
 }
 
 wscli.commands.add({GetType: null}, GetInfo.bind(undefined, 'Type'), 'Get tile type.');
-wscli.commands.add({GetParams: null}, GetInfo.bind(undefined, 'Params'), 'Get tile params.');
+wscli.commands.add({GetParams: String}, GetInfo.bind(undefined, 'Params'), 'Get tile params.');
 
 function SetInfo(info, arg) {
     if(wscli.context.current === wscli.context.tile){
