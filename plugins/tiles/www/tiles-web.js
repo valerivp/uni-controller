@@ -40,25 +40,6 @@ Object.defineProperty(Tile.prototype, 'type', {
     },
 });
 
-/*
-Tile.prototype = {
-    get id() {
-        return this._id;
-    },
-    set id(val) {
-        throw('Property is read only');
-    },
-    get type() {
-        return this._type;
-    },
-    set type(val) {
-        if(val !== this._type){
-            this.params = {};
-            this._type = val;
-        }
-    },
-};
-*/
 
 function Tiles() {
 }

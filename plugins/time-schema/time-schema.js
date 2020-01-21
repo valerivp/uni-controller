@@ -69,45 +69,6 @@ function SetInfo(info, arg) {
     }
 
 }
-/*
-wscli.commands.add({SetName: String},
-    function (arg) {
-        if(wscli.context.current === wscli.context.TimeSchema){
-            checkRangeTimeSchema(wscli.current.TimeSchema);
-            let qp = {$ID: wscli.current.TimeSchema};
-            qp.$Name = arg;
-            let q = `UPDATE TimeSchemas SET Name = $Name WHERE ID = $ID;
-                SELECT * FROM TimeSchemasParams WHERE ID = $ID;`;
-            let row = db.querySync(q, qp)[0];
-            wscli.sendData(`#TimeSchema:${row.ID},Name:${row.Name}`);
-            return true;
-        }
-    },
-    'Set TimeSchema name.');
-
-wscli.commands.add({SetType: String},
-    function (arg) {
-        if(wscli.context.current === wscli.context.TimeSchema){
-            checkRangeTimeSchema(wscli.current.TimeSchema);
-            let qp = {$ID: wscli.current.TimeSchema};
-            qp.$Type = arg;
-            // при изменении типа стираем связанные записи
-            let q = `CREATE TABLE temp._TimeSchemas AS
-                  SELECT * FROM TimeSchemas WHERE ID = $ID AND Type != $Type;
-                DELETE FROM TimeSchemas WHERE ID IN (SELECT ID FROM temp._TimeSchemas);
-                UPDATE temp._TimeSchemas SET Type = $Type;
-                INSERT INTO TimeSchemas
-                  SELECT * FROM temp._TimeSchemas;
-                DROP TABLE temp._TimeSchemas;
-                SELECT * FROM TimeSchemas WHERE ID = $ID;`;
-            let row = db.querySync(q, qp)[0];
-            wscli.sendData(`#TimeSchema:${row.ID},Type:${row.Type}`);
-            return true;
-        }
-    },
-    'Set TimeSchema type.');
-
-*/
 
 
 wscli.commands.add({SetName: String}, SetInfo.bind(undefined, 'Name'), 'Set TimeSchema name.');
@@ -146,6 +107,95 @@ wscli.commands.add({SetCount:Number},
 );
 
 
+
+wscli.commands.add({SetParams: Object},
+    function (arg) {
+        if(wscli.context.current === wscli.context.TimeSchema){
+            let qp = {$ID: wscli.current.TimeSchema};
+            if(db.querySync(`SELECT * FROM TimeSchemas WHERE ID = $ID`, qp).length){
+                let q = '';
+                for(let key in arg){
+                    if(key === 'DOWs'){
+                        qp.$DOWs = arg.DOWs | 0;
+                        q += `UPDATE TimeSchemasDOW SET DOWs = $DOWs WHERE SchemaID = $ID;
+                            INSERT INTO TimeSchemasDOW (SchemaID, DOWs)
+                                SELECT $ID, $DOWs WHERE (Select Changes() = 0);\n`;
+                    }else if(key.startsWith('dow=')){
+                        let dow = wscli.data.fromString(key, Object).dow;
+                        q += `DELETE FROM TimeSchemasParams WHERE SchemaID = $ID AND DOW = ${dow};\n`;
+                        let data = arg[key];
+                        data = wscli.data.fromString(data, Array);
+                        if(data.length) {
+                            q += `INSERT INTO TimeSchemasParams(SchemaID, DOW, BeginTime, Value) VALUES\n`;
+                            q += data.map((item) => wscli.data.fromString(item, Object))
+                                .map((item) =>
+                                    `($ID, ${dow}, ${item.time === undefined ? 'NULL' : item.time}, ${item.value === undefined ? 'NULL' : item.value})`
+                                )
+                                .join(',\n') + ';\n';
+                        }
+                    }
+                }
+                db.querySync(q, qp);
+                wscli.sendData(`#TimeSchema:${qp.$ID},Params:${getParams(qp.$ID, qp.$DOWs)}`);
+                return true;
+            }
+        }
+    },
+    'Set TimeSchema params.');
+
+
+function getParams(SchemaID, DOWs) {
+    let res = {};
+    let qp = {$ID: SchemaID, $DOWs: (DOWs === undefined ? 0b11111111 : DOWs)};
+
+    let rows = db.querySync(`SELECT DOWs FROM TimeSchemasDOW WHERE SchemaID = $ID`, qp);
+    res.DOWs = rows.length ? rows[0].DOWs : 0;
+
+    rows = db.querySync(`SELECT TimeSchemasDOWs.DOW, BeginTime, Value,
+        (TimeSchemasParams.DOW IS NULL) AS NoData  
+        FROM TimeSchemasDOWs AS TimeSchemasDOWs
+        LEFT JOIN TimeSchemasParams AS TimeSchemasParams
+            ON TimeSchemasDOWs.DOW = TimeSchemasParams.DOW
+                AND TimeSchemasParams.SchemaID = $ID
+        WHERE  TimeSchemasDOWs.DOWs & $DOWs
+        ORDER BY TimeSchemasDOWs.DOW`, qp);
+    let dow, i, data = {};
+
+    rows.forEach((row)=>{
+        if(dow !== row.DOW){
+            i = 0;
+            dow = row.DOW;
+            data[dow] = [];
+            if(row.NoData)
+                return;
+        }
+        data[dow].push( {time: row.BeginTime, value: row.Value});
+        i++;
+    });
+
+    for(let dow in data){
+        res[`dow=${dow}`] = wscli.data.toString(data[dow]);
+    }
+
+    res = wscli.data.toString(res);
+    return res;
+}
+
+wscli.commands.add({GetParams: String},
+    function (arg) {
+        if(wscli.context.current === wscli.context.TimeSchema){
+            //let qp = {$ID: wscli.current.TimeSchema};
+            //if(db.querySync(`SELECT * FROM TimeSchemas WHERE ID = $ID AND Type = $Type`, qp).length){
+                arg = arg === '' ? undefined : (arg | 0);
+                wscli.sendClientData(`#TimeSchema:${wscli.current.TimeSchema},Params:${getParams(wscli.current.TimeSchema, arg)}`);
+                return true;
+            //}
+        }
+    },
+    'Get TimeSchema params.');
+
+
+
 // noinspection JSUnusedLocalSymbols
 module.exports.update = function(prevVer){
     return getDbInitData();
@@ -166,7 +216,7 @@ function getDbInitData() {
                 {"ID": 0, "Count": 0, "MaxCount": 8}
               ]
             },
-            "TimeSchemasDOW": {
+            "TimeSchemasDOWs": {
               "schema": {
                 "DOW": "INTEGER PRIMARY KEY AUTOINCREMENT",
                 "DOWs": "INTEGER NOT NULL"
@@ -187,6 +237,20 @@ function getDbInitData() {
                 "ID": "INTEGER PRIMARY KEY AUTOINCREMENT",
                 "Name": "CHAR(32) NOT NULL ON CONFLICT REPLACE DEFAULT ''",
                 "Type": "CHAR(32) NOT NULL ON CONFLICT REPLACE DEFAULT ''"
+              }
+            },
+            "TimeSchemasDOW": {
+              "schema": {
+                "SchemaID": "INTEGER NOT NULL CONSTRAINT [TimeSchemaID] REFERENCES [TimeSchemas]([ID]) ON DELETE CASCADE",
+                "DOWs": "INTEGER NOT NULL ON CONFLICT REPLACE DEFAULT 0"
+              }
+            },
+            "TimeSchemasParams": {
+              "schema": {
+                "SchemaID": "INTEGER NOT NULL CONSTRAINT [TimeSchemaID] REFERENCES [TimeSchemas]([ID]) ON DELETE CASCADE",
+                "DOW": "INTEGER NOT NULL",
+                "BeginTime": "INTEGER NOT NULL",
+                "Value": "CHAR(64)"
               }
             }
           }

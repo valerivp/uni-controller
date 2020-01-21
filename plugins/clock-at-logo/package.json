@@ -3,7 +3,7 @@
   "version": "0.0.6",
   "plugins-dependencies": {
   },
-  "node": "clock-at-logo.js",
+  "node": "",
   "web":{
     "js":[
       "www/clock-at-logo-web.js"

@@ -9,6 +9,7 @@
       "www/time-schema-web.js"
     ],
     "css":[
+      "www/time-schema.css"
     ]
   }
 }

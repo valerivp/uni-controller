@@ -3,13 +3,12 @@
   "version": "0.0.1",
   "plugins-dependencies": {
   },
-  "node": "time-schema-temperature.js",
+  "node": "",
   "web":{
     "js":[
       "www/time-schema-temperature-web.js"
     ],
     "css":[
-      "www/time-schema-temperature.css"
     ]
   }
 }
