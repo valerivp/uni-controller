@@ -388,6 +388,9 @@ body.dark{
 .sProperties > div{
     flex-direction:column;
 }
+.sProperties > div > div{
+    align-items: center;
+}
 
 .sProperties div {
     display: flex;

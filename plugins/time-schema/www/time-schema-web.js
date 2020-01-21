@@ -197,14 +197,16 @@ const vTimeSchemaSettings = new Vue({
                     </select>
                 </div>
             </div>
+        </div>
             <div v-bind:is="selectedTypeName"
                 v-bind:type="selectedTypeName"
                 v-bind:time-schema="selectedTimeSchema"
                 v-bind:time-schema-id="selectedTimeSchemaId"
+                class="sProperties"
                 >
             
             </div>
-        </div>
+        
     </div>`
 
 });

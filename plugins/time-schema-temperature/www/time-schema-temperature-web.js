@@ -161,8 +161,9 @@ Vue.component('time-schema-temperature', {
         }
     },
     template: `
-        <div  class="sProperties">
-            <div v-for="dow in dowData" class="values-short" style="border-style: none;">
+        <div>
+            <div v-for="dow in dowData" class="values-short">
+            
                 <div> 
                     <label><input v-if="dow.dow >= 1" type="checkbox" v-model="dow.use" 
                         v-on:change="setDOWs()">

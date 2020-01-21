@@ -804,14 +804,16 @@ const vTimeSchemaSettings = new Vue({
                     </select>
                 </div>
             </div>
+        </div>
             <div v-bind:is="selectedTypeName"
                 v-bind:type="selectedTypeName"
                 v-bind:time-schema="selectedTimeSchema"
                 v-bind:time-schema-id="selectedTimeSchemaId"
+                class="sProperties"
                 >
             
             </div>
-        </div>
+        
     </div>`
 
 });
@@ -1050,8 +1052,9 @@ Vue.component('time-schema-temperature', {
         }
     },
     template: `
-        <div  class="sProperties">
-            <div v-for="dow in dowData" class="values-short" style="border-style: none;">
+        <div>
+            <div v-for="dow in dowData" class="values-short">
+            
                 <div> 
                     <label><input v-if="dow.dow >= 1" type="checkbox" v-model="dow.use" 
                         v-on:change="setDOWs()">
