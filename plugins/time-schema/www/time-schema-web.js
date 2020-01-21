@@ -118,16 +118,10 @@ const vTimeSchemaSettings = new Vue({
 
     methods: {
         onShow(params){
-            // this.$data._isActive = true;
             if(params && params.TimeSchemaId)
                 this.selectedTimeSchemaId = params.TimeSchemaId;
-            // if(this.selectedTypeName)
-            //     setTimeout(this.$emit.bind(this, `show-${this.selectedTypeName}-settings`), 2);
         },
         onHide(){
-            // this.$data._isActive = false;
-            // if(this.selectedTypeName)
-            //     setTimeout(this.$emit.bind(this, `hide-${this.selectedTypeName}-settings`), 2);
         },
         checkTimeSchema(t, allowZero){
             return checkInRange(t, allowZero ? 0 : 1, this.timeSchemas.length(), "Time schema id");
@@ -227,9 +221,6 @@ const vTimeSchemaSettings = new Vue({
     },
     watch:{
         selectedTypeName: function (newVal, oldVal) {
-        //     if(this.$data._isActive){
-        //         if(oldVal)
-        //             setTimeout(this.$emit.bind(this, `hide-${oldVal}-settings`), 1);
             if(newVal)
                 wscli.send(`#TimeSchema:${this.selectedTimeSchemaId},GetParams`);
         }
