@@ -89,7 +89,7 @@ Vue.component('time-schema-temperature', {
         setParams(dow, item){
             let data = this.dowData[dow].data;
             data = data
-                .filter((item)=>(item.time !== undefined ||item.value !== undefined))
+                .filter((item)=>(item.time !== undefined ))
                 .map((item)=>{
                     let t = item.toString('time'), v = item.toString('value');
                     return {
@@ -124,7 +124,7 @@ Vue.component('time-schema-temperature', {
                                 return obj;
                             });
 
-                            data = data.filter((item)=>( item.time !== undefined || item.value !== undefined))
+                            data = data.filter((item)=>( item.time !== undefined))
                                 .sort((item1, item2)=> {
                                     if(item1.time === item2.time)
                                         return 0;

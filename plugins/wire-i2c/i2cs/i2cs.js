@@ -38,7 +38,7 @@
         };
       })(this));
       this.on('error', function(err) {
-        return console.log("Error: " + err);
+        return console.error(err);
       });
       this.open(this.options.device, (function(_this) {
         return function(err) {

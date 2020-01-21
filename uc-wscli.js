@@ -58,7 +58,7 @@ wscli.init = function (pws) {
                 this.isAlive = true;
             });
             client.on('message', function incoming(message) {
-                console.log('>: %s', message.trim());
+                console.log(`>: ${message.trim()}`);
                 onCommand(client, message);
             });
             onConnection(client);

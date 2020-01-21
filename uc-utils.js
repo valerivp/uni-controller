@@ -6,13 +6,15 @@ const child_process = require('child_process');
 
 const utils = module.exports;
 module.exports.file = {};
-module.exports.file.log = function(text){
-    console.log(text);
+//module.exports.file
+function write_file_log(text){
+    //console.log(text);
     if(utils.file.logFile) {
         let tl = utils.DateToShotXMLString(new Date());
         fs.appendFileSync(utils.file.logFile, `${tl}\t${text}\n`);
     }
 };
+
 
 module.exports.init = function (writeFileLog) {
     if(!utils.file.hasOwnProperty("logFile"))
@@ -30,6 +32,35 @@ module.exports.init = function (writeFileLog) {
 };
 
 initExitHandler();
+
+
+
+console._log = console.log;
+console.log = function (arg) {
+    if(arg instanceof Error)
+        console.error(arg);
+    else
+        console._log(`\x1b[2K${arg}\x1b[0m`);
+};
+console._error = console.error;
+console.error = function (arg) {
+    if(arg instanceof Error)
+        arg = arg.stack;
+    console._log(`\x1b[2K\x1b[31m${arg}\x1b[0m`);
+    write_file_log(arg);
+};
+console._info = console.info;
+console.info = function (arg) {
+    if(arg instanceof Error)
+        console.error(arg);
+    else {
+        console._log(`\x1b[2K\x1b[34m${arg}\x1b[0m`);
+        write_file_log(arg);
+    }
+};
+console.state = function (arg) {
+    console._log(`\x1b[2K\x1b[32m${arg}\x1b[1A\x1b[0m`)
+}
 
 
 
@@ -126,12 +157,12 @@ String.prototype.toCamel = function(){
 function initExitHandler(exitHandler) {
 //do something when app is closing
     process.on('exit', (code) => {
-        utils.file.log(`Done. Exit code: ${code}`);
+        console.info(`Done. Exit code: ${code}`);
     });
 
 //catches ctrl+c event
     process.on('SIGINT', (signal)=>{
-        utils.file.log(`Receive SIGINT (ctrl+c)`);
+        console.info(`Receive SIGINT (ctrl+c)`);
         process.exit(0);
     });
 
@@ -140,11 +171,11 @@ function initExitHandler(exitHandler) {
 //    process.on('SIGUSR2', exitHandler.bind(null, {event:'SIGUSR2', exit: true}));
 
     process.on('unhandledRejection', (reason, p) => {
-        utils.file.log(reason);
+        console.info(reason);
         process.exit(2);
     });
     process.on('uncaughtException', err => {
-        utils.file.log(err.message + '\n' + err.stack);
+        console.error(err);
         process.exit(1);
     });
 }

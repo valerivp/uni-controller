@@ -100,8 +100,9 @@ const ws = new WebSocket.Server({ server: httpServer });
 module.exports.ws = ws;
 
 ws.broadcast = function broadcast(data) {
+    //console.state(`b: ${data.trim()}`);
     if(data.indexOf("#time"))
-        console.log('b: %s', data.trim());
+        console.log(`b: ${data.trim()}`);
     ws.clients.forEach(function(client) {
         if (client.readyState === WebSocket.OPEN) {
             client.send(data);
@@ -110,7 +111,7 @@ ws.broadcast = function broadcast(data) {
 };
 
 ws.send = function send(client, data) {
-    console.log('c: %s', data.trim());
+    console.log(`c: ${data.trim()}`);
     if (client.readyState === WebSocket.OPEN) {
         client.send(data);
     }
@@ -120,14 +121,14 @@ function ping() {
     let n = 0;
     ws.clients.forEach(function each(client) {
         if (client.isAlive === false){
-            console.log("A dead client is terminated");
+            console.state("A dead client is terminated");
             return client.terminate();
         }
         client.isAlive = false;
         client.ping(function () {});
         n++;
     });
-    console.log("Amount of live clients: " + n);
+    console.state(`Amount of live clients: ${n}`);
 }
 
 

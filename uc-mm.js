@@ -42,22 +42,22 @@ module.exports.init = function(){
     fs.writeFileSync(module.exports["web-plugins.js"], "'use strict';\n\n");
     fs.writeFileSync(module.exports["web-plugins.css"], "");
 
-    let q = `SELECT DISTINCT p.ID, p.Name, p.Version AS Version, p.Directory FROM Plugins as p
+    let q = `SELECT DISTINCT p.Name, p.Version AS Version, p.Directory FROM Plugins as p
         LEFT JOIN PluginsDependences as d
-             ON p.ID = d.PluginID
-        WHERE NOT p.ID IN (
-            SELECT PluginID FROM mem.LoadedPlugins
+             ON p.Name = d.Plugin
+        WHERE NOT p.Name IN (
+            SELECT Plugin FROM mem.LoadedPlugins
             UNION
-            SELECT DISTINCT d.PluginID FROM PluginsDependences as d
+            SELECT DISTINCT d.Plugin FROM PluginsDependences as d
             LEFT JOIN mem.LoadedPlugins as lp
-                 ON d.DependsOn = lp.PluginID
-            WHERE lp.[PluginID] IS NULL
+                 ON d.DependsOn = lp.Plugin
+            WHERE lp.[Plugin] IS NULL
         )`;
     let rows = [];
     do{
         rows = db.querySync(q);
         rows.forEach(function (row) {
-            utils.file.log(`Load plugin '${row.Name}'...`);
+            console.info(`Load plugin '${row.Name}'...`);
 
 
             /** @namespace row.Directory */
@@ -93,8 +93,8 @@ module.exports.init = function(){
                     fs.appendFileSync(module.exports["web-plugins.css"], fs.readFileSync(row.Directory + '/' + file));
                 });
 
-            /** @namespace row.ID */
-            db.querySync("INSERT INTO mem.LoadedPlugins (PluginID) VALUES ($PluginID)", {$PluginID: row.ID});
+            /** @namespace row.Name */
+            db.querySync("INSERT INTO mem.LoadedPlugins (Plugin) VALUES ($Plugin)", {$Plugin: row.Name});
         });
     }while(rows.length);
 
@@ -102,10 +102,10 @@ module.exports.init = function(){
 };
 
 function cmdList() {
-    let q = "SELECT DISTINCT p.ID, p.Name, p.Version AS Version, p.Directory FROM Plugins as p";
+    let q = "SELECT DISTINCT p.Name, p.Version AS Version, p.Directory FROM Plugins as p";
     let rows = db.querySync(q);
     rows.forEach(function (row) {
-        console.log(`${row.ID}\t${row.Name}\t${row.Version}\t${row.Directory}`);
+        console.log(`${row.Name}\t${row.Version}\t${row.Directory}`);
     });
 }
 
@@ -171,20 +171,20 @@ function cmdUpdate(dirName) {
 
         if(pluginExistData) {
             // удалим список зависимостей
-            db.querySync("DELETE FROM PluginsDependences WHERE PluginID = $ID", {$ID: pluginData.ID});
-            db.querySync("UPDATE Plugins SET Version = $Version, Directory = $Directory WHERE ID = $ID",
-                {$ID: pluginData.ID, $Version: obj.version, $Directory: dir});
+            db.querySync("DELETE FROM PluginsDependences WHERE Plugin = $Name", {$Name: pluginData.Name});
+            db.querySync("UPDATE Plugins SET Version = $Version, Directory = $Directory WHERE Name = $Name",
+                {$Name: pluginData.Name, $Version: obj.version, $Directory: dir});
         }else{
             db.querySync("INSERT INTO Plugins (Name, Version, Directory) VALUES ($Name, $Version, $Directory)",
                 {$Name: obj.name, $Version: obj.version, $Directory: dir});
         }
-        let pluginData = db.querySync("SELECT ID FROM Plugins WHERE Name = $Name", {$Name: obj.name})[0];
+        let pluginData = db.querySync("SELECT Name FROM Plugins WHERE Name = $Name", {$Name: obj.name})[0];
 
-        q = `INSERT INTO PluginsDependences (PluginID, DependsOn)
-                SELECT $ID, p.ID FROM mem.dependencies as d
+        q = `INSERT INTO PluginsDependences (Plugin, DependsOn)
+                SELECT $Name, p.Name FROM mem.dependencies as d
                 LEFT JOIN Plugins as p
                 ON d.Name = p.Name`;
-        db.querySync(q, {$ID: pluginData.ID});
+        db.querySync(q, {$Name: pluginData.Name});
 
 
         let UninstallInfo = '';
@@ -194,7 +194,7 @@ function cmdUpdate(dirName) {
                 UninstallInfo = plugin.update(pluginExistData ? pluginExistData.Version : undefined,
                     pluginExistData ? pluginExistData.UninstallInfo : undefined);
         }
-        db.querySync("UPDATE Plugins SET UninstallInfo = $UninstallInfo WHERE ID = $ID", {$ID: pluginData.ID, $UninstallInfo: UninstallInfo});
+        db.querySync("UPDATE Plugins SET UninstallInfo = $UninstallInfo WHERE Name = $Name", {$Name: pluginData.Name, $UninstallInfo: UninstallInfo});
 
 
         db.commitTransaction();
@@ -222,21 +222,20 @@ function getDbInitData() {
     return `{
           "main": {
             "Plugins": {
-              "ID": "INTEGER PRIMARY KEY AUTOINCREMENT",
-              "Name": "CHAR(32) NOT NULL",
+              "Name": "CHAR(64) NOT NULL PRIMARY KEY",
               "Version": "CHAR(16) NOT NULL ON CONFLICT REPLACE DEFAULT ''",
               "Directory": "CHAR(64) NOT NULL",
               "UninstallInfo": "TEXT"
             },
             "PluginsDependences": {
-              "PluginID": "INTEGER NOT NULL CONSTRAINT [PluginID] REFERENCES [Plugins]([ID]) ON DELETE CASCADE",
-              "DependsOn": "INTEGER NOT NULL CONSTRAINT [DependsOn] REFERENCES [Plugins]([ID]) ON DELETE SET NULL"
+              "Plugin": "CHAR(64) NOT NULL CONSTRAINT [Plugin] REFERENCES [Plugins]([Name]) ON DELETE CASCADE",
+              "DependsOn": "CHAR(64) NOT NULL CONSTRAINT [DependsOn] REFERENCES [Plugins]([Name]) ON DELETE SET NULL"
             }
           },
           "mem":{
             "LoadedPlugins": {
               "Order": "INTEGER PRIMARY KEY AUTOINCREMENT",
-              "PluginID": "INTEGER NOT NULL CONSTRAINT [PluginID] REFERENCES [Plugins]([ID]) ON DELETE CASCADE"
+              "Plugin": "CHAR(64) NOT NULL CONSTRAINT [Plugin] REFERENCES [Plugins]([Name]) ON DELETE CASCADE"
             }
           }
         }`;
@@ -346,7 +345,7 @@ router.get(urlPlugins,
         let q = `SELECT Name AS name, Version as version
             FROM mem.LoadedPlugins AS LoadedPlugins
             LEFT JOIN Plugins AS Plugins
-                ON LoadedPlugins.PluginID = Plugins.ID
+                ON LoadedPlugins.Plugin = Plugins.Name
             ORDER BY [Order]`;
         res.write(JSON.stringify(db.querySync(q)));
         res.end();

@@ -4,7 +4,7 @@ const path = require('path');
 process.chdir(path.dirname(module.filename));
 
 const utils = require("./uc-utils").init();
-utils.file.log('Initialization...');
+console.info('Initialization...');
 
 if(! Buffer.alloc) Buffer = require('safe-buffer').Buffer;
 
@@ -22,5 +22,5 @@ const mm = require('./uc-mm').init();
 
 
 
-utils.file.log("Started...");
+console.info("Started...");
 

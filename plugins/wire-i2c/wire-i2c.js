@@ -7,7 +7,7 @@ let i2c;
 try {
     i2c = require('./i2cs/i2cs');
 }catch (err){
-    utils.file.log(err.message);
+    console.error(err.message);
 }
 
 const wire_cashe = {};

@@ -14,7 +14,7 @@ module.exports = function (mod, bin) {
             try {
                 if (fs.statSync(`${dirname}/${dir}`).isDirectory()) {
                     res = require(`${dirname}/${dir}/${bin}.node`);
-                    utils.file.log(`Load ./${dir}/${bin}.node`);
+                    console.info(`Load ./${dir}/${bin}.node`);
                     return true;
                 }
             } catch (err) {

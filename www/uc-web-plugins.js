@@ -27,46 +27,20 @@ new Vue({
                         
 mm['clock-at-logo'] = new clockAtLogo_class();
 
-/* sensors-wth433 v.0.0.1 */
+/* sensor-data-sender v.0.0.1 */
 
-function sensorsWth433_class(){
+function sensorDataSender_class(){
                         
 let module = {exports: this};
-let sensorInfo = {
-    temperature: {
-        title: 'Темпе\u00ADратура',
-        unit: '\u00B0C',
-        align: 'right',
-        data: (sd) => Number(sd.param('temperature') / 10).toFixed(1)
-    },
-    humidity: {
-        title: 'Влаж\u00ADность',
-        unit: '%',
-        align: 'right',
-        data: (sd) => Number(sd.param('humidity'))
-    },
-    battery: {
-        title: 'Бата\u00ADрея',
-        align: 'center',
-        data: (sd) => '',
-        html: (sd) => {return `<div class="sSensorBattery"><div class="${(sd.param('battery') ? 'ok' : 'low')}"></div></div>`}
-    },
-    dataAge:{
-        title: 'Сек. назад',
-        align: 'right',
-        data: (sd) => sd.dataAge()
+wscli.commands.add({Autosend: Number}, (arg) => {
+        if(wscli.context.current === wscli.context.sensor)
+            return true;
     }
-};
-sensorsTypes.add( 'WTH433-0', Object.assign({}, sensorInfo));
-let sensorInfo1 = Object.assign({}, sensorInfo);
-delete sensorInfo1.battery;
-sensorsTypes.add( 'WTH433-1', sensorInfo1);
-sensorsTypes.add( 'WTH433-2', Object.assign({}, sensorInfo));
-sensorsTypes.add( 'WTH433-3', Object.assign({}, sensorInfo));
+);
 
 }
                         
-mm['sensors-wth433'] = new sensorsWth433_class();
+mm['sensor-data-sender'] = new sensorDataSender_class();
 
 /* sensors-ds18b20 v.0.0.1 */
 
@@ -144,66 +118,46 @@ sensorsTypes.add( 'PZEM004T', {
                         
 mm['sensors-pzem004t'] = new sensorsPzem004t_class();
 
-/* mqtt-udp-publicator v.0.0.1 */
+/* sensors-wth433 v.0.0.1 */
 
-function mqttUdpPublicator_class(){
+function sensorsWth433_class(){
                         
 let module = {exports: this};
-vSettings.add(
-    Vue.component('settings-set-mqtt-udp-pub', {
-        data:()=> {return {PublicateSensorsData: false, IP:''}},
-        methods: {
-            sendSettings(){
-                let bodyFormData = new FormData();
-
-                bodyFormData.set('PublicateSensorsData', (this.PublicateSensorsData ? 'on' : ''));
-                bodyFormData.set('IP', this.IP);
-                axios({
-                    url: `http://${serverLocation}/mqtt-udp-publicator`,
-                    method: 'post',
-                    data: bodyFormData,
-                    config: { headers: {'Content-Type': 'multipart/form-data' }}})
-                    .then(function (response) {
-                        vToasts.add(response.data);
-                        console.log(response); })
-                    .catch(function (error) {
-                        vToasts.addHttpError(error);
-                        console.log(error);});
-            },
-            onFetch: function () {
-                axios.get(`http://${serverLocation}/mqtt-udp-publicator?format=json`)
-                    .then(response => {
-                        this.PublicateSensorsData = Boolean(response.data.PublicateSensorsData);
-                        this.IP = response.data.IP;
-                    })
-                    .catch(function (error) {
-                        vToasts.addHttpError(error); console.log(error);});
-            },
-        },
-        created: function() {
-            this.$parent.$on('fetch', this.onFetch);
-        },
-        template:`
-    <div>
-        <div>
-            <span>Настройки MQTT/UDP</span>
-            <button v-on:click="sendSettings">Сохранить</button>
-        </div>
-        <div>
-            <span>Публиковать данные датчиков</span>
-            <input type="checkbox" v-model="PublicateSensorsData">
-        </div>
-        <div>
-            <span>Адрес для публикации</span>
-            <input v-model="IP" length="15" placeholder="xxx.xxx.xxx.xxx">
-        </div>
-    </div>`
-    })
-);
+let sensorInfo = {
+    temperature: {
+        title: 'Темпе\u00ADратура',
+        unit: '\u00B0C',
+        align: 'right',
+        data: (sd) => Number(sd.param('temperature') / 10).toFixed(1)
+    },
+    humidity: {
+        title: 'Влаж\u00ADность',
+        unit: '%',
+        align: 'right',
+        data: (sd) => Number(sd.param('humidity'))
+    },
+    battery: {
+        title: 'Бата\u00ADрея',
+        align: 'center',
+        data: (sd) => '',
+        html: (sd) => {return `<div class="sSensorBattery"><div class="${(sd.param('battery') ? 'ok' : 'low')}"></div></div>`}
+    },
+    dataAge:{
+        title: 'Сек. назад',
+        align: 'right',
+        data: (sd) => sd.dataAge()
+    }
+};
+sensorsTypes.add( 'WTH433-0', Object.assign({}, sensorInfo));
+let sensorInfo1 = Object.assign({}, sensorInfo);
+delete sensorInfo1.battery;
+sensorsTypes.add( 'WTH433-1', sensorInfo1);
+sensorsTypes.add( 'WTH433-2', Object.assign({}, sensorInfo));
+sensorsTypes.add( 'WTH433-3', Object.assign({}, sensorInfo));
 
 }
                         
-mm['mqtt-udp-publicator'] = new mqttUdpPublicator_class();
+mm['sensors-wth433'] = new sensorsWth433_class();
 
 /* tiles v.0.0.1 */
 
@@ -585,21 +539,6 @@ Vue.component('tile-second-settings', {
                         
 mm['tiles'] = new tiles_class();
 
-/* sensor-data-sender v.0.0.1 */
-
-function sensorDataSender_class(){
-                        
-let module = {exports: this};
-wscli.commands.add({Autosend: Number}, (arg) => {
-        if(wscli.context.current === wscli.context.sensor)
-            return true;
-    }
-);
-
-}
-                        
-mm['sensor-data-sender'] = new sensorDataSender_class();
-
 /* time-schema v.0.0.1 */
 
 function timeSchema_class(){
@@ -980,7 +919,7 @@ Vue.component('time-schema-temperature', {
         setParams(dow, item){
             let data = this.dowData[dow].data;
             data = data
-                .filter((item)=>(item.time !== undefined ||item.value !== undefined))
+                .filter((item)=>(item.time !== undefined ))
                 .map((item)=>{
                     let t = item.toString('time'), v = item.toString('value');
                     return {
@@ -1015,7 +954,7 @@ Vue.component('time-schema-temperature', {
                                 return obj;
                             });
 
-                            data = data.filter((item)=>( item.time !== undefined || item.value !== undefined))
+                            data = data.filter((item)=>( item.time !== undefined))
                                 .sort((item1, item2)=> {
                                     if(item1.time === item2.time)
                                         return 0;
@@ -1085,6 +1024,215 @@ Vue.component('time-schema-temperature', {
 }
                         
 mm['time-schema-temperature'] = new timeSchemaTemperature_class();
+
+/* tile-energy-monitor v.0.0.1 */
+
+function tileEnergyMonitor_class(){
+                        
+let module = {exports: this};
+mm.tiles.components.types.add('tile-energy-monitor', {title: 'Энергомонитор'});
+
+// noinspection JSUnusedLocalSymbols
+Vue.component('tile-energy-monitor', {
+    data:()=>({
+        energyTN: 0
+    }),
+    computed:{
+        sensorId() {
+            return (this.params || {}).sensor;
+        },
+        sensor() {
+            return vSensors.sensors[this.sensorId];
+        },
+        voltage() {
+            return this.getParam('voltage', 10);
+        },
+        current() {
+            return this.getParam('current', 100);
+        },
+        power() {
+            return this.getParam('power', 1);
+        },
+        energy() {
+            return this.getParam('energy', 1000);
+        },
+        energyT1() {
+            return this.getParam('energy-t1', 1000);
+        },
+        energyT2() {
+            return this.getParam('energy-t2', 1000);
+        },
+    },
+    watch:{
+        sensorId(newVal, oldVal) {
+            this.fetchSensorData();
+        },
+    },
+    created(){
+        this.fetchSensorData();
+        ws.on('open', ()=>{
+            this.fetchSensorData();
+        });
+        //this.$parent.$on('show', this.onShow);
+        this.$parent.$on('resize', doResizeTilesContent);
+        setInterval(function () {
+            this.energyTN++;
+        }.bind(this), 4000);
+    },
+    methods: {
+        getParam(par, div){
+            let res = this.sensor ? this.sensor.param(par) : undefined;
+            res = (res !== undefined) ? res / div : undefined;
+            return res;
+        },
+        /*onShow(){
+            //doResizeTilesContent();
+        },*/
+        fetchSensorData(){
+            if(this.sensorId) {
+                wscli.send(`#Sensor:0x${Number(this.sensorId).toHex()},GetName,GetData`);
+                this.sendAutosend();
+            }
+        },
+        sendAutosend(){
+            clearTimeout(this.timeoutHandle);
+            if(this.sensorId){
+                wscli.send(`#Sensor:0x${Number(this.sensorId).toHex()},SetAutosend:300`);
+                this.timeoutHandle = setTimeout(this.sendAutosend, 60*1000);
+            }
+        },
+    },
+    props: {
+        name: String,
+        params: Object
+    },
+    template: `
+        <div class="tile tile-energy-monitor">
+            <div class="tile-caption">
+                <div class="zoom-place">
+                    <div class="zoomed-content">
+                        <nobr class="tile-caption-data">
+                            <span>{{ sensor ? sensor.name || String(sensor) : 'no sensor'}}</span>
+                            <span style="flex-grow: 1;">&nbsp;</span>
+                            <span class="tile-energy-monitor-data-energy">
+                                <span>{{Number(this['energy' + (energyTN % 3 ? 'T' + (energyTN % 3) : '')]).toFixed(0)}}</span><span>T{{energyTN % 3 || ''}}</span>
+                            </span>
+                        </nobr>
+                    </div>
+                </div>
+            </div>
+            <div class="tile-data tile-energy-monitor-data">
+                <div class="tile-energy-monitor-data-voltage">
+                    <div class="zoom-place">
+                        <div class="zoomed-content">
+                            <span>{{Number(voltage).toFixed(0)}}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="tile-energy-monitor-data-current">
+                    <div class="zoom-place">
+                        <div class="zoomed-content">
+                            <span>{{Number(current).toFixed(1)}}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        `
+    }
+);
+
+// noinspection CssUnusedSymbol
+document.write(`
+<style type="text/css">
+    .tile-energy-monitor-data .zoomed-content{
+        zoom: 1;
+        --max-zoom: 5;
+    }
+</style>
+`);
+
+function doResizeTilesContent() {
+    setTimeout(()=>{
+        doZoom('.tile-energy-monitor-data .zoomed-content');
+    }, 100);
+}
+//window.addEventListener('resize', doResizeTilesContent, false);
+
+// noinspection JSUnusedLocalSymbols
+/*wscli.commands.add({Count: Number}, (arg) => {
+        if (wscli.context.current === wscli.context.tile) {
+            doResizeTilesContent();
+            return true;
+        }
+    }
+);
+*/
+
+Vue.component('tile-energy-monitor-settings', {
+    props: {
+        type: String,
+        tile: Object,
+    },
+    computed:{
+        params(){
+            return this.tile.params;
+        },
+        sensors(){
+            let res = vSensors.sensors.toArray().filter((sd)=> (sd.param('voltage') !== undefined));
+            if(this.sensor && !res.find(item => item.id === this.sensor))
+                res.splice(0, 0, vSensors.sensors[this.sensor] || new SensorData(this.sensor));
+            return res;
+        },
+        sensor: {
+            get(){
+                return Number(this.params.sensor);
+            },
+            set(val) {
+                this.setParam({sensor: val});
+            }
+        },
+    },
+    methods: {
+        setParam(param){
+            let params = Object.assign(this.params);
+            for(let key in param)// noinspection JSUnfilteredForInLoop
+                params[key] = param[key];
+            mm.tiles.setParams(this.tile.id, params);
+        },
+        onShow(){
+            if(!this._isActive) {
+                this._isActive = !this._isActive;
+                sensorsInfoQuery.start();
+            }
+        },
+        onHide(){
+            if(this._isActive) {
+                this._isActive = !this._isActive;
+                sensorsInfoQuery.stop();
+            }
+        },
+    },
+    created() {
+        this.$parent.$on('show-' + this.type, this.onShow);
+        this.$parent.$on('hide-' + this.type, this.onHide);
+    },
+    template: `
+           <div>
+                <div>
+                    <span>Датчик</span>
+                    <select v-model="sensor">
+                        <option v-for="sensor in sensors" v-bind:value="sensor.id">{{String(sensor)}}{{sensor ? ', ' + sensor.param('voltage')/10 + 'B' : ''}}</option>
+                    </select>
+                </div>
+            </div>
+        `
+});
+
+
+}
+                        
+mm['tile-energy-monitor'] = new tileEnergyMonitor_class();
 
 /* tile-temperature-humidity-battery v.0.0.1 */
 
@@ -1353,212 +1501,3 @@ Vue.component('tile-temperature-settings', {
 }
                         
 mm['tile-temperature-humidity-battery'] = new tileTemperatureHumidityBattery_class();
-
-/* tile-energy-monitor v.0.0.1 */
-
-function tileEnergyMonitor_class(){
-                        
-let module = {exports: this};
-mm.tiles.components.types.add('tile-energy-monitor', {title: 'Энергомонитор'});
-
-// noinspection JSUnusedLocalSymbols
-Vue.component('tile-energy-monitor', {
-    data:()=>({
-        energyTN: 0
-    }),
-    computed:{
-        sensorId() {
-            return (this.params || {}).sensor;
-        },
-        sensor() {
-            return vSensors.sensors[this.sensorId];
-        },
-        voltage() {
-            return this.getParam('voltage', 10);
-        },
-        current() {
-            return this.getParam('current', 100);
-        },
-        power() {
-            return this.getParam('power', 1);
-        },
-        energy() {
-            return this.getParam('energy', 1000);
-        },
-        energyT1() {
-            return this.getParam('energy-t1', 1000);
-        },
-        energyT2() {
-            return this.getParam('energy-t2', 1000);
-        },
-    },
-    watch:{
-        sensorId(newVal, oldVal) {
-            this.fetchSensorData();
-        },
-    },
-    created(){
-        this.fetchSensorData();
-        ws.on('open', ()=>{
-            this.fetchSensorData();
-        });
-        //this.$parent.$on('show', this.onShow);
-        this.$parent.$on('resize', doResizeTilesContent);
-        setInterval(function () {
-            this.energyTN++;
-        }.bind(this), 4000);
-    },
-    methods: {
-        getParam(par, div){
-            let res = this.sensor ? this.sensor.param(par) : undefined;
-            res = (res !== undefined) ? res / div : undefined;
-            return res;
-        },
-        /*onShow(){
-            //doResizeTilesContent();
-        },*/
-        fetchSensorData(){
-            if(this.sensorId) {
-                wscli.send(`#Sensor:0x${Number(this.sensorId).toHex()},GetName,GetData`);
-                this.sendAutosend();
-            }
-        },
-        sendAutosend(){
-            clearTimeout(this.timeoutHandle);
-            if(this.sensorId){
-                wscli.send(`#Sensor:0x${Number(this.sensorId).toHex()},SetAutosend:300`);
-                this.timeoutHandle = setTimeout(this.sendAutosend, 60*1000);
-            }
-        },
-    },
-    props: {
-        name: String,
-        params: Object
-    },
-    template: `
-        <div class="tile tile-energy-monitor">
-            <div class="tile-caption">
-                <div class="zoom-place">
-                    <div class="zoomed-content">
-                        <nobr class="tile-caption-data">
-                            <span>{{ sensor ? sensor.name || String(sensor) : 'no sensor'}}</span>
-                            <span style="flex-grow: 1;">&nbsp;</span>
-                            <span class="tile-energy-monitor-data-energy">
-                                <span>{{Number(this['energy' + (energyTN % 3 ? 'T' + (energyTN % 3) : '')]).toFixed(0)}}</span><span>T{{energyTN % 3 || ''}}</span>
-                            </span>
-                        </nobr>
-                    </div>
-                </div>
-            </div>
-            <div class="tile-data tile-energy-monitor-data">
-                <div class="tile-energy-monitor-data-voltage">
-                    <div class="zoom-place">
-                        <div class="zoomed-content">
-                            <span>{{Number(voltage).toFixed(0)}}</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="tile-energy-monitor-data-current">
-                    <div class="zoom-place">
-                        <div class="zoomed-content">
-                            <span>{{Number(current).toFixed(1)}}</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        `
-    }
-);
-
-// noinspection CssUnusedSymbol
-document.write(`
-<style type="text/css">
-    .tile-energy-monitor-data .zoomed-content{
-        zoom: 1;
-        --max-zoom: 5;
-    }
-</style>
-`);
-
-function doResizeTilesContent() {
-    setTimeout(()=>{
-        doZoom('.tile-energy-monitor-data .zoomed-content');
-    }, 100);
-}
-//window.addEventListener('resize', doResizeTilesContent, false);
-
-// noinspection JSUnusedLocalSymbols
-/*wscli.commands.add({Count: Number}, (arg) => {
-        if (wscli.context.current === wscli.context.tile) {
-            doResizeTilesContent();
-            return true;
-        }
-    }
-);
-*/
-
-Vue.component('tile-energy-monitor-settings', {
-    props: {
-        type: String,
-        tile: Object,
-    },
-    computed:{
-        params(){
-            return this.tile.params;
-        },
-        sensors(){
-            let res = vSensors.sensors.toArray().filter((sd)=> (sd.param('voltage') !== undefined));
-            if(this.sensor && !res.find(item => item.id === this.sensor))
-                res.splice(0, 0, vSensors.sensors[this.sensor] || new SensorData(this.sensor));
-            return res;
-        },
-        sensor: {
-            get(){
-                return Number(this.params.sensor);
-            },
-            set(val) {
-                this.setParam({sensor: val});
-            }
-        },
-    },
-    methods: {
-        setParam(param){
-            let params = Object.assign(this.params);
-            for(let key in param)// noinspection JSUnfilteredForInLoop
-                params[key] = param[key];
-            mm.tiles.setParams(this.tile.id, params);
-        },
-        onShow(){
-            if(!this._isActive) {
-                this._isActive = !this._isActive;
-                sensorsInfoQuery.start();
-            }
-        },
-        onHide(){
-            if(this._isActive) {
-                this._isActive = !this._isActive;
-                sensorsInfoQuery.stop();
-            }
-        },
-    },
-    created() {
-        this.$parent.$on('show-' + this.type, this.onShow);
-        this.$parent.$on('hide-' + this.type, this.onHide);
-    },
-    template: `
-           <div>
-                <div>
-                    <span>Датчик</span>
-                    <select v-model="sensor">
-                        <option v-for="sensor in sensors" v-bind:value="sensor.id">{{String(sensor)}}{{sensor ? ', ' + sensor.param('voltage')/10 + 'B' : ''}}</option>
-                    </select>
-                </div>
-            </div>
-        `
-});
-
-
-}
-                        
-mm['tile-energy-monitor'] = new tileEnergyMonitor_class();
