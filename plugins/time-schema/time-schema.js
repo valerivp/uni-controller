@@ -184,12 +184,9 @@ function getParams(SchemaID, DOWs) {
 wscli.commands.add({GetParams: String},
     function (arg) {
         if(wscli.context.current === wscli.context.TimeSchema){
-            //let qp = {$ID: wscli.current.TimeSchema};
-            //if(db.querySync(`SELECT * FROM TimeSchemas WHERE ID = $ID AND Type = $Type`, qp).length){
-                arg = arg === '' ? undefined : (arg | 0);
-                wscli.sendClientData(`#TimeSchema:${wscli.current.TimeSchema},Params:${getParams(wscli.current.TimeSchema, arg)}`);
-                return true;
-            //}
+            arg = arg === '' ? undefined : (arg | 0);
+            wscli.sendClientData(`#TimeSchema:${wscli.current.TimeSchema},Params:${getParams(wscli.current.TimeSchema, arg)}`);
+            return true;
         }
     },
     'Get TimeSchema params.');
