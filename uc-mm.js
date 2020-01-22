@@ -131,11 +131,7 @@ function cmdRemove(pluginName) {
         console.log(`Plugin '${pluginName}' not installed.`);
 
 }
-
-function cmdUpdate(dirName) {
-    //let dir = path.dirname(module.filename) + '/plugins/' + path.parse(dirName).base;
-    let dir = `./plugins/${path.parse(dirName).base}`;
-
+function updatePlugin(dir) {
     const obj = JSON.parse(fs.readFileSync(`${dir}/package.json`, 'utf8'));
 
     let rows = db.querySync("SELECT * FROM Plugins WHERE Name = $Name", {$Name: obj.name});
@@ -149,62 +145,80 @@ function cmdUpdate(dirName) {
     let q = "CREATE TABLE mem.dependencies AS\nSELECT '' as Name WHERE 1 = 0\n";
     for(let d in obj["plugins-dependencies"]){
         q = q + `UNION\n
-                 SELECT '${d}'\n`;
+                         SELECT '${d}'\n`;
     }
     db.querySync(q);
 
     q = `SELECT d.Name FROM mem.dependencies as d
-        LEFT JOIN Plugins as p
-        ON d.Name = p.Name
-        WHERE p.Name IS NULL`;
+                LEFT JOIN Plugins as p
+                ON d.Name = p.Name
+                WHERE p.Name IS NULL`;
     rows = db.querySync(q);
 
     if(rows.length) {
         rows.forEach(function (row) {
             console.log(`Required plugin '${row.Name}' not installed.`);
         });
+        db.querySync("DROP TABLE mem.dependencies");
         return false;
     }
 
-    try{
-        db.beginTransaction();
 
-        if(pluginExistData) {
-            // удалим список зависимостей
-            db.querySync("DELETE FROM PluginsDependences WHERE Plugin = $Name", {$Name: pluginData.Name});
-            db.querySync("UPDATE Plugins SET Version = $Version, Directory = $Directory WHERE Name = $Name",
-                {$Name: pluginData.Name, $Version: obj.version, $Directory: dir});
-        }else{
-            db.querySync("INSERT INTO Plugins (Name, Version, Directory) VALUES ($Name, $Version, $Directory)",
-                {$Name: obj.name, $Version: obj.version, $Directory: dir});
-        }
-        let pluginData = db.querySync("SELECT Name FROM Plugins WHERE Name = $Name", {$Name: obj.name})[0];
-
-        q = `INSERT INTO PluginsDependences (Plugin, DependsOn)
-                SELECT $Name, p.Name FROM mem.dependencies as d
-                LEFT JOIN Plugins as p
-                ON d.Name = p.Name`;
-        db.querySync(q, {$Name: pluginData.Name});
-
-
-        let UninstallInfo = '';
-        if(obj.node){
-            const plugin = require(dir + '/' + obj.node);
-            if(plugin.update)
-                UninstallInfo = plugin.update(pluginExistData ? pluginExistData.Version : undefined,
-                    pluginExistData ? pluginExistData.UninstallInfo : undefined);
-        }
-        db.querySync("UPDATE Plugins SET UninstallInfo = $UninstallInfo WHERE Name = $Name", {$Name: pluginData.Name, $UninstallInfo: UninstallInfo});
-
-
-        db.commitTransaction();
-        console.log(`Plugin '${obj.name}' was updated.`);
-    }catch (err){
-        if(db.isTransaction())
-            db.rollbackTransaction();
-        throw(err);
-
+    if(pluginExistData) {
+        // удалим список зависимостей
+        db.querySync("DELETE FROM PluginsDependences WHERE Plugin = $Name", {$Name: pluginData.Name});
+        db.querySync("UPDATE Plugins SET Version = $Version, Directory = $Directory WHERE Name = $Name",
+            {$Name: pluginData.Name, $Version: obj.version, $Directory: dir});
+    }else{
+        db.querySync("INSERT INTO Plugins (Name, Version, Directory) VALUES ($Name, $Version, $Directory)",
+            {$Name: obj.name, $Version: obj.version, $Directory: dir});
     }
+    let pluginData = db.querySync("SELECT Name FROM Plugins WHERE Name = $Name", {$Name: obj.name})[0];
+
+    q = `INSERT INTO PluginsDependences (Plugin, DependsOn)
+                    SELECT $Name, p.Name FROM mem.dependencies as d
+                    LEFT JOIN Plugins as p
+                    ON d.Name = p.Name`;
+    db.querySync(q, {$Name: pluginData.Name});
+
+
+    let UninstallInfo = '';
+    if(obj.node){
+        const plugin = require(dir + '/' + obj.node);
+        if(plugin.update)
+            UninstallInfo = plugin.update(pluginExistData ? pluginExistData.Version : undefined,
+                pluginExistData ? pluginExistData.UninstallInfo : undefined);
+    }
+    db.querySync("UPDATE Plugins SET UninstallInfo = $UninstallInfo WHERE Name = $Name", {$Name: pluginData.Name, $UninstallInfo: UninstallInfo});
+    db.querySync("DROP TABLE mem.dependencies");
+
+    console.log(`Plugin '${obj.name}' was updated.`);
+
+}
+
+function cmdUpdate(dirName) {
+    let dir = `./plugins/${path.parse(dirName).base}`;
+
+    let mask = path.parse(dirName).base
+        .replaceAll('.', '\\.')
+        .replaceAll('$', '\\$')
+        .replaceAll('*', '.*');
+    mask = `^${mask}$`;
+
+    fs.readdirSync('./plugins').forEach((dir)=>{
+        if (fs.statSync(`./plugins/${dir}`).isDirectory() && dir.match(mask) ) {
+            dir = `./plugins/${path.parse(dir).base}`;
+            try{
+                db.beginTransaction();
+                updatePlugin(dir);
+                db.commitTransaction();
+            }catch (err){
+                if(db.isTransaction())
+                    db.rollbackTransaction();
+                throw(err);
+            }
+        }
+    });
 
 }
 
