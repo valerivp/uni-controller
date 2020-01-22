@@ -112,31 +112,33 @@ wscli.commands.add({SetParams: Object},
     function (arg) {
         if(wscli.context.current === wscli.context.TimeSchema){
             let qp = {$ID: wscli.current.TimeSchema};
-            if(db.querySync(`SELECT * FROM TimeSchemas WHERE ID = $ID`, qp).length){
+            let rows = db.querySync(`SELECT * FROM TimeSchemas WHERE ID = $ID AND Type != ''`, qp);
+            if(rows.length){
+                qp.$Type = rows[0].Type;
                 let q = '';
                 for(let key in arg){
-                    if(key === 'DOWs'){
-                        qp.$DOWs = arg.DOWs | 0;
-                        q += `UPDATE TimeSchemasDOW SET DOWs = $DOWs WHERE SchemaID = $ID;
-                            INSERT INTO TimeSchemasDOW (SchemaID, DOWs)
-                                SELECT $ID, $DOWs WHERE (Select Changes() = 0);\n`;
+                    if(key === 'DOWmask'){
+                        qp.$DOWmask = arg.DOWmask | 0;
+                        q += `UPDATE TimeSchemasDOW SET DOWmask = $DOWmask WHERE SchemaID = $ID AND Type = $Type;
+                            INSERT INTO TimeSchemasDOW (SchemaID, Type, DOWmask)
+                                SELECT $ID, $Type, $DOWmask WHERE (Select Changes() = 0);\n`;
                     }else if(key.startsWith('dow=')){
                         let dow = wscli.data.fromString(key, Object).dow;
-                        q += `DELETE FROM TimeSchemasParams WHERE SchemaID = $ID AND DOW = ${dow};\n`;
+                        q += `DELETE FROM TimeSchemasParams WHERE SchemaID = $ID AND Type = $Type AND DOW = ${dow};\n`;
                         let data = arg[key];
                         data = wscli.data.fromString(data, Array);
                         if(data.length) {
-                            q += `INSERT INTO TimeSchemasParams(SchemaID, DOW, BeginTime, Value) VALUES\n`;
+                            q += `INSERT INTO TimeSchemasParams(SchemaID, Type, DOW, BeginTime, Value) VALUES\n`;
                             q += data.map((item) => wscli.data.fromString(item, Object))
                                 .map((item) =>
-                                    `($ID, ${dow}, ${item.time === undefined ? 'NULL' : item.time}, ${item.value === undefined ? 'NULL' : item.value})`
+                                    `($ID, $Type, ${dow}, ${item.time === undefined ? 'NULL' : item.time}, ${item.value === undefined ? 'NULL' : item.value})`
                                 )
                                 .join(',\n') + ';\n';
                         }
                     }
                 }
                 db.querySync(q, qp);
-                wscli.sendData(`#TimeSchema:${qp.$ID},Params:${getParams(qp.$ID, qp.$DOWs)}`);
+                wscli.sendData(`#TimeSchema:${qp.$ID},Params:${getParams(qp.$ID, qp.$DOWmask)}`);
                 return true;
             }
         }
@@ -144,39 +146,42 @@ wscli.commands.add({SetParams: Object},
     'Set TimeSchema params.');
 
 
-function getParams(SchemaID, DOWs) {
+function getParams(SchemaID, DOWmask) {
     let res = {};
-    let qp = {$ID: SchemaID, $DOWs: (DOWs === undefined ? 0b11111111 : DOWs)};
+    let qp = {$ID: SchemaID, $DOWmask: (DOWmask === undefined ? 0b11111111 : DOWmask)};
 
-    let rows = db.querySync(`SELECT DOWs FROM TimeSchemasDOW WHERE SchemaID = $ID`, qp);
-    res.DOWs = rows.length ? rows[0].DOWs : 0;
+    let rows = db.querySync(`SELECT * FROM TimeSchemas WHERE ID = $ID AND Type != ''`, qp);
+    if(rows.length) {
+        qp.$Type = rows[0].Type;
+        rows = db.querySync(`SELECT DOWmask FROM TimeSchemasDOW WHERE SchemaID = $ID AND Type = $Type`, qp);
+        res.DOWmask = rows.length ? rows[0].DOWmask : 0;
 
-    rows = db.querySync(`SELECT TimeSchemasDOWs.DOW, BeginTime, Value,
-        (TimeSchemasParams.DOW IS NULL) AS NoData  
-        FROM TimeSchemasDOWs AS TimeSchemasDOWs
-        LEFT JOIN TimeSchemasParams AS TimeSchemasParams
-            ON TimeSchemasDOWs.DOW = TimeSchemasParams.DOW
-                AND TimeSchemasParams.SchemaID = $ID
-        WHERE  TimeSchemasDOWs.DOWs & $DOWs
-        ORDER BY TimeSchemasDOWs.DOW`, qp);
-    let dow, i, data = {};
+        rows = db.querySync(`SELECT TimeSchemasDOWmask.DOW, BeginTime, Value,
+            (TimeSchemasParams.DOW IS NULL) AS NoData  
+            FROM TimeSchemasDOWmask AS TimeSchemasDOWmask
+            LEFT JOIN TimeSchemasParams AS TimeSchemasParams
+                ON TimeSchemasDOWmask.DOW = TimeSchemasParams.DOW
+                    AND TimeSchemasParams.SchemaID = $ID AND Type = $Type
+            WHERE TimeSchemasDOWmask.DOWmask & $DOWmask
+            ORDER BY TimeSchemasDOWmask.DOW`, qp);
+        let dow, i, data = {};
 
-    rows.forEach((row)=>{
-        if(dow !== row.DOW){
-            i = 0;
-            dow = row.DOW;
-            data[dow] = [];
-            if(row.NoData)
-                return;
+        rows.forEach((row) => {
+            if (dow !== row.DOW) {
+                i = 0;
+                dow = row.DOW;
+                data[dow] = [];
+                if (row.NoData)
+                    return;
+            }
+            data[dow].push({time: row.BeginTime, value: row.Value});
+            i++;
+        });
+
+        for (let dow in data) {
+            res[`dow=${dow}`] = wscli.data.toString(data[dow]);
         }
-        data[dow].push( {time: row.BeginTime, value: row.Value});
-        i++;
-    });
-
-    for(let dow in data){
-        res[`dow=${dow}`] = wscli.data.toString(data[dow]);
     }
-
     res = wscli.data.toString(res);
     return res;
 }
@@ -213,20 +218,20 @@ function getDbInitData() {
                 {"ID": 0, "Count": 0, "MaxCount": 8}
               ]
             },
-            "TimeSchemasDOWs": {
+            "TimeSchemasDOWmask": {
               "schema": {
                 "DOW": "INTEGER PRIMARY KEY AUTOINCREMENT",
-                "DOWs": "INTEGER NOT NULL"
+                "DOWmask": "INTEGER NOT NULL"
               },
               "data": [
-                {"DOW": 0, "DOWs": 128},
-                {"DOW": 1, "DOWs": 1},
-                {"DOW": 2, "DOWs": 2},
-                {"DOW": 3, "DOWs": 4},
-                {"DOW": 4, "DOWs": 8},
-                {"DOW": 5, "DOWs": 16},
-                {"DOW": 6, "DOWs": 32},
-                {"DOW": 7, "DOWs": 64}
+                {"DOW": 0, "DOWmask": 128},
+                {"DOW": 1, "DOWmask": 1},
+                {"DOW": 2, "DOWmask": 2},
+                {"DOW": 3, "DOWmask": 4},
+                {"DOW": 4, "DOWmask": 8},
+                {"DOW": 5, "DOWmask": 16},
+                {"DOW": 6, "DOWmask": 32},
+                {"DOW": 7, "DOWmask": 64}
               ]
             },
             "TimeSchemas": {
@@ -239,12 +244,14 @@ function getDbInitData() {
             "TimeSchemasDOW": {
               "schema": {
                 "SchemaID": "INTEGER NOT NULL CONSTRAINT [TimeSchemaID] REFERENCES [TimeSchemas]([ID]) ON DELETE CASCADE",
-                "DOWs": "INTEGER NOT NULL ON CONFLICT REPLACE DEFAULT 0"
+                "Type": "CHAR(32) NOT NULL",
+                "DOWmask": "INTEGER NOT NULL ON CONFLICT REPLACE DEFAULT 0"
               }
             },
             "TimeSchemasParams": {
               "schema": {
                 "SchemaID": "INTEGER NOT NULL CONSTRAINT [TimeSchemaID] REFERENCES [TimeSchemas]([ID]) ON DELETE CASCADE",
+                "Type": "CHAR(32) NOT NULL",
                 "DOW": "INTEGER NOT NULL",
                 "BeginTime": "INTEGER NOT NULL",
                 "Value": "CHAR(64)"

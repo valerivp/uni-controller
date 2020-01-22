@@ -3,9 +3,6 @@ const TimeSchemaComponentsTypes = function () {
 TimeSchemaComponentsTypes.prototype.add = function(name, params){
     this[name] = params;
     this[name].name = name;
-    this[name].value = params.value;
-    this[name].type = params.value.type;
-    this[name].specification = params.value.specification;
 
 };
 TimeSchemaComponentsTypes.prototype.length = function () {
@@ -24,31 +21,20 @@ function DataItem(par) {
     this.value = (par || {}).value;
 }
 DataItem.prototype._toString = DataItem.prototype.toString;
-DataItem.prototype.toString = function(par, info){
-    if(par === undefined)
-        return this._toString();
-    else if(par === 'time'){
-        if(this.time !== undefined) {
-            let t = String(this.time).replaceAll(':', '');
-            t = Number.parseInt(t) % 10000;
-            t = isNaN(t) ? undefined : (t > 2359 ? 2359 : (t < 0 ? 0 : t));
-            t = t === undefined ? undefined
-                : `${String('00' + Math.trunc(t / 100)).slice(-2)}:${String('00' + (t % 100)).slice(-2)}`;
-            return t;
-        }
-    }else if(par === 'value'){
-        if(info.type === Number){
-            if(this.value !== undefined) {
-                let v = Number.parseFloat(this.value);
-                v = isNaN(v) ? undefined : v;
-                v = v === undefined ? undefined
-                    : Number(v).toFixed(info.specification);
-                return v;
-            }
 
-        }else
-            throw new Error(`Unknown type of parameter: ${info.type}`);
+DataItem.prototype.parseTime = function(){
+    if(this.time !== undefined) {
+        let t = String(this.time).replaceAll(':', '');
+        t = Number.parseInt(t) % 10000;
+        t = isNaN(t) ? undefined : (t > 2359 ? 2359 : (t < 0 ? 0 : t));
+        t = t === undefined ? undefined
+            : `${String('00' + Math.trunc(t / 100)).slice(-2)}:${String('00' + (t % 100)).slice(-2)}`;
+        return t;
     }
+};
+DataItem.prototype.timeToData = function(){
+    let t = this.parseTime();
+    return t === undefined ? undefined : String(t).replaceAll(':', '');
 };
 
 function DOWData(pdow) {
@@ -60,8 +46,6 @@ Object.defineProperty(DOWData.prototype, 'dow', {
     get() { return this._dow; },
     set(val) { throw('Property is read only'); },
 });
-
-
 
 
 function TimeSchema(pId) {
@@ -153,31 +137,29 @@ const vTimeSchemaSettings = new Vue({
         setParams(dow, item){
             let data = this.dowData[dow].data;
             data = data
-                .filter((item)=>(item.time !== undefined ))
-                .map((item)=>{
-                    let t = item.toString('time'), v = item.toString('value',
-                        vTimeSchemaComponentsTypes[this.selectedTimeSchema.type]);
-                    return {
-                        time: t === undefined ? undefined : String(t).replaceAll(':', ''),
-                        value: v === undefined ? undefined : 10 * v
-                    }
-                });
+                .map((item)=>({
+                    time: item.timeToData(),
+                    value: vTimeSchemaSettings.typeInfo.valueToData(item.value)
+                }))
+                .filter((item)=>(item.time !== undefined ));
             let data1 = {};
             data1[`dow=${dow}`] = data.map((item)=>wscli.data.toString(item));
             wscli.send(`#TimeSchema:${this.selectedTimeSchemaId},SetParams:${wscli.data.toString(data1)}`);
-
         },
 
-        setDOWs(){
+        setDOWmask(){
             let mask = "";
             for (var dow = 0; dow < 7; dow++) {
                 mask = (this.dowData[dow + 1].use ? "1" : "0") + mask;
             }
             mask = Number('0b' + mask);
-            wscli.send(`#TimeSchema:${this.selectedTimeSchemaId},SetParams:${wscli.data.toString({DOWs: mask})}`);
+            wscli.send(`#TimeSchema:${this.selectedTimeSchemaId},SetParams:${wscli.data.toString({DOWmask: mask})}`);
         },
     },
     computed:{
+        typeInfo(){
+            return vTimeSchemaComponentsTypes[this.selectedTimeSchema.type];
+        },
         types(){
             let res = vTimeSchemaComponentsTypes;
             if(this.selectedTypeName && !res[this.selectedTypeName]){
@@ -265,7 +247,7 @@ const vTimeSchemaSettings = new Vue({
             
                 <div> 
                     <label><input v-if="dow.dow >= 1" type="checkbox" v-model="dow.use" 
-                        v-on:change="setDOWs()">
+                        v-on:change="setDOWmask()">
                     <span>{{['Общая настройка', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'][dow.dow]}}</span>
                     </label>
                 </div>
@@ -274,14 +256,22 @@ const vTimeSchemaSettings = new Vue({
                     <span>время</span>
                     <div>
                         <input v-for="item in dow.data" type="text" placeholder="hh:mm"
-                              v-model="item.time" v-on:change="setParams(dow.dow, item)">
+                            style="text-align: center;"
+                            v-model="item.time" v-on:change="setParams(dow.dow, item)">
                     </div>
                 </div>
-                <div v-show="(!dow.dow) || dow.use">
-                    <span>температура<span style="font-size: 0.75em; margin: 0;">,&deg;C</span></span>
-                    <div>
-                        <input v-for="item in dow.data" type="text" placeholder="00.0"
-                              v-model="item.value" v-on:change="setParams(dow.dow, item)">
+                <div v-if="(!dow.dow) || dow.use">
+                    <span>{{typeInfo.caption}}<span style="font-size: 0.75em; margin: 0;">{{(typeInfo.unit ? (', ' + typeInfo.unit) : '') }}</span></span>
+                    <div v-if="typeInfo.type === Boolean">
+                        <input v-for="item in dow.data" type="checkbox"
+                            v-bind:style="typeInfo.style"
+                            v-model="item.value" v-on:change="setParams(dow.dow, item)">
+                    </div>
+                    <div v-if="typeInfo.type !== Boolean">
+                        <input v-for="item in dow.data" type="text"
+                            v-bind:placeholder="typeInfo.placeholder"
+                            v-bind:style="typeInfo.style"
+                            v-model="item.value" v-on:change="setParams(dow.dow, item)">
                     </div>
                 </div>
             </div>
@@ -327,33 +317,22 @@ wscli.commands.add({Params: Object}, (arg)=>{
     if(wscli.context.current === wscli.context.timeSchema){
         vTimeSchemaSettings.checkTimeSchema(wscli.current.timeSchema);
         for(let key in arg){
-            if(key === 'DOWs'){
-                let use = arg.DOWs | 0;
+            if(key === 'DOWmask'){
+                let use = arg.DOWmask | 0;
                 Vue.set(vTimeSchemaSettings.dowData[0], 'use', true);
                 for(let i = 0; i < 7; i++)
                     Vue.set(vTimeSchemaSettings.dowData[i + 1], 'use', (use & (0x1 << i)) !== 0);
             }else if(key.startsWith('dow=')){
-                let info = vTimeSchemaComponentsTypes[vTimeSchemaSettings.timeSchemas[wscli.current.timeSchema].type];
                 let dow = wscli.data.fromString(key, Object).dow;
                 let data = wscli.data.fromString(arg[key], Array);
 
                 data = data.map((item) => wscli.data.fromString(item, Object));
                 data = data.map((item) => {
                     let obj = new DataItem(item);
-                    obj.time = obj.toString('time');
-
-                    if(info.type === Number){
-                        if(item.value !== undefined) {
-                            obj.value = item.value / 10;
-                            obj.value = obj.toString('value',
-                                info);
-                        }
-
-                    }else
-                        throw new Error(`Unknown type of parameter: ${info.type}`);
-
-
-                    return obj;
+                    return new DataItem({
+                        time: obj.parseTime(),
+                        value: vTimeSchemaSettings.typeInfo.valueFromData(obj.value)
+                    });
                 });
 
                 data = data.filter((item)=>( item.time !== undefined))

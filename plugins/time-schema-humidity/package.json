@@ -1,5 +1,5 @@
 {
-  "name": "time-schema-temperature",
+  "name": "time-schema-humidity",
   "version": "0.0.1",
   "plugins-dependencies": {
     "time-schema": ""
@@ -7,7 +7,7 @@
   "node": "",
   "web":{
     "js":[
-      "www/time-schema-temperature-web.js"
+      "www/time-schema-humidity-web.js"
     ],
     "css":[
     ]
