@@ -212,7 +212,7 @@ const vTimeSchemaSettings = new Vue({
             this.dowData.push(new DOWData(i));
     },
     template:`
-    <div id="tab-content-time-schema-settings" title="Настройка схемы">
+    <div id="tab-content-time-schema-settings" title="Настройка схем">
         <div class="sProperties">
             <div>
                 <div>
@@ -243,7 +243,7 @@ const vTimeSchemaSettings = new Vue({
                 </div>
             </div>
             
-             <div v-for="dow in dowData" class="values-short" v-if="selectedTypeName">
+            <div v-for="dow in dowData" class="values-short" v-if="selectedTypeName">
             
                 <div> 
                     <label><input v-if="dow.dow >= 1" type="checkbox" v-model="dow.use" 
@@ -251,32 +251,28 @@ const vTimeSchemaSettings = new Vue({
                     <span>{{['Общая настройка', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'][dow.dow]}}</span>
                     </label>
                 </div>
-            
-                <div v-show="(!dow.dow) || dow.use">
-                    <span>время</span>
+                <div v-if="(!dow.dow) || dow.use" class="time-value">
                     <div>
-                        <input v-for="item in dow.data" type="text" placeholder="hh:mm"
+                        <span>время</span>
+                        <span>{{typeInfo.caption}}<span style="font-size: 0.75em; margin: 0;">{{(typeInfo.unit ? (', ' + typeInfo.unit) : '') }}</span></span>
+                    </div>
+                    <div v-for="item in dow.data">
+                        <input type="text" placeholder="hh:mm"
                             style="text-align: center;"
                             v-model="item.time" v-on:change="setParams(dow.dow, item)">
-                    </div>
-                </div>
-                <div v-if="(!dow.dow) || dow.use">
-                    <span>{{typeInfo.caption}}<span style="font-size: 0.75em; margin: 0;">{{(typeInfo.unit ? (', ' + typeInfo.unit) : '') }}</span></span>
-                    <div v-if="typeInfo.type === Boolean">
-                        <input v-for="item in dow.data" type="checkbox"
+                        <input type="checkbox" v-if="typeInfo.type === Boolean"
                             v-bind:style="typeInfo.style"
+                            v-show="item.time !== undefined"
                             v-model="item.value" v-on:change="setParams(dow.dow, item)">
-                    </div>
-                    <div v-if="typeInfo.type !== Boolean">
-                        <input v-for="item in dow.data" type="text"
+                        <input type="text" v-if="typeInfo.type !== Boolean"
                             v-bind:placeholder="typeInfo.placeholder"
+                            v-show="item.time !== undefined"
                             v-bind:style="typeInfo.style"
                             v-model="item.value" v-on:change="setParams(dow.dow, item)">
                     </div>
-                </div>
-            </div>
-       </div>
-         
+                 </div>
+             </div>
+        </div>
     </div>`
 
 });
