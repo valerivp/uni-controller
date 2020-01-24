@@ -146,7 +146,7 @@ function updatePlugin(dir) {
     let pluginExistData = rows.length ? rows[0] : undefined;
 
     if(pluginExistData && pluginExistData.Version === obj.version) {
-        console.log(`Plugin '${obj.name}' no need to update.`);
+        console.warn(`Plugin '${obj.name}' no need to update.`);
         return true;
     }
 
@@ -270,7 +270,7 @@ function getDbInitData() {
 function getArgumentsDescription(){
     return {
         help: ['h', 'Show this help.', 'help'],
-        update: ['u', 'Update plugin. Directory name as param.', 'update', true],
+        update: ['u', 'Update plugin. Directory name/mask as param.', 'update', true],
         remove: ['r', 'Remove plugin. Plugin name as param.', 'remove', true],
         list: ['l', 'List installed plugin.', 'list']
     }

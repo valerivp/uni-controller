@@ -46,20 +46,21 @@ console._error = console.error;
 console.error = function (arg) {
     if(arg instanceof Error)
         arg = arg.stack;
-    console._log(`\x1b[2K\x1b[31m${arg}\x1b[0m`);
+    console._log(`\x1b[2K\x1b[91m${arg}\x1b[0m`);
     write_file_log(arg);
 };
 console._info = console.info;
 console.info = function (arg) {
-    if(arg instanceof Error)
-        console.error(arg);
-    else {
-        console._log(`\x1b[2K\x1b[34m${arg}\x1b[0m`);
-        write_file_log(arg);
-    }
+    console._log(`\x1b[2K\x1b[94m${arg}\x1b[0m`);
+    write_file_log(arg);
+};
+console._warn = console.warn;
+console.warn = function (arg) {
+    console._log(`\x1b[2K\x1b[93m${arg}\x1b[0m`);
+    write_file_log(arg);
 };
 console.state = function (arg) {
-    console._log(`\x1b[2K\x1b[32m${arg}\x1b[1A\x1b[0m`)
+    console._log(`\x1b[2K\x1b[92m${arg}\x1b[1A\x1b[0m`)
 }
 
 
