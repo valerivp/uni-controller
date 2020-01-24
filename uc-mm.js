@@ -112,6 +112,9 @@ function cmdList() {
     rows.forEach(function (row) {
         console.log(`${row.Name}\t${row.Version}\t${row.Directory}`);
     });
+    if(!rows.length)
+        console.log(`Plugins not installed.`);
+
 }
 
 function cmdRemove(pluginName) {
