@@ -29,7 +29,7 @@ function GetInfo(info, arg) {
         // noinspection JSUnresolvedVariable
         if(arg)
             checkRangeTimeSchema(wscli.current.timeSchema);
-        //let TimeSchemasCount = db.querySync("SELECT Count(*) AS Count FROM TimeSchemasSettings")[0].Count;
+        //let TimeSchemasCount = db.querySync("SELECT Count FROM TimeSchemasSettings")[0].Count;
         let q = `SELECT SchemaID, Name, Type
             FROM TimeSchemas AS TimeSchemas 
             LEFT JOIN TimeSchemasTypes AS TimeSchemasTypes
@@ -42,8 +42,8 @@ function GetInfo(info, arg) {
             res = true;
         });
         // noinspection JSConstructorReturnsPrimitive
-        if(!res)
-            throw ('No data');
+//        if(!res)
+//            throw ('No data');
         return res;
     }
 }

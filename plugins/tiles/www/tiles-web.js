@@ -269,25 +269,6 @@ wscli.commands.add({Name: String}, SetInfo.bind(undefined, 'name'));
 wscli.commands.add({Type: String}, SetInfo.bind(undefined, 'type'));
 wscli.commands.add({Params: Object}, SetInfo.bind(undefined, 'params'));
 
-// wscli.commands.add({Type: String}, (arg)=> {
-//         if(wscli.context.current === wscli.context.tile){
-//             vTiles.checkTile(wscli.current.tile);
-//             if(vTiles.tiles[wscli.current.tile].type !== arg)
-//                 Vue.set(vTiles.tiles[wscli.current.tile], "type", arg);
-//             return true;
-//         }
-//     }
-// );
-//
-// wscli.commands.add({Params: Object}, (arg) =>{
-//         if(wscli.context.current === wscli.context.tile){
-//             vTiles.checkTile(wscli.current.tile);
-//             Vue.set(vTiles.tiles[wscli.current.tile], 'params', arg);
-//             return true;
-//         }
-//     }
-// );
-
 wscli.commands.add({Count: Number}, (arg) => {
         if (wscli.context.current === wscli.context.tile) {
             checkInRange(wscli.current.tile, 0, 0, 'Tile');
