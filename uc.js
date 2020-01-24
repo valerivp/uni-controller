@@ -11,7 +11,7 @@ if(! Buffer.alloc) Buffer = require('safe-buffer').Buffer;
 const router = require('./uc-router');
 module.exports.router = router;
 
-const server = require('./uc-server').init(8080, router);
+const server = require('./uc-server').init(router);
 
 const wscli = require('./uc-wscli').init(server.ws);
 

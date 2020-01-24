@@ -211,7 +211,7 @@ const vTileSettings = new Vue({
     created: function() {
     },
     template:`
-    <div id="tab-content-tile-settings" title="Настройка">
+    <div id="tab-content-tile-settings" title="Настройка плиток">
         <div class="sProperties">
             <div>
                 <div>

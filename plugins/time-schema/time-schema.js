@@ -34,7 +34,7 @@ function GetInfo(info, arg) {
             FROM TimeSchemas AS TimeSchemas 
             LEFT JOIN TimeSchemasTypes AS TimeSchemasTypes
                 ON TimeSchemas.TypeID = TimeSchemasTypes.TypeID
-            WHERE (SchemaID = $SchemaID OR ($SchemaID = 0 AND SchemaID <= (SELECT Count(*) AS Count FROM TimeSchemasSettings)))`;
+            WHERE (SchemaID = $SchemaID OR ($SchemaID = 0 AND SchemaID <= (SELECT Count FROM TimeSchemasSettings)))`;
         let rows = db.querySync(q, {$SchemaID: wscli.current.timeSchema});
         rows.forEach(function (row) { // noinspection JSUnresolvedVariable
             let data = `#TimeSchema:${row.SchemaID},${info}:${row[info]}`;
@@ -93,7 +93,7 @@ wscli.commands.add({SetType: String},
 wscli.commands.add({GetCount: null},
     function(arg){
         if(wscli.context.current === wscli.context.timeSchema) {
-            let row = db.querySync("SELECT COUNT(*) AS Count  FROM TimeSchemas")[0];
+            let row = db.querySync("SELECT Count FROM TimeSchemasSettings")[0];
             // noinspection JSUnresolvedVariable
             wscli.sendClientData(`#TimeSchema,Count:${row.Count}`);
             return true;
@@ -105,7 +105,7 @@ wscli.commands.add({GetCount: null},
 function checkRangeTimeSchema(arg) {
     // noinspection JSUnresolvedVariable
     return wscli.checkInRange(arg, 0,
-        db.querySync("SELECT COUNT(0) AS Count FROM TimeSchemas")[0].Count,
+        db.querySync("SELECT Count FROM TimeSchemasSettings")[0].Count,
         'TimeSchema');
 }
 
@@ -113,14 +113,14 @@ wscli.commands.add({SetCount:Number},
     function(arg){
         if(wscli.context.current === wscli.context.timeSchema) {
 
-            wscli.checkInRange(arg, 0,
-                db.querySync("SELECT MaxCount FROM TimeSchemasSettings")[0].MaxCount,
-                'TimeSchema')
+            let row = db.querySync("SELECT MaxCount, Count FROM TimeSchemasSettings")[0];
+            wscli.checkInRange(arg, 0, row.MaxCount, 'TimeSchema')
 
-            let count = db.querySync("SELECT COUNT(*) AS Count FROM TimeSchemas")[0].Count;
+            let count = row.Count;
             if(count >= arg){
                 let q = `DELETE FROM TimeSchemas WHERE SchemaID > $SchemasCount;
-                    SELECT COUNT(0) AS Count FROM TimeSchemas;`;
+                    UPDATE TimeSchemasSettings SET Count = (SELECT COUNT(*) AS Count FROM TimeSchemas);
+                    SELECT Count FROM TimeSchemasSettings;`;
                 let row = db.querySync(q, {$SchemasCount: arg})[0];
                 wscli.sendData(`#TimeSchema,Count:${row.Count}`);
             }else{
@@ -131,12 +131,13 @@ wscli.commands.add({SetCount:Number},
                 let q = `INSERT
                         INTO TimeSchemas (SchemaID, TypeID)
                         VALUES ($SchemaID, $TypeID);
-                     SELECT SchemaID AS Count, SchemaID, Type
-                        FROM TimeSchemas AS TimeSchemas
+                     UPDATE TimeSchemasSettings SET Count = (SELECT COUNT(*) AS Count FROM TimeSchemas);
+                     SELECT Count, SchemaID, Type
+                        FROM TimeSchemasSettings AS TimeSchemasSettings, TimeSchemas AS TimeSchemas
                         LEFT JOIN TimeSchemasTypes AS TimeSchemasTypes
                             ON TimeSchemas.TypeID = TimeSchemasTypes.TypeID
-                        ORDER BY SchemaID DESC
-                        LIMIT 1;`;
+                                AND TimeSchemasSettings.Count = TimeSchemas.SchemaID
+                        WHERE TimeSchemas.SchemaID = $SchemaID`;
                 for(let i = count + 1; i <= arg; i++){
                     qp.$SchemaID = i;
                     let row = db.querySync(q, qp)[0];
@@ -275,10 +276,11 @@ function getDbInitData() {
           "main": {
             "TimeSchemasSettings": {
               "schema": {
-                "MaxCount": "INTEGER NOT NULL"
+                "MaxCount": "INTEGER NOT NULL",
+                "Count": "INTEGER NOT NULL ON CONFLICT REPLACE DEFAULT 0"
               },
               "data": [
-                {"RowID": 1, "MaxCount": 8}
+                {"RowID": 1, "MaxCount": 8, "Count": 0}
               ]
             },
             "TimeSchemasDOWmask": {
@@ -325,14 +327,14 @@ function getDbInitData() {
             },
             "TimeSchemasDOW": {
               "schema": {
-                "SchemaID": "INTEGER NOT NULL CONSTRAINT [TimeSchemaID] REFERENCES [TimeSchemas]([SchemaID]) ON DELETE CASCADE",
+                "SchemaID": "INTEGER NOT NULL",
                 "TypeID": "INTEGER NOT NULL CONSTRAINT [TypeID] REFERENCES [TimeSchemasTypes]([TypeID]) ON DELETE CASCADE",
                 "DOWmask": "INTEGER NOT NULL ON CONFLICT REPLACE DEFAULT 0"
               }
             },
             "TimeSchemasParams": {
               "schema": {
-                "SchemaID": "INTEGER NOT NULL CONSTRAINT [TimeSchemaID] REFERENCES [TimeSchemas]([SchemaID]) ON DELETE CASCADE",
+                "SchemaID": "INTEGER NOT NULL",
                 "TypeID": "INTEGER NOT NULL CONSTRAINT [TypeID] REFERENCES [TimeSchemasTypes]([TypeID]) ON DELETE CASCADE",
                 "DOW": "INTEGER NOT NULL",
                 "BeginTime": "INTEGER NOT NULL",

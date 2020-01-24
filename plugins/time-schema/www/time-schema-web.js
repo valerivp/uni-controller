@@ -129,6 +129,8 @@ const vTimeSchemaSettings = new Vue({
                 this.selectedTimeSchemaId = 1;
             else if(!val)
                 this.selectedTimeSchemaId = 0;
+            else if(val < this.selectedTimeSchemaId)
+                this.selectedTimeSchemaId = val;
 
         },
         setName(id, name){

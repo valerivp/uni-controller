@@ -115,12 +115,11 @@ function getDbInitData() {
           "main": {
             "TilesSettings": {
               "schema": {
-                "ID": "INTEGER PRIMARY KEY AUTOINCREMENT",
                 "MaxCount": "INTEGER NOT NULL",
                 "Count": "INTEGER NOT NULL"
               },
               "data": [
-                {"ID": 0, "Count": 1, "MaxCount": 8}
+                {"RowID": 1, "Count": 1, "MaxCount": 8}
               ]
             },
             "TilesParams": {

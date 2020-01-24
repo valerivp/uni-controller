@@ -7,6 +7,7 @@ const multipart = require('multipart-formdata');
 
 const WebStatic = require('node-static');
 const WebSocket = require('ws');
+const db = require("./uc-db").init(getDbInitData());
 
 //authentication.
 const authentication = require('./uc-auth');
@@ -132,13 +133,28 @@ function ping() {
 }
 
 
-function init(port, r){
+function init(r){
     if(!router){
         router = r;
-        httpServer.listen(port);
+        httpServer.listen(db.querySync(`SELECT Port FROM ServerSettings`)[0].Port);
         setInterval(ping, 30000);
     }
     return module.exports;
 }
 module.exports.init = init;
 
+function getDbInitData() {
+
+    return `{
+          "main": {
+            "ServerSettings": {
+              "schema": {
+                "Port": "INTEGER NOT NULL"
+              },
+              "data": [
+                {"RowID": 1, "Port": 8080}
+              ]
+            }
+          }
+        }`;
+}
