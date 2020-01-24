@@ -149,11 +149,10 @@ function getDbInitData() {
             },
             "SensorsSettings": {
               "schema": {
-                "ID": "INTEGER PRIMARY KEY AUTOINCREMENT",
                 "MaxTimeDivergence": "INTEGER"
               },
               "data": [
-                {"ID": 0, "MaxTimeDivergence": 2}
+                {"RowID": 1, "MaxTimeDivergence": 2}
               ]
             }
           },

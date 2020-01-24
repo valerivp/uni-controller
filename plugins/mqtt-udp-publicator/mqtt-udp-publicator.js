@@ -88,15 +88,11 @@ function getDbInitData() {
           "main": {
             "MQTT_UDP_publicator_Settings": {
               "schema": {
-                "ID": "INTEGER PRIMARY KEY AUTOINCREMENT",
                 "PublicateSensorsData": "BOOLEAN NOT NULL",
                 "IP": "CHAR(15) NOT NULL ON CONFLICT REPLACE DEFAULT ''"
               },
-              "index": {
-                
-              },
               "data": [
-                {"ID": 0, "PublicateSensorsData": 0, "IP": "192.168.1.255"}
+                {"RowID": 1, "PublicateSensorsData": 0, "IP": "192.168.1.255"}
               ]
             }
           }

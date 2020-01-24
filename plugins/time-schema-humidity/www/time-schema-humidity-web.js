@@ -1,5 +1,5 @@
 
-mm["time-schema"].components.types.add('time-schema-humidity',
+mm["time-schema"].components.types.add('humidity',
     {
         title: 'Влажность',
         caption: 'влажность',
@@ -7,13 +7,12 @@ mm["time-schema"].components.types.add('time-schema-humidity',
         placeholder: '00',
         style: 'text-align: right;',
         type: Number,
-        min: 0,
-        max: 99,
+
         parseValue: function(val){
             let v = Number.parseFloat(val);
             v = isNaN(v) ? undefined : v;
             v = v === undefined ? undefined
-                : Number(Math.min(this.max, Math.max(this.min, v))).toFixed(0);
+                : Number(v).toFixed(0);
             return v;
         },
         valueFromData(val){

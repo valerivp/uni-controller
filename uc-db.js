@@ -78,15 +78,18 @@ function checkTableSchema(schema, table, data){
         }
     }
 
-    for(let key in data.index || {}) {
-        let index_info = db.querySync(`PRAGMA ${schema}.index_info([${table}.${key}])`);
-        if(!index_info.length){
-            let columns = '';
-            for(let i = 0; i < data.index[key].length; i++)
-                columns += `, [${data.index[key][i]}]`;
-            columns = columns.slice(2);
-            let q = `CREATE UNIQUE INDEX ${schema}.[${table}.${key}] ON ${table} (${columns})`;
-            db.querySync(q);
+    for(let indexType in {'unique index': '', 'index': ''}){
+        let index = data[indexType] || {};
+        for(let key in index) {
+            let index_info = db.querySync(`PRAGMA ${schema}.index_info([${table}.${key}])`);
+            if(!index_info.length){
+                let columns = '';
+                for(let i = 0; i < index[key].length; i++)
+                    columns += `, [${index[key][i]}]`;
+                columns = columns.slice(2);
+                let q = `CREATE ${indexType} ${schema}.[${table}.${key}] ON ${table} (${columns})`;
+                db.querySync(q);
+            }
         }
     }
 

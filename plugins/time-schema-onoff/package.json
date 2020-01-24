@@ -4,7 +4,7 @@
   "plugins-dependencies": {
     "time-schema": ""
   },
-  "node": "",
+  "node": "time-schema-onoff.js",
   "web":{
     "js":[
       "www/time-schema-onoff-web.js"

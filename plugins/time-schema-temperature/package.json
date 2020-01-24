@@ -4,7 +4,7 @@
   "plugins-dependencies": {
     "time-schema": ""
   },
-  "node": "",
+  "node": "time-schema-temperature.js",
   "web":{
     "js":[
       "www/time-schema-temperature-web.js"

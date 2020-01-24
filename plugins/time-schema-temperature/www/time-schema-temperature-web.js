@@ -1,5 +1,5 @@
 
-mm["time-schema"].components.types.add('time-schema-temperature',
+mm["time-schema"].components.types.add('temperature',
     {
         title: 'Температура',
         caption: 'температура',
@@ -7,13 +7,10 @@ mm["time-schema"].components.types.add('time-schema-temperature',
         placeholder: '00.0',
         style: 'text-align: right;',
         type: Number,
-        min: 5,
-        max: 35,
-        parseValue: function(val){
+        parseValue(val){
             let v = Number.parseFloat(val);
             v = isNaN(v) ? undefined : v;
-            v = v === undefined ? undefined
-                : Number(Math.min(this.max, Math.max(this.min, v))).toFixed(1);
+            v = v === undefined ? undefined : Number(v).toFixed(1);
             return v;
         },
         valueFromData(val){

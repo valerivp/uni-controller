@@ -4,7 +4,7 @@
   "plugins-dependencies": {
     "time-schema": ""
   },
-  "node": "",
+  "node": "time-schema-humidity.js",
   "web":{
     "js":[
       "www/time-schema-humidity-web.js"

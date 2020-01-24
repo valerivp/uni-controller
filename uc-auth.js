@@ -32,7 +32,6 @@ function getDbInitData() {
           "main": {
             "Authentication": {
               "schema": {
-                "ID": "INTEGER PRIMARY KEY AUTOINCREMENT",
                 "User": "CHAR(32) NOT NULL",
                 "Password": "CHAR(32) NOT NULL ON CONFLICT REPLACE DEFAULT ''"
               },
@@ -40,7 +39,7 @@ function getDbInitData() {
                 "User": ["User"]
               },
               "data": [
-                {"ID": 0, "User": "Admin"}
+                {"RowID": 1, "User": "Admin"}
               ]
             }
           }

@@ -1,5 +1,5 @@
 
-mm["time-schema"].components.types.add('time-schema-onoff',
+mm["time-schema"].components.types.add('onoff',
     {
         title: 'Вкл./выкл.',
         caption: 'вкл./выкл.',

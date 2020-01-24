@@ -104,8 +104,12 @@ const vTimeSchemaSettings = new Vue({
         onShow(params){
             if(params && params.TimeSchemaId)
                 this.selectedTimeSchemaId = params.TimeSchemaId;
+            this.fetchInfo();
         },
         onHide(){
+        },
+        fetchInfo(){
+            wscli.send("#TimeSchema,GetCount,GetName,GetType");
         },
         checkTimeSchema(t, allowZero){
             return checkInRange(t, allowZero ? 0 : 1, this.timeSchemas.length(), "Time schema id");
@@ -210,6 +214,8 @@ const vTimeSchemaSettings = new Vue({
     created: function() {
         for(let i = 0; i <= 7; i++)
             this.dowData.push(new DOWData(i));
+        ws.on('open', this.fetchInfo);
+
     },
     template:`
     <div id="tab-content-time-schema-settings" title="Настройка схем">
