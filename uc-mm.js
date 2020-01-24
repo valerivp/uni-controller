@@ -164,8 +164,9 @@ function updatePlugin(dir) {
     rows = db.querySync(q);
 
     if(rows.length) {
+        console.error(`Plugin ${dir} not updated.`);
         rows.forEach(function (row) {
-            console.error(`Required plugin '${row.Name}' not installed.`);
+            console.error(` Required plugin '${row.Name}' not installed.`);
         });
         db.querySync("DROP TABLE mem.dependencies");
         return false;
