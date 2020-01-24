@@ -17,21 +17,24 @@ if(process.mainModule.filename === module.filename){
     let exitCode = 0;
     for(let key in command)
         cc++;
-    if(!cc || command.hasOwnProperty('help')){
-        if(commands.help)
-            exitCode = commands.help;
-        else if(!cc)
-            exitCode = 2;
-        cmdHelp();
+
+    for(let key in command) {
+        if (!cc || key === 'help') {
+            if (command.help)
+                exitCode = command.help;
+            else if (!cc)
+                exitCode = 2;
+            cmdHelp();
+        }
+        if (key === 'list')
+            cmdList();
+
+        if (key === 'update')
+            command.update.forEach(item => cmdUpdate(item));
+
+        if (key === 'remove')
+            command.remove.forEach(item => cmdRemove(item));
     }
-    if(command.hasOwnProperty('update'))
-        command.update.forEach(item=>cmdUpdate(item));
-
-    if(command.hasOwnProperty('remove'))
-        command.remove.forEach(item=>cmdRemove(item));
-
-    if(command.hasOwnProperty('list'))
-        cmdList();
 
 
     process.exit(exitCode);
@@ -263,10 +266,10 @@ function getDbInitData() {
 
 function getArgumentsDescription(){
     return {
-        help: ['h', 'Show this help.', 'help', null],
-        update: ['u', 'Update plugin. Directory name as param.', 'update'],
-        remove: ['r', 'Remove plugin. Plugin name as param.', 'remove'],
-        list: ['l', 'List installed plugin.', 'list', null]
+        help: ['h', 'Show this help.', 'help'],
+        update: ['u', 'Update plugin. Directory name as param.', 'update', true],
+        remove: ['r', 'Remove plugin. Plugin name as param.', 'remove', true],
+        list: ['l', 'List installed plugin.', 'list']
     }
 }
 
@@ -278,6 +281,7 @@ function parseArg(){
     let isAppArg = false;
     let currentParam, lastParam;
 
+nextArg:
     for(let a = 0; a < process.argv.length; a++){
         let arg = process.argv[a];
         if(basename === path.basename(arg, '.js')){
@@ -291,8 +295,11 @@ function parseArg(){
             for(let p in getArgumentsDescription()){
                 let ad = getArgumentsDescription()[p];
                 if(arg === ('-' + ad[0]) || arg === ('--' + ad[2]) ){
-                    currentParam = ad[2];
-                    break;
+                    if(ad[3])
+                        currentParam = ad[2];
+                    else
+                        commands[ad[2]] = undefined;
+                    continue nextArg;
                 }
             }
             if(!currentParam) {
@@ -314,6 +321,7 @@ function parseArg(){
             lastParam = currentParam;
             currentParam = undefined;
         }
+
     }
 
     return commands;
