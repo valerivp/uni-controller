@@ -17,20 +17,22 @@ if(process.mainModule.filename === module.filename){
     let exitCode = 0;
     for(let key in command)
         cc++;
-    if(command.hasOwnProperty('help')){
+    if(!cc || command.hasOwnProperty('help')){
         if(commands.help)
             exitCode = commands.help;
+        else if(!cc)
+            exitCode = 2;
         cmdHelp();
-    }else if(cc !== 1){
-        exitCode = 2;
-        cmdHelp();
-    }else if(command.hasOwnProperty('update')){
-        cmdUpdate(command.update);
-    }else if(command.hasOwnProperty('remove')){
-        cmdRemove(command.remove);
-    }else if(command.hasOwnProperty('list')){
-        cmdList();
     }
+    if(command.hasOwnProperty('update'))
+        command.update.forEach(item=>cmdUpdate(item));
+
+    if(command.hasOwnProperty('remove'))
+        command.remove.forEach(item=>cmdRemove(item));
+
+    if(command.hasOwnProperty('list'))
+        cmdList();
+
 
     process.exit(exitCode);
 }
@@ -128,7 +130,7 @@ function cmdRemove(pluginName) {
             throw(err);
         }
     }else
-        console.log(`Plugin '${pluginName}' not installed.`);
+        console.error(`Plugin '${pluginName}' not installed.`);
 
 }
 function updatePlugin(dir) {
@@ -157,7 +159,7 @@ function updatePlugin(dir) {
 
     if(rows.length) {
         rows.forEach(function (row) {
-            console.log(`Required plugin '${row.Name}' not installed.`);
+            console.error(`Required plugin '${row.Name}' not installed.`);
         });
         db.querySync("DROP TABLE mem.dependencies");
         return false;
@@ -205,8 +207,11 @@ function cmdUpdate(dirName) {
         .replaceAll('*', '.*');
     mask = `^${mask}$`;
 
+    let found = false;
+
     fs.readdirSync('./plugins').forEach((dir)=>{
         if (fs.statSync(`./plugins/${dir}`).isDirectory() && dir.match(mask) ) {
+            found = true;
             dir = `./plugins/${path.parse(dir).base}`;
             try{
                 db.beginTransaction();
@@ -219,7 +224,8 @@ function cmdUpdate(dirName) {
             }
         }
     });
-
+    if(!found)
+        console.error(`Plugin directory '${dir}' not found.`)
 }
 
 function cmdHelp() {
@@ -270,7 +276,7 @@ function parseArg(){
 
     const basename = path.basename(module.filename, '.js');
     let isAppArg = false;
-    let currentParam = undefined;
+    let currentParam, lastParam;
 
     for(let a = 0; a < process.argv.length; a++){
         let arg = process.argv[a];
@@ -290,14 +296,22 @@ function parseArg(){
                 }
             }
             if(!currentParam) {
-                commands.help = 1;
-                console.log(`Argument '${arg}' unknown`);
+                if(lastParam){
+                    commands[lastParam].push(arg);
+                }else{
+                    commands.help = 1;
+                    console.error(`Argument '${arg}' unknown`);
+                }
             }else if(getArgumentsDescription()[currentParam][3] === null) {
                 commands[currentParam] = undefined;
                 currentParam = undefined;
+                lastParam = currentParam;
             }
         }else{
-            commands[currentParam] = arg;
+            if(commands[currentParam] === undefined)
+                commands[currentParam] = [];
+            commands[currentParam].push(arg);
+            lastParam = currentParam;
             currentParam = undefined;
         }
     }
