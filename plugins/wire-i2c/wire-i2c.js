@@ -9,19 +9,30 @@ const queue = new queues.queue('i2c', 5);
 
 
 let device;
-let _wire, wire;
+let wire;
 module.exports.init = function () {
     device = db.querySync(`SELECT Device FROM I2C_Settings`)[0].Device;
-    _wire = new i2c(undefined, {device: device});
+    //_wire = new i2c(undefined, {device: device});
 };
+
+const wire_cashe = {};
+function getWire(address) {
+    let res = wire_cashe[address];
+    if(!res){
+        res = new i2c(address, {device: device}); // point to your i2c address, debug provides REPL interface
+        wire_cashe[address] = res;
+    }
+    return res;
+}
+
+
 
 module.exports.open = function(address) {
     return queue.lock({timeout: 1000})
         .then(()=> {
             return new Promise(function(resolve, reject) {
-                _wire.open(device, ()=>{
-                    wire = _wire;
-                    wire.setAddress(address);
+                wire = getWire(address);
+                wire.open(device, ()=>{
                     resolve(this);
                 });
             });
