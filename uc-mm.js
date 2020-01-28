@@ -163,7 +163,7 @@ function cmdUpdate(dirName) {
             }catch (err){
                 if(db.isTransaction())
                     db.rollbackTransaction();
-                throw(err);
+                console.error(err);
             }
         }
     });
