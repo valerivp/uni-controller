@@ -157,12 +157,14 @@ function cmdUpdate(dirName) {
             found = true;
             dir = `./plugins/${path.parse(dir).base}`;
             try{
+                mm.loadPlugins();
                 db.beginTransaction();
                 updatePlugin(dir);
                 db.commitTransaction();
             }catch (err){
                 if(db.isTransaction())
                     db.rollbackTransaction();
+                console.error(`Plugin '${dir}' not updated:`);
                 console.error(err);
             }
         }
