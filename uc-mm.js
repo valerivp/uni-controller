@@ -4,7 +4,7 @@ const path = require('path');
 process.chdir(path.dirname(module.filename));
 const fs = require('fs');
 
-const utils = require("uc-utils").initLog({log: false});
+const utils = require("uc-utils").init({log: true});
 const db = require("uc-db");
 const mm = require("uc-mm-rt");
 

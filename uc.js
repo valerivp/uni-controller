@@ -21,11 +21,5 @@ require('uc-wscli').init(server.ws);
 require('uc-sensors');
 
 
-
-
-
-
-
-
 console.info("Started...");
 
