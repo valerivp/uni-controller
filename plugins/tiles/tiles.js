@@ -1,18 +1,11 @@
 'use strict';
 
-const basedir = require('path').dirname(process.mainModule.filename);
-const db = require(`${basedir}/uc-db`);
-const wscli = require(`${basedir}/uc-wscli`);
+const db = require(`uc-db`).init(getDbInitData());
+const wscli = require(`uc-wscli`);
 
 module.exports.init = function () {
-    db.init(getDbInitData());
 
-    // noinspection JSUnresolvedVariable
-    let MaxTilesCount = db.querySync("SELECT MaxCount FROM TilesSettings")[0].MaxCount;
-    db.querySync("DELETE FROM TilesParams WHERE ID > $MaxTilesCount", {$MaxTilesCount: MaxTilesCount});
-    for(let i = 1; i <= MaxTilesCount; i++){
-        db.querySync("INSERT OR IGNORE INTO TilesParams (ID) VALUES ($ID)", {$ID: i});
-    }
+    db.querySync("DELETE FROM TilesParams WHERE ID > (SELECT MaxCount FROM TilesSettings)");
 };
 
 wscli.context.add('tile');         /** @namespace wscli.context.tile */
@@ -127,7 +120,17 @@ function getDbInitData() {
                 "ID": "INTEGER PRIMARY KEY AUTOINCREMENT",
                 "Type": "CHAR(32) NOT NULL ON CONFLICT REPLACE DEFAULT ''",
                 "Params": "TEXT NOT NULL ON CONFLICT REPLACE DEFAULT ''"
-              }
+              },
+              "data": [
+                {"ID": 1},
+                {"ID": 2},
+                {"ID": 3},
+                {"ID": 4},
+                {"ID": 5},
+                {"ID": 6},
+                {"ID": 7},
+                {"ID": 8}
+              ]
             }
           }
         }`;

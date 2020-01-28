@@ -1,12 +1,7 @@
 'use strict';
 
-const basedir = require('path').dirname(process.mainModule.filename);
-const db = require(`${basedir}/uc-db`);
-const wscli = require(`${basedir}/uc-wscli`);
-
-module.exports.init = function () {
-    db.init(getDbInitData());
-};
+const db = require(`uc-db`).init(getDbInitData());
+const wscli = require(`uc-wscli`);
 
 wscli.context.add('timeSchema');         /** @namespace wscli.context.timeSchema */
 

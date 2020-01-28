@@ -1,0 +1,16 @@
+{
+  "name": "i2c-wth-receiver",
+  "version": "0.0.1",
+  "plugins-dependencies": {
+    "wire-i2c": ""
+  },
+  "node": "i2c-wth-receiver",
+  "web":{
+    "js":[
+    ],
+    "css":[
+
+    ]
+  }
+}
+

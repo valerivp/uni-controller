@@ -2,10 +2,9 @@
 
 const udp = require("dgram").createSocket("udp4");
 
-const basedir = require('path').dirname(process.mainModule.filename);
 
-const utils = require(`${basedir}/uc-utils`);
-const sensors = require(`${basedir}/uc-sensors`);
+const utils = require(`uc-utils`);
+const sensors = require(`uc-sensors`);
 const util = require("util");
 
 function EventEmitterClass() {

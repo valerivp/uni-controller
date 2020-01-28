@@ -1,5 +1,6 @@
 
-mm.tiles.components.types.add('tile-temperature', {title: 'Температура и влажность'});
+const tiles = require('tiles');
+tiles.components.types.add('tile-temperature', {title: 'Температура и влажность'});
 
 // noinspection JSUnusedLocalSymbols
 // noinspection JSUnusedGlobalSymbols
@@ -214,7 +215,7 @@ Vue.component('tile-temperature-settings', {
             let params = Object.assign(this.params);
             for (let key in param)// noinspection JSUnfilteredForInLoop
                 params[key] = param[key];
-            mm.tiles.setParams(this.tile.id, params);
+            tiles.setParams(this.tile.id, params);
         },
         onShow() {
             if (!this._isActive) {

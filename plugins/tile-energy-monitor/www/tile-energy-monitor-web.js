@@ -1,4 +1,5 @@
-mm.tiles.components.types.add('tile-energy-monitor', {title: 'Энергомонитор'});
+const tiles = require('tiles');
+tiles.components.types.add('tile-energy-monitor', {title: 'Энергомонитор'});
 
 // noinspection JSUnusedLocalSymbols
 Vue.component('tile-energy-monitor', {
@@ -166,7 +167,7 @@ Vue.component('tile-energy-monitor-settings', {
             let params = Object.assign(this.params);
             for(let key in param)// noinspection JSUnfilteredForInLoop
                 params[key] = param[key];
-            mm.tiles.setParams(this.tile.id, params);
+            tiles.setParams(this.tile.id, params);
         },
         onShow(){
             if(!this._isActive) {

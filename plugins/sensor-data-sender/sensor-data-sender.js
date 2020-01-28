@@ -1,10 +1,9 @@
 'use strict';
 
-const basedir = require('path').dirname(process.mainModule.filename);
-const utils = require(`${basedir}/uc-utils`);
-const db = require(`${basedir}/uc-db`);
-const wscli = require(`${basedir}/uc-wscli`);
-const sensors = require(`${basedir}/uc-sensors`);
+const utils = require(`uc-utils`);
+const db = require(`uc-db`);
+const wscli = require(`uc-wscli`);
+const sensors = require(`uc-sensors`);
 
 module.exports.init = function () {
     db.init(getDbInitData());

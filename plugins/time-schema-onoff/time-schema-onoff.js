@@ -1,12 +1,6 @@
 'use strict';
 
-const basedir = require('path').dirname(process.mainModule.filename);
-const db = require(`${basedir}/uc-db`);
-
-module.exports.init = function () {
-    db.init(getDbInitData());
-};
-
+const db = require(`uc-db`).init(getDbInitData());
 
 
 function getDbInitData() {

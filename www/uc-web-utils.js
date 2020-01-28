@@ -1,4 +1,14 @@
 
+const $plugins = {};
+
+var require = function (name) {
+    if($plugins[name])
+        return $plugins[name];
+    else
+        throw new Error(`Module no found: ${name}`);
+}
+
+
 function checkInRange(arg, lv, rv, desc){
 
     if(lv instanceof Array){

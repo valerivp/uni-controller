@@ -2,12 +2,10 @@
 
 const udp = require("dgram").createSocket("udp4");
 
-const basedir = require('path').dirname(process.mainModule.filename);
-
-const utils = require(`${basedir}/uc-utils`);
-const db = require(`${basedir}/uc-db`);
-const sensors = require(`${basedir}/uc-sensors`);
-const router = require(`${basedir}/uc-router`);
+const utils = require(`uc-utils`);
+const db = require(`uc-db`);
+const sensors = require(`uc-sensors`);
+const router = require(`uc-router`);
 
 
 

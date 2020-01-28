@@ -5,7 +5,6 @@ const serverLocation = location.protocol === 'file:' ? 'localhost:8080' : locati
 
 if (!Array.prototype.last){ Array.prototype.last = function(){ return this[this.length - 1]; } }
 
-let mm = {};
 
 const $store = new Vuex.Store({
     state: {

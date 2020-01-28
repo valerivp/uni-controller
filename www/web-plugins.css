@@ -1,0 +1,380 @@
+
+/* tiles v.0.0.1 */
+
+#tab-content-tiles {
+    height: calc(100vh - 3.5em);
+    display: flex;
+    flex-flow: row wrap;
+    align-content: center;
+    justify-content: center;
+    padding-bottom: 1ex;
+    padding-left: 1ex;
+}
+
+.sTileWrap{
+    padding-top: 1ex;
+}
+.sTile {
+
+    border-radius: 3px;
+    box-shadow: 0 2px 2px 0 rgba(0,0,0,0.14), 0 3px 1px -2px rgba(0,0,0,0.2), 0 1px 5px 0 rgba(0,0,0,0.12);
+    border-top: 0.4ex solid;
+    height: 100%;
+    /*display: flex;*/
+    /*flex-direction: column;*/
+    margin-right: 1ex;
+    cursor: pointer;
+}
+
+.tile{
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+.tile > div {
+    margin-top: 1ex;
+    margin-right: 1ex;
+    margin-left: 1ex;
+    margin-bottom: 0ex;
+}
+.tile > div:last-child{
+    margin-bottom: 1ex;
+}
+
+.tile-caption{
+    flex-grow: 1;
+    min-height: 1em;
+    max-height: 2em;
+}
+.tile-caption > div{
+    width: 100%;
+}
+.tile-caption-data >span:first-child {
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.tile-data{
+    flex-grow: 8;
+}
+
+/*
+.sTile > div {
+    height: inherit;
+}
+*/
+/* --------------------------- */
+/* -- landscape - Zone info -- */
+/* --------------------------- */
+@media screen and (orientation: landscape){
+    .l1-in-line{
+        width: 100%;
+    }
+    .l2-in-line{
+        width: 50%;
+    }
+    .l3-in-line{
+        width: calc(100% / 3);
+    }
+    .l4-in-line{
+        width: 25%;
+    }
+    .sTilesCount1, .sTilesCount2, .sTilesCount3 {
+        height:100%;
+    }
+    .sTilesCount4, .sTilesCount5, .sTilesCount6, .sTilesCount7, .sTilesCount8{
+        height:50%;
+    }
+}
+/* -------------------------- */
+/* -- portrait - Zone info -- */
+/* -------------------------- */
+@media screen and (orientation: portrait){
+    .p1-in-line{
+        width: 100%;
+    }
+    .p2-in-line{
+        width: 50%;
+    }
+    .sTilesCount1{
+        height:100%;
+    }
+    .sTilesCount2{
+        height:50%;
+    }
+    .sTilesCount3, .sTilesCount4, .sTilesCount5, .sTilesCount6{
+        height:calc(100% / 3);
+    }
+    .sTilesCount7, .sTilesCount8{
+        height:25%;
+    }
+
+}
+
+/* clock-at-logo v.0.0.6 */
+#clock-at-logo {
+    display: inline-block;
+    margin: 1ex;
+    cursor: pointer;
+}
+/* sensors-wth433 v.0.0.1 */
+.sSensorBattery{
+    display: flex;
+    justify-content: center;
+}
+
+.sSensorBattery div{
+    width: 1em;
+    height: 1em;
+    background-repeat: no-repeat;
+}
+.sSensorBattery .ok{
+    background: url("data:image/svg+xml;base64,PCEtLT94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPy0tPgo8c3ZnIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHZpZXdCb3g9IjAgMCAyNCAyNCIgdmVyc2lvbj0iMS4xIj4KPGc+CjxwYXRoIHN0eWxlPSJmaWxsOiM1MWNjOTYiIGQ9Ik0gMTAgMiBDIDkuMzk4NDM4IDIgOSAyLjM5ODQzOCA5IDMgTCA5IDQgTCA4IDQgQyA2Ljg5ODQzOCA0IDYgNC44OTg0MzggNiA2IEwgNiAyMCBDIDYgMjEuMTAxNTYzIDYuODk4NDM4IDIyIDggMjIgTCAxNiAyMiBDIDE3LjEwMTU2MyAyMiAxOCAyMS4xMDE1NjMgMTggMjAgTCAxOCA2IEMgMTggNC44OTg0MzggMTcuMTAxNTYzIDQgMTYgNCBMIDE1IDQgTCAxNSAzIEMgMTUgMi4zOTg0MzggMTQuNjAxNTYzIDIgMTQgMiBaIE0gMTEgNCBMIDEzIDQgTCAxMyA2IEwgMTYgNiBMIDE2IDcgTCA4IDcgTCA4IDYgTCAxMSA2IFogIj48L3BhdGg+CjwvZz4KPC9zdmc+");
+}
+.sSensorBattery .low{
+    background: url("data:image/svg+xml;base64,PCEtLT94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPy0tPgo8c3ZnIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHZpZXdCb3g9IjAgMCAyNCAyNCIgdmVyc2lvbj0iMS4xIj4KPGc+CjxwYXRoIHN0eWxlPSJmaWxsOiNlODViNDAiIGQ9Ik0gMTAgMiBDIDkuMzk4NDM4IDIgOSAyLjM5ODQzOCA5IDMgTCA5IDQgTCA4IDQgQyA2Ljg5ODQzOCA0IDYgNC44OTg0MzggNiA2IEwgNiAyMCBDIDYgMjEuMTAxNTYzIDYuODk4NDM4IDIyIDggMjIgTCAxNiAyMiBDIDE3LjEwMTU2MyAyMiAxOCAyMS4xMDE1NjMgMTggMjAgTCAxOCA2IEMgMTggNC44OTg0MzggMTcuMTAxNTYzIDQgMTYgNCBMIDE1IDQgTCAxNSAzIEMgMTUgMi4zOTg0MzggMTQuNjAxNTYzIDIgMTQgMiBaIE0gMTEgNCBMIDEzIDQgTCAxMyA2IEwgMTYgNiBMIDE2IDE3IEwgOCAxNyBMIDggNiBMIDExIDYgWiAiPjwvcGF0aD4KPC9nPgo8L3N2Zz4=");
+}
+
+/* time-schema v.0.0.1 */
+#tab-content-time-schema-settings .values-short input[type="text"] {
+    flex-grow: 1;
+    max-width: 7ex;
+    min-width: 5ex;
+}
+
+#tab-content-time-schema-settings .values-short >div:not(:first-child) span {
+    flex-grow: 1;
+    max-width: 20ex;
+    min-width: 15ex;
+    height: 2em;
+}
+
+#tab-content-time-schema-settings .time-value >div{
+    display: flex;
+    flex-direction: column;
+}
+#tab-content-time-schema-settings .time-value{
+    align-items: flex-start;
+}
+#tab-content-time-schema-settings .time-value input{
+    margin-right: 0;
+}
+
+/* tile-energy-monitor v.0.0.1 */
+.tile-energy-monitor .tile-caption-data{
+    display: flex;
+}
+
+.tile-energy-monitor .tile-data{
+    display: flex;
+    flex-direction: column;
+}
+
+.tile-energy-monitor-data-energy>span:last-child{
+    position: absolute;
+    font-size: 50%;
+}
+.tile-energy-monitor-data-energy:last-child::after{
+    content: 'кВт*ч';
+    font-size: 50%;
+}
+/*
+.tile-energy-monitor-data-energy >span:not(:last-child)::after {
+    font-size: 50%;
+}
+.tile-energy-monitor-data-energy .energy-t1::after{
+    content: 'T1 ';
+}
+.tile-energy-monitor-data-energy .energy-t2::after{
+    content: 'T2 ';
+}
+.tile-energy-monitor-data-energy .energy-t::after{
+    content: 'T ';
+}
+*/
+.tile-energy-monitor-data-voltage, .tile-energy-monitor-data-current{
+    flex-grow: 2;
+    display: flex;
+    align-items: center;
+    /*margin-top: -1ex;*/
+    /*margin-bottom: -1ex;*/
+    text-shadow: 0.2ex 0.2ex 0.2ex rgba( 0,0,0,0.17 );
+}
+.tile-energy-monitor-data-voltage{
+    justify-content: flex-start;;
+
+}
+.tile-energy-monitor-data-current{
+    justify-content: flex-end;
+
+}
+.tile-energy-monitor-data-voltage span::after{
+    content: 'В';
+    font-size: 50%;
+}
+.tile-energy-monitor-data-current span::after{
+    content: 'А';
+    font-size: 50%;
+}
+
+.tile-energy-monitor-data{
+    display: flex;
+}
+.tile-energy-monitor-data > div{
+    flex-grow: 1;
+}
+/* tile-temperature-humidity-battery v.0.0.1 */
+
+.tile-t-h-b .tile-caption-data{
+    display: flex;
+}
+
+.tile-t-h-b .tile-data{
+    display: flex;
+    flex-direction: column;
+}
+
+.tile-temperature-data{
+    flex-grow: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: -1ex;
+    margin-bottom: -1ex;
+
+    text-shadow:  0.2ex 0.2ex 0.2ex rgba( 0,0,0,0.17 );
+}
+.temperature.cold{
+    color: #28b7c8;
+}
+.temperature.warm{
+    color: #ff9d5e;
+}
+
+.temperature::after{
+    content: "°";
+    font-size: 50%;
+    vertical-align: super;
+}
+.temperature{
+    /*margin-right: 0.5ex;*/
+}
+
+.tile-t-h-trend-up, .tile-t-h-trend-down{
+    position: absolute;
+    height: 0.3em;
+    width: 0.3em;
+}
+
+
+.tile-t-h-trend-up::before, .tile-t-h-trend-up::after, .tile-t-h-trend-down::before, .tile-t-h-trend-down::after {
+    height: 0.1em;
+    width: 0.1em;
+    position: absolute;
+    content: '';
+    border-radius: 0.5px;
+    border-left: 0.5px solid;
+    border-bottom: 0.5px solid;
+
+}
+.tile-t-h-trend-up::before {
+    animation: animationArrUp 3s linear infinite;
+}
+.tile-t-h-trend-up::after {
+    animation: animationArrUp 3s linear infinite -1.5s;
+}
+.tile-t-h-trend-down::before {
+    animation: animationArrDown 3s linear infinite;
+}
+.tile-t-h-trend-down::after {
+    animation: animationArrDown 3s linear infinite -1.5s;
+}
+
+
+
+.temperature .tile-t-h-trend-up, .temperature .tile-t-h-trend-down{
+    bottom: 0.2em;
+}
+.humidity .tile-t-h-trend-up, .humidity .tile-t-h-trend-down{
+    top: 0.2em;
+}
+
+.tile-humidity-data{
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    margin-top: -1ex;
+    text-shadow: 0.2ex 0.2ex 0.2ex rgba( 0,0,0,0.17 );
+
+}
+
+.humidity::after{
+    content: "%";
+    /*position: absolute;*/
+    font-size: 50%;
+    /*bottom: 0.3em;*/
+}
+.humidity{
+    /*margin-right: 0.5ex;*/
+}
+
+
+.sensor-battery{
+    display: flex;
+    justify-content: center;
+}
+
+.sensor-battery div{
+    width: 1em;
+    height: 1em;
+    background-repeat: no-repeat;
+}
+.sensor-battery .ok{
+    background: url("data:image/svg+xml;base64,PCEtLT94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPy0tPgo8c3ZnIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHZpZXdCb3g9IjAgMCAyNCAyNCIgdmVyc2lvbj0iMS4xIj4KPGc+CjxwYXRoIHN0eWxlPSJmaWxsOiM1MWNjOTYiIGQ9Ik0gMTAgMiBDIDkuMzk4NDM4IDIgOSAyLjM5ODQzOCA5IDMgTCA5IDQgTCA4IDQgQyA2Ljg5ODQzOCA0IDYgNC44OTg0MzggNiA2IEwgNiAyMCBDIDYgMjEuMTAxNTYzIDYuODk4NDM4IDIyIDggMjIgTCAxNiAyMiBDIDE3LjEwMTU2MyAyMiAxOCAyMS4xMDE1NjMgMTggMjAgTCAxOCA2IEMgMTggNC44OTg0MzggMTcuMTAxNTYzIDQgMTYgNCBMIDE1IDQgTCAxNSAzIEMgMTUgMi4zOTg0MzggMTQuNjAxNTYzIDIgMTQgMiBaIE0gMTEgNCBMIDEzIDQgTCAxMyA2IEwgMTYgNiBMIDE2IDcgTCA4IDcgTCA4IDYgTCAxMSA2IFogIj48L3BhdGg+CjwvZz4KPC9zdmc+");
+}
+.sensor-battery .low{
+    background: url("data:image/svg+xml;base64,PCEtLT94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPy0tPgo8c3ZnIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHZpZXdCb3g9IjAgMCAyNCAyNCIgdmVyc2lvbj0iMS4xIj4KPGc+CjxwYXRoIHN0eWxlPSJmaWxsOiNlODViNDAiIGQ9Ik0gMTAgMiBDIDkuMzk4NDM4IDIgOSAyLjM5ODQzOCA5IDMgTCA5IDQgTCA4IDQgQyA2Ljg5ODQzOCA0IDYgNC44OTg0MzggNiA2IEwgNiAyMCBDIDYgMjEuMTAxNTYzIDYuODk4NDM4IDIyIDggMjIgTCAxNiAyMiBDIDE3LjEwMTU2MyAyMiAxOCAyMS4xMDE1NjMgMTggMjAgTCAxOCA2IEMgMTggNC44OTg0MzggMTcuMTAxNTYzIDQgMTYgNCBMIDE1IDQgTCAxNSAzIEMgMTUgMi4zOTg0MzggMTQuNjAxNTYzIDIgMTQgMiBaIE0gMTEgNCBMIDEzIDQgTCAxMyA2IEwgMTYgNiBMIDE2IDE3IEwgOCAxNyBMIDggNiBMIDExIDYgWiAiPjwvcGF0aD4KPC9nPgo8L3N2Zz4=");
+}
+
+
+@keyframes animationArrUp {
+    0% {
+        border-color: transparent;
+        transform: translate(22%, 130%) rotate(135deg);
+    }
+    40% {
+        border-color: red;
+    }
+    50% {
+        transform: translate(22%, 65%) rotate(135deg);
+    }
+    60% {
+        border-color: red;
+    }
+    100% {
+        border-color: transparent;
+        transform: translate(22%, 0px) rotate(135deg);
+    }
+}
+@keyframes animationArrDown {
+    100% {
+        border-color: transparent;
+        transform: translate(22%, 130%) rotate(-45deg);
+    }
+    60% {
+        border-color: blue;
+    }
+    50% {
+        transform: translate(22%, 65%) rotate(-45deg);
+    }
+    40% {
+        border-color: blue;
+    }
+    0% {
+        border-color: transparent;
+        transform: translate(22%, 0px) rotate(-45deg);
+    }
+}

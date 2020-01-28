@@ -1,5 +1,5 @@
 
-mm["time-schema"].components.types.add('temperature',
+require("time-schema").components.types.add('temperature',
     {
         title: 'Температура',
         caption: 'температура',

@@ -1,5 +1,5 @@
 
-mm["time-schema"].components.types.add('humidity',
+require("time-schema").components.types.add('humidity',
     {
         title: 'Влажность',
         caption: 'влажность',

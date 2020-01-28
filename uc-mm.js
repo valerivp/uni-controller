@@ -1,12 +1,13 @@
 'use strict';
 
-const fs = require('fs');
 const path = require('path');
-const utils = require("./uc-utils").init(false);
-const db = require("./uc-db").init(getDbInitData());
-const router = require("./uc-router");
+process.chdir(path.dirname(module.filename));
+const fs = require('fs');
 
-const mm = module.exports;
+const utils = require("uc-utils").initLog({log: false});
+const db = require("uc-db");
+const mm = require("uc-mm-rt");
+
 
 if(process.mainModule.filename === module.filename){
 
@@ -40,71 +41,6 @@ if(process.mainModule.filename === module.filename){
     process.exit(exitCode);
 }
 
-module.exports["web-plugins.js"] = "./www/uc-web-plugins.js";
-module.exports["web-plugins.css"] = "./www/uc-plugins.css";
-
-module.exports.init = function(){
-    fs.writeFileSync(module.exports["web-plugins.js"], "'use strict';\n\n");
-    fs.writeFileSync(module.exports["web-plugins.css"], "");
-
-    let q = `SELECT DISTINCT p.Name, p.Version AS Version, p.Directory FROM Plugins as p
-        LEFT JOIN PluginsDependences as d
-             ON p.Name = d.Plugin
-        WHERE NOT p.Name IN (
-            SELECT Plugin FROM mem.LoadedPlugins
-            UNION
-            SELECT DISTINCT d.Plugin FROM PluginsDependences as d
-            LEFT JOIN mem.LoadedPlugins as lp
-                 ON d.DependsOn = lp.Plugin
-            WHERE lp.[Plugin] IS NULL
-        )`;
-    let rows = [];
-    do{
-        rows = db.querySync(q);
-        rows.forEach(function (row) {
-            console.info(`Load plugin '${row.Name}'...`);
-
-
-            /** @namespace row.Directory */
-            const obj = JSON.parse(fs.readFileSync(row.Directory + '/package.json', 'utf8'));
-            if(obj.node){
-                /** @namespace obj.node */
-                let plugin = require(row.Directory + '/' + obj.node);
-                module.exports[row.Name] = plugin;
-                if(plugin.hasOwnProperty('init')){
-                    plugin.init();
-                }
-            }
-            const about = `\n/* ${row.Name} v.${row.Version} */\n`;
-            /** @namespace obj.web */
-            /** @namespace obj.web.js */
-            if(obj.web && obj.web.js)
-                obj.web.js.forEach(function (file) {
-                    fs.appendFileSync(module.exports["web-plugins.js"], about);
-                    let start = `\nfunction ${row.Name.toCamel()}_class(){
-                        \nlet module = {exports: this};\n`;
-                    fs.appendFileSync(module.exports["web-plugins.js"], start);
-
-                    fs.appendFileSync(module.exports["web-plugins.js"], fs.readFileSync(row.Directory + '/' + file));
-
-                    let end = `\n}
-                        \nmm['${row.Name}'] = new ${row.Name.toCamel()}_class();\n`;
-                    fs.appendFileSync(module.exports["web-plugins.js"], end);
-                });
-
-            if(obj.web && obj.web.css)
-                obj.web.css.forEach(function (file) {
-                    fs.appendFileSync(module.exports["web-plugins.css"], about);
-                    fs.appendFileSync(module.exports["web-plugins.css"], fs.readFileSync(row.Directory + '/' + file));
-                });
-
-            /** @namespace row.Name */
-            db.querySync("INSERT INTO mem.LoadedPlugins (Plugin) VALUES ($Plugin)", {$Plugin: row.Name});
-        });
-    }while(rows.length);
-
-    return module.exports;
-};
 
 function cmdList() {
     let q = "SELECT DISTINCT p.Name, p.Version AS Version, p.Directory FROM Plugins as p";
@@ -244,30 +180,6 @@ function cmdHelp() {
     }
 }
 
-function getDbInitData() {
-
-    return `{
-          "main": {
-            "Plugins": {
-              "Name": "CHAR(64) NOT NULL PRIMARY KEY",
-              "Version": "CHAR(16) NOT NULL ON CONFLICT REPLACE DEFAULT ''",
-              "Directory": "CHAR(64) NOT NULL",
-              "UninstallInfo": "TEXT"
-            },
-            "PluginsDependences": {
-              "Plugin": "CHAR(64) NOT NULL CONSTRAINT [Plugin] REFERENCES [Plugins]([Name]) ON DELETE CASCADE",
-              "DependsOn": "CHAR(64) NOT NULL CONSTRAINT [DependsOn] REFERENCES [Plugins]([Name]) ON DELETE SET NULL"
-            }
-          },
-          "mem":{
-            "LoadedPlugins": {
-              "Order": "INTEGER PRIMARY KEY AUTOINCREMENT",
-              "Plugin": "CHAR(64) NOT NULL CONSTRAINT [Plugin] REFERENCES [Plugins]([Name]) ON DELETE CASCADE"
-            }
-          }
-        }`;
-}
-
 function getArgumentsDescription(){
     return {
         help: ['h', 'Show this help.', 'help'],
@@ -355,7 +267,6 @@ function uninitTable(table, data){
 }
 
 
-module.exports.uninit = uninit;
 function uninit(uninitData){
     if(!uninitData)
         return
@@ -377,17 +288,3 @@ function uninit(uninitData){
     }
 
 }
-
-let urlPlugins = "/plugins";
-router.get(urlPlugins,
-    function (req, res) {
-        res.writeHead(200, {'Content-Type': 'text/json'});
-        let q = `SELECT Name AS name, Version as version
-            FROM mem.LoadedPlugins AS LoadedPlugins
-            LEFT JOIN Plugins AS Plugins
-                ON LoadedPlugins.Plugin = Plugins.Name
-            ORDER BY [Order]`;
-        res.write(JSON.stringify(db.querySync(q)));
-        res.end();
-    },
-    'get plugins info');
