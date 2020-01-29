@@ -62,8 +62,30 @@ module.exports.read = function (len) {
 };
 
 
-function getDbInitData() {
+function getDbInitData1_0_1() {
 
+    return `{
+          "main": {
+            "I2C_Settings": {
+              "schema": {
+                "Platform": "CHAR(16) NOT NULL",
+                "Device": "CHAR(16) NOT NULL"
+              },
+              "data": [
+                {"Platform": "mipsel.linux", "Device": "/dev/i2c-0"},
+                {"Platform": "arm.linux", "Device": "/dev/i2c-1"},
+                {"Platform": "ia32.win32", "Device": "null"},
+              ],
+              "unique index": {
+                "Platform": ["Platform"]
+              }
+            }
+          }
+        }`;
+}
+
+function getDbInitData() {
+    return "{}";
     return `{
           "main": {
             "I2C_Settings": {

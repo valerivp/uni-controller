@@ -8,9 +8,7 @@ process.chdir(path.dirname(module.filename));
 require("uc-utils").init({log: true});
 console.info('Initialization...');
 
-require('uc-mm-rt').loadPlugins();
-
-if(! Buffer.alloc) Buffer = require('safe-buffer').Buffer;
+const  mm = require('uc-mm-rt');
 
 const router = require('uc-router');
 
@@ -19,6 +17,8 @@ const server = require('uc-server').init(router);
 require('uc-wscli').init(server.ws);
 
 require('uc-sensors');
+
+mm.loadPlugins();
 
 
 console.info("Started...");
