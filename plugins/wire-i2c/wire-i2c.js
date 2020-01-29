@@ -8,10 +8,11 @@ const queues = require('uc-qlock');
 const queue = new queues.queue('i2c', 5);
 
 
-let device, wire, _wire;
+let device;
+let wire;
 module.exports.init = function () {
     device = db.querySync(`SELECT Device FROM I2C_Settings`)[0].Device;
-    _wire = new i2c(undefined, {device: device});
+    //_wire = new i2c(undefined, {device: device});
 };
 
 const wire_cashe = {};
@@ -30,10 +31,8 @@ module.exports.open = function(address) {
     return queue.lock({timeout: 500})
         .then(()=> {
             return new Promise(function(resolve, reject) {
-                _wire.setAddress(address);
-                //wire = getWire(address);
-                _wire.open(device, ()=>{
-                    wire = _wire;
+                wire = getWire(address);
+                wire.open(device, ()=>{
                     resolve(this);
                 });
             });
