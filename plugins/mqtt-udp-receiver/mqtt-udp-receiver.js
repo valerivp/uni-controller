@@ -35,18 +35,20 @@ function onMqttUdpData(topic, load){
     sensorData.Type = topic_data[0];
     let load_data = JSON.parse(load);
     /** @namespace load_data.timelabel */
-    if(load_data.timelabel){
-        if(load_data.timelabel.slice(8, 9) === 'T')
-            sensorData.TimeLabel = utils.DateFromShotXMLString(load_data.timelabel);
-        else
-            sensorData.TimeLabel = new Date(load_data.timelabel);
 
-        delete load_data.timelabel;
-    }else{
-        sensorData.TimeLabel = new Date;
+    for(let key in load_data){
+        if(key.toLowerCase() === 'timelabel'){
+            if(load_data[key].slice(8, 9) === 'T')
+                sensorData.TimeLabel = utils.DateFromShotXMLString(load_data[key]);
+            else
+                sensorData.TimeLabel = new Date(load_data[key]);
+        }else
+            sensorData[key] = load_data[key];
     }
+    if(!sensorData.TimeLabel)
+        sensorData.TimeLabel = new Date;
 
-    sensors.updateSensorData(sensorData, load_data);
+    sensors.updateSensorData(sensorData);
 }
 
 module.exports.onMqttUdpData((topic, load)=>{

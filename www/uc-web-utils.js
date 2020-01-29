@@ -127,17 +127,23 @@ function doZoom(selector) {
     let rule = getCssRule(selector);
     if(! rule) return false;
 
-    rule.style.zoom = rule.style.getPropertyValue('--max-zoom');
+    let maxZoom = Number(rule.style.getPropertyValue('--max-zoom') || 1);
+    let minZoom = Number(rule.style.getPropertyValue('--min-zoom')|| 1);
+    rule.style.zoom = maxZoom;
 
     let zoom = rule.style.zoom;
     let elements = document.querySelectorAll(selector);
     for (let elem of elements) {
         let parent = elem.parentNode;
+        let width = parent.style.width;
+        parent.style.width = 'auto';
         let place = parent.parentNode;
-        let newZoom = Math.min(place.offsetHeight * rule.style.zoom / parent.offsetHeight , place.offsetWidth * rule.style.zoom / parent.offsetWidth);
-        zoom = Math.max(isNaN(newZoom) ? 1 : Math.min(zoom, newZoom), 1);
+        let newZoom = 0.99 * Math.min(place.offsetHeight * maxZoom / parent.offsetHeight , place.offsetWidth * maxZoom / parent.offsetWidth);
+        zoom = Math.max(isNaN(newZoom) ? minZoom : Math.min(zoom, newZoom), minZoom);
+        parent.style.width = width;
+
     }
-    rule.style.zoom = Math.min(zoom, rule.style.zoom);
+    rule.style.zoom = Math.min(zoom, maxZoom);
 }
 
 function DateFromShotXMLString(ds){

@@ -34,7 +34,7 @@ function GetInfo(info, arg) {
             res = true;
         });
 
-        return res || !wscli.current.timeSchema;
+        return true; //res || !wscli.current.timeSchema;
     }
 }
 

@@ -81,9 +81,9 @@ Vue.component('tile-temperature', {
             <div class="zoom-place">
                 <div class="zoomed-content">
                     <nobr class="tile-caption-data">
-                        <span>{{ sensor ? sensor.name || String(sensor) : 'no sensor'}}</span>
-                        <span style="flex-grow: 1;">&nbsp;</span>
-                        <span class="sensor-battery" v-if="String(params['show-battery']) === 'true' && sensor && sensor.param('battery') !== undefined"><div v-bind:class="(sensor.param('battery') ? 'ok' : 'low')"></div></span>
+                        <span>{{
+                            sensor ? sensor.name || String(sensor) : 'no sensor'
+                            }}</span><span style="flex-grow: 1;">&nbsp;</span><span class="sensor-battery" v-if="String(params['show-battery']) === 'true' && sensor && sensor.param('battery') !== undefined"><div v-bind:class="(sensor.param('battery') ? 'ok' : 'low')"></div></span>
                     </nobr>
                 </div>
             </div>
@@ -93,9 +93,15 @@ Vue.component('tile-temperature', {
                 v-if="String(params['show-temperature']) === 'true'">
                 <div class="zoom-place">
                     <div class="zoomed-content">
-                        <nobr v-bind:class="temperature === undefined ? '' : (temperature > 0 ? 'temperature warm' : 'temperature cold')">{{temperature === undefined ? '-.-' : String(Number(temperature).toFixed(1)).trim()}}<span v-if="trend('temperature') !== undefined" 
-                                v-bind:class="trend('temperature') ? 'tile-t-h-trend-up' : 'tile-t-h-trend-down'"></span>
+                        <nobr v-if="temperature !== undefined" v-bind:class="(temperature > 0 ? 'temperature warm' : 'temperature cold')">
+                            <span class="integer-part">{{
+                                Number(temperature).toFixed(0)
+                                }}</span><span class="fractional-part">.{{
+                                Number(temperature * 10 % 10).toFixed(0)}}
+                                </span><span v-if="trend('temperature') !== undefined" 
+                                    v-bind:class="trend('temperature') ? 'tile-t-h-trend-up' : 'tile-t-h-trend-down'"></span>
                          </nobr>
+                         <nobr v-else class="temperature">-.-</nobr>
                     </div>
                 </div>
             </div>

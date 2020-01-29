@@ -25,10 +25,16 @@
     color: #ff9d5e;
 }
 
-.temperature::after{
+.integer-part::after{
     content: "°";
     font-size: 50%;
-    vertical-align: super;
+    top: 0.25em;
+    /* vertical-align: super; */
+    position: absolute;
+}
+.fractional-part{
+    font-size: 50%;
+    margin-left: -0.25ex;
 }
 .temperature{
     /*margin-right: 0.5ex;*/

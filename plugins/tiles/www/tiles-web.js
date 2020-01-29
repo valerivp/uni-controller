@@ -286,6 +286,7 @@ document.write(`
 .tile-caption .zoomed-content{
     zoom: 1;
     --max-zoom: 2;
+    --min-zoom: 0.5;
 }
 </style>
 `);
