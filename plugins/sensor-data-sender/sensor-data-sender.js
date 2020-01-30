@@ -7,6 +7,8 @@ const sensors = require(`uc-sensors`);
 
 module.exports.init = function () {
     db.init(getDbInitData());
+    sensors.onSensorDataReceived(sendSensorData);
+
 };
 
 
@@ -57,15 +59,13 @@ function sendSensorData(data) {
     });
 }
 
-sensors.onSensorDataReceived(sendSensorData);
 
 
 
 
-
-
-// noinspection JSUnusedLocalSymbols
-module.exports.update = function(prevVer){
+const update = {};
+module.exports.update = update;
+update['0.0.1'] = function(){
     return getDbInitData();
 };
 

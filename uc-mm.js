@@ -30,8 +30,8 @@ if(process.mainModule.filename === module.filename){
         if (key === 'list')
             cmdList();
 
-        if (key === 'update')
-            command.update.forEach(item => cmdUpdate(item));
+        if (key === 'install')
+            command.install.forEach(item => cmdInstall(item));
 
         if (key === 'remove')
             command.remove.forEach(item => cmdRemove(item));
@@ -54,13 +54,19 @@ function cmdList() {
 }
 
 function cmdRemove(pluginName) {
-    let rows = db.querySync("SELECT * FROM Plugins WHERE Name = $Name", {$Name: pluginName})
+    let q = `SELECT Plugins.Name, PluginsUninstallInfo.UninstallInfo
+        FROM Plugins AS Plugins
+        LEFT JOIN PluginsUninstallInfo AS PluginsUninstallInfo
+            ON Plugins.Name = PluginsUninstallInfo.Plugin 
+        WHERE Name = $Name`;
+    let rows = db.querySync(q, {$Name: pluginName})
     if(rows.length){
         let pluginExistData = rows[0];
         try{
             db.beginTransaction();
 
-            uninit(pluginExistData.UninstallInfo);
+            if(pluginExistData.UninstallInfo)
+                uninit(pluginExistData.UninstallInfo);
 
             db.querySync("DELETE FROM Plugins WHERE Name = $Name", {$Name: pluginName});
 
@@ -75,17 +81,20 @@ function cmdRemove(pluginName) {
         console.error(`Plugin '${pluginName}' not installed.`);
 
 }
-function updatePlugin(dir) {
+function installPlugin(dir) {
     const obj = JSON.parse(fs.readFileSync(`${dir}/package.json`, 'utf8'));
 
     let rows = db.querySync("SELECT * FROM Plugins WHERE Name = $Name", {$Name: obj.name});
     let pluginExistData = rows.length ? rows[0] : undefined;
 
-    if(pluginExistData && pluginExistData.Version === obj.version) {
-        console.warn(`Plugin '${obj.name}' no need to update.`);
-        return true;
-    }
+    if(rows.length)
+        throw(`Plugin '${obj.name}' already installed.`);
 
+    db.querySync("INSERT INTO Plugins (Name, Directory) VALUES ($Name, $Directory)",
+        {$Name: obj.name, $Directory: dir});
+
+    return obj.name;
+    /*
     let q = "CREATE TABLE mem.dependencies AS\nSELECT '' as Name WHERE 1 = 0\n";
     for(let d in obj["plugins-dependencies"]){
         q = q + `UNION\n
@@ -137,14 +146,14 @@ function updatePlugin(dir) {
     db.querySync("UPDATE Plugins SET UninstallInfo = $UninstallInfo WHERE Name = $Name", {$Name: pluginData.Name, $UninstallInfo: UninstallInfo});
     db.querySync("DROP TABLE mem.dependencies");
 
-    console.log(`Plugin '${obj.name}' was updated.`);
+*/
 
 }
 
-function cmdUpdate(dirName) {
-    let dir = `./plugins/${path.parse(dirName).base}`;
+function cmdInstall(dir) {
+    //let dir = `./plugins/${path.parse(dirName).base}`;
 
-    let mask = path.parse(dirName).base
+    let mask = path.parse(dir).base
         .replaceAll('.', '\\.')
         .replaceAll('$', '\\$')
         .replaceAll('*', '.*');
@@ -157,14 +166,15 @@ function cmdUpdate(dirName) {
             found = true;
             dir = `./plugins/${path.parse(dir).base}`;
             try{
-                mm.loadPlugins();
+                //mm.loadPlugins();
                 db.beginTransaction();
-                updatePlugin(dir);
+                let name = installPlugin(dir);
                 db.commitTransaction();
+                console.log(`Plugin '${name}' was installed.`);
             }catch (err){
                 if(db.isTransaction())
                     db.rollbackTransaction();
-                console.error(`Plugin '${dir}' not updated:`);
+                console.error(`Plugin '${dir}' not installed:`);
                 console.error(err);
             }
         }
@@ -174,7 +184,7 @@ function cmdUpdate(dirName) {
 }
 
 function cmdHelp() {
-    console.log(`Usage:\nnode ${path.basename(module.filename)} CMD [param]`);
+    console.log(`Usage:\nnode ${path.basename(module.filename)} CMD [param] [CMD [param]] [...]`);
     console.log("Commands:");
     for(let p in getArgumentsDescription()){
         let pd = getArgumentsDescription()[p];
@@ -184,10 +194,10 @@ function cmdHelp() {
 
 function getArgumentsDescription(){
     return {
-        help: ['h', 'Show this help.', 'help'],
-        update: ['u', 'Update plugin. Directory name/mask as param.', 'update', true],
+        help:   ['h', 'Show this help.', 'help'],
+        update: ['i', 'Install plugin. Directory name/mask as param.', 'install', true],
         remove: ['r', 'Remove plugin. Plugin name as param.', 'remove', true],
-        list: ['l', 'List installed plugin.', 'list']
+        list:   ['l', 'List installed plugin.', 'list']
     }
 }
 

@@ -18,6 +18,16 @@ module.exports.init = function () {
     updateMQTT_UDP_SettingsFromDB();
 
     udp.bind({}, () => { udp.setBroadcast(true);});
+
+    sensors.onSensorDataReceived(function (data) {
+        if(module.MQTT_UDP_Settings.PublicateSensorsData && module.MQTT_UDP_Settings.IP){
+            let params = Object.assign({}, data.params);
+            params.timelabel = data.timelabel;
+            mqtt_udp_send(`${data.type}/0x${Number(data.id).toHex()}`, JSON.stringify(params), module.MQTT_UDP_Settings.IP);
+            //console.log(JSON.stringify(data));
+        }
+    });
+
 };
 
 module.exports.update = function(prevVer){
@@ -70,14 +80,6 @@ function mqtt_udp_send(topic, data, ip_addr){
 
 }
 
-sensors.onSensorDataReceived(function (data) {
-    if(module.MQTT_UDP_Settings.PublicateSensorsData && module.MQTT_UDP_Settings.IP){
-        let params = Object.assign({}, data.params);
-        params.timelabel = data.timelabel;
-        mqtt_udp_send(`${data.type}/0x${Number(data.id).toHex()}`, JSON.stringify(params), module.MQTT_UDP_Settings.IP);
-        //console.log(JSON.stringify(data));
-    }
-});
 
 
 function getDbInitData() {

@@ -1,9 +1,9 @@
 'use strict';
 
 const i2c = require('./i2cs/i2cs');
-const utils = require('uc-utils');
-const db = require(`uc-db`).init(getDbInitData());
+const db = require(`uc-db`);
 const queues = require('uc-qlock');
+const os = require('os');
 
 const queue = new queues.queue('i2c', 5);
 
@@ -11,8 +11,12 @@ const queue = new queues.queue('i2c', 5);
 let device;
 let wire;
 module.exports.init = function () {
-    device = db.querySync(`SELECT Device FROM I2C_Settings`)[0].Device;
-    //_wire = new i2c(undefined, {device: device});
+
+    db.init(getDbInitDataV0_0_2());
+    let qp = {$Platform: `${os.arch()}.${os.platform()}`};
+
+    device = db.querySync(`SELECT Device FROM I2C_Settings WHERE Platform = $Platform`, qp)[0].Device;
+
 };
 
 const wire_cashe = {};
@@ -61,8 +65,17 @@ module.exports.read = function (len) {
     });
 };
 
+const update = {};
+module.exports.update = update;
 
-function getDbInitData1_0_1() {
+
+update['0.0.2'] = function () {
+    db.querySync(`DROP TABLE IF EXISTS I2C_Settings`);
+    db.init(getDbInitDataV0_0_2());
+    return getDbInitDataV0_0_2();
+};
+
+function getDbInitDataV0_0_2() {
 
     return `{
           "main": {
@@ -74,7 +87,7 @@ function getDbInitData1_0_1() {
               "data": [
                 {"Platform": "mipsel.linux", "Device": "/dev/i2c-0"},
                 {"Platform": "arm.linux", "Device": "/dev/i2c-1"},
-                {"Platform": "ia32.win32", "Device": "null"},
+                {"Platform": "ia32.win32", "Device": "null"}
               ],
               "unique index": {
                 "Platform": ["Platform"]
@@ -85,7 +98,6 @@ function getDbInitData1_0_1() {
 }
 
 function getDbInitData() {
-    return "{}";
     return `{
           "main": {
             "I2C_Settings": {
