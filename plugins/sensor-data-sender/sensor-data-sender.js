@@ -24,8 +24,6 @@ wscli.commands.add({SetAutosend: Number}, (arg)=> {
                 db.querySync('DELETE FROM mem.SensorsSendTimeouts WHERE ID = $ID', {$ID: wscli.current.sensor});
             }
             wscli.sendData(`#Sensor:0x${Number(wscli.current.sensor).toHex()},Autosend:${arg}`);
-            //if(arg)
-            //    sendSensorData({ID: wscli.current.sensor});
             return true;
         }
 
