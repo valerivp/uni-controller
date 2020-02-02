@@ -331,6 +331,16 @@ function getDbInitData() {
                 "Value": "CHAR(64)"
               }
             }
+          },
+          "mem":{
+            "TimeSchemasCurrentValues": {
+              "schema": {
+                "SchemaID": "INTEGER NOT NULL",
+                "Value": "CHAR(64)",
+                "TimeLabel": "INTEGER NOT NULL",
+                "PrevValue": "CHAR(64)"
+              }
+            }
           }
         }`;
 }
