@@ -71,7 +71,7 @@ function cmdRemove(pluginName) {
             db.querySync("DELETE FROM Plugins WHERE Name = $Name", {$Name: pluginName});
 
             db.commitTransaction();
-            console.log(`Plugin '${pluginName}' removed.`);
+            console.warn(`Plugin '${pluginName}' removed.`);
         } catch (err){
             if(db.isTransaction())
                 db.rollbackTransaction();
