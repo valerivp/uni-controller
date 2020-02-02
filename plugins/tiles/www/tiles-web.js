@@ -140,9 +140,6 @@ const vTiles = new Vue({
 vContent.addTab({component: vTiles, id: 'tiles'}, {before: 'sensors', });
 
 
-vTilesComponentsTypes.add('tile-test', {title: 'Компонент'});
-vTilesComponentsTypes.add('tile-second', {title: 'Второй'});
-
 const vTileSettings = new Vue({
     data: {
         _isActive: false,
@@ -309,28 +306,3 @@ function doResizeTilesContent() {
 window.addEventListener('resize', doResizeTilesContent, false);
 
 
-Vue.component('tile-test', {
-    props: {
-        tileId: Number
-    },
-    template: '<h3>TEST {{ tileId }}</h3>'
-});
-
-Vue.component('tile-test-settings', {
-    props: {
-        //tileId: Number
-    },
-    template: '<h3>TEST settings {{  }}</h3>'
-});
-
-Vue.component('tile-second', {
-    props: {
-        tileId: Number
-    },
-    template: '<h3>SECOND {{ tileId }}</h3>'
-});
-Vue.component('tile-second-settings', {
-    props: {
-    },
-    template: '<h3>SECOND settings{{  }}</h3>'
-});
