@@ -38,12 +38,14 @@ Vue.component('tile-round-clock', {
             let parent = canvasHTML.parentNode;
             let place = parent.parentNode;
             let newZoom = 0.99 * Math.min(place.offsetHeight / parent.offsetHeight , place.offsetWidth / parent.offsetWidth);
-            this.zoom = Math.max(isNaN(newZoom) ? minZoom : Math.min(maxZoom, newZoom), minZoom);
+            let zoom = Math.max(isNaN(newZoom) ? minZoom : Math.min(maxZoom, newZoom), minZoom);
 
 
             //this.zoom = doZoom('.tile-round-clock-data .zoomed-content', false);
-            canvasHTML.width = canvasHTML.width * this.zoom;
-            canvasHTML.height = canvasHTML.height * this.zoom;
+            canvasHTML.width = canvasHTML.width * zoom;
+            canvasHTML.height = canvasHTML.height * zoom;
+
+            this.zoom = canvasHTML.width / canvasHTML.attributes.width.value;
         },
         drawClock() {
             let d = $store.state.time;
@@ -121,7 +123,7 @@ Vue.component('tile-round-clock', {
     <div class="tile tile-round-clock">
         <div class="tile-round-clock-data">
             <div class="zoom-place">
-                   <canvas class="zoomed-content" height="150" width="150"  v-bind:id="elementid" ></canvas>
+                   <canvas class="zoomed-content" height="150" width="150" v-bind:id="elementid" ></canvas>
                     <!--<div class="square">
                 <div class="zoomed-content">
                    <canvas height="150" width="150"  v-bind:id="elementid" ></canvas>
