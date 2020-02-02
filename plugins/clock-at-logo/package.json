@@ -6,10 +6,10 @@
   "node": "",
   "web":{
     "js":[
-      "www/clock-at-logo-web.js"
+      "clock-at-logo-web.js"
     ],
     "css":[
-      "www/clock-at-logo-web.css"
+      "clock-at-logo-web.css"
     ]
   }
 }

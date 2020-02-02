@@ -114,6 +114,9 @@ const vTiles = new Vue({
             this.$emit('show');
             doResizeTilesContent();
         },
+        onHide(params){
+            this.$emit('hide');
+        },
     },
     created: function() {
         module.exports.setParams = this.setParams;

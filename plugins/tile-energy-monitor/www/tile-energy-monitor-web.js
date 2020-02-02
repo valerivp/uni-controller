@@ -39,24 +39,33 @@ Vue.component('tile-energy-monitor', {
     },
     created(){
         this.fetchSensorData();
-        ws.on('open', ()=>{
-            this.fetchSensorData();
-        });
-        //this.$parent.$on('show', this.onShow);
-        this.$parent.$on('resize', doResizeTilesContent);
-        setInterval(function () {
-            this.energyTN++;
-        }.bind(this), 4000);
+        ws.on('open', this.fetchSensorData);
+
+        this.$parent.$on('resize', this.doResizeTilesContent);
+
+        this.handleInterval = setInterval(function () {this.energyTN++;}.bind(this), 4000);
+
+    },
+    beforeDestroy() {
+        clearInterval(this.handleInterval);
+        clearTimeout(this.timeoutHandle);
+
+        ws.off('open', this.fetchSensorData);
+
+        this.$parent.$off('resize', this.doResizeTilesContent);
     },
     methods: {
+
+
+        doResizeTilesContent() {
+            doZoom('.tile-energy-monitor-data .zoomed-content');
+        },
+
         getParam(par, div){
             let res = this.sensor ? this.sensor.param(par) : undefined;
             res = (res !== undefined) ? res / div : undefined;
             return res;
         },
-        /*onShow(){
-            //doResizeTilesContent();
-        },*/
         fetchSensorData(){
             if(this.sensorId) {
                 wscli.send(`#Sensor:0x${Number(this.sensorId).toHex()},GetName,GetData`);
@@ -121,22 +130,6 @@ document.write(`
 </style>
 `);
 
-function doResizeTilesContent() {
-    setTimeout(()=>{
-        doZoom('.tile-energy-monitor-data .zoomed-content');
-    }, 100);
-}
-//window.addEventListener('resize', doResizeTilesContent, false);
-
-// noinspection JSUnusedLocalSymbols
-/*wscli.commands.add({Count: Number}, (arg) => {
-        if (wscli.context.current === wscli.context.tile) {
-            doResizeTilesContent();
-            return true;
-        }
-    }
-);
-*/
 
 Vue.component('tile-energy-monitor-settings', {
     props: {
@@ -185,6 +178,10 @@ Vue.component('tile-energy-monitor-settings', {
     created() {
         this.$parent.$on('show-' + this.type, this.onShow);
         this.$parent.$on('hide-' + this.type, this.onHide);
+    },
+    beforeDestroy(){
+        this.$parent.$off('show-' + this.type, this.onShow);
+        this.$parent.$off('hide-' + this.type, this.onHide);
     },
     template: `
            <div>

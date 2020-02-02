@@ -866,6 +866,14 @@ function WSConnection (server, terminal) {
             this._events[en] = [];
         this._events[en].push(func);
     };
+    this.off = (event, func) => {
+        let en = 'on' +  event.toLowerCase();
+        if(!this._events[en])
+            this._events[en] = [];
+        let i = this._events[en].indexOf(func);
+        if(i >= 0)
+            this._events[en].splice(i, 1);
+    };
     this.emit = (event, data) => {
         let en = 'on' +  event.toLowerCase();
         if(!this._events[en])

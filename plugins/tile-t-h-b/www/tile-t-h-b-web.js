@@ -38,15 +38,23 @@ Vue.component('tile-temperature', {
     },
     created() {
         this.fetchSensorData();
-        ws.on('open', () => {
-            this.fetchSensorData();
-        });
-        this.$parent.$on('resize', doResizeTilesContent);
+
+        ws.on('open', this.fetchSensorData);
+        this.$parent.$on('resize', this.doResizeTilesContent);
+    },
+    beforeDestroy() {
+        ws.off('open', this.fetchSensorData);
+        this.$parent.$off('resize', this.doResizeTilesContent);
+        clearTimeout(this.timeoutHandle);
     },
     methods: {
-        /*onShow() {
-            doResizeTilesContent();
-        },*/
+
+        doResizeTilesContent() {
+            doZoom('.tile-temperature-data .zoomed-content');
+            doZoom('.tile-temperature-data.only .zoomed-content');
+            doZoom('.tile-humidity-data .zoomed-content');
+            doZoom('.tile-humidity-data.only .zoomed-content');
+        },
         fetchSensorData() {
             if (this.sensorId) {
                 wscli.send(`#Sensor:0x${Number(this.sensorId).toHex()},GetName,GetData`);
@@ -97,7 +105,7 @@ Vue.component('tile-temperature', {
                             <span class="integer-part">{{
                                 Number(temperature).toFixed(0)
                                 }}</span><span class="fractional-part">.{{
-                                Number(temperature * 10 % 10).toFixed(0)}}
+                                Number(Math.abs(temperature * 10 % 10)).toFixed(0)}}
                                 </span><span v-if="trend('temperature') !== undefined" 
                                     v-bind:class="trend('temperature') ? 'tile-t-h-trend-up' : 'tile-t-h-trend-down'"></span>
                          </nobr>
@@ -145,16 +153,6 @@ document.write(`
 `);
 
 
-function doResizeTilesContent() {
-    if (doResizeTilesContent.timeoutHandle)
-        clearTimeout(doResizeTilesContent.timeoutHandle);
-    doResizeTilesContent.timeoutHandle = setTimeout(() => {
-        doZoom('.tile-temperature-data .zoomed-content');
-        doZoom('.tile-temperature-data.only .zoomed-content');
-        doZoom('.tile-humidity-data .zoomed-content');
-        doZoom('.tile-humidity-data.only .zoomed-content');
-    }, 100);
-}
 /*
 window.addEventListener('resize', doResizeTilesContent, false);
 
@@ -239,6 +237,10 @@ Vue.component('tile-temperature-settings', {
     created() {
         this.$parent.$on('show-' + this.type, this.onShow);
         this.$parent.$on('hide-' + this.type, this.onHide);
+    },
+    beforeDestroy(){
+        this.$parent.$off('show-' + this.type, this.onShow);
+        this.$parent.$off('hide-' + this.type, this.onHide);
     },
     template: `
        <div>

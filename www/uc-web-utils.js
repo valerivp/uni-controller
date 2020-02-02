@@ -123,12 +123,14 @@ function getCssRule(selector) {
     return null;
 }
 
-function doZoom(selector) {
+function doZoom(selector, setZoom) {
+
     let rule = getCssRule(selector);
     if(! rule) return false;
 
     let maxZoom = Number(rule.style.getPropertyValue('--max-zoom') || 1);
     let minZoom = Number(rule.style.getPropertyValue('--min-zoom')|| 1);
+    let defZoom = Number(rule.style.getPropertyValue('zoom')|| 1);
     rule.style.zoom = maxZoom;
 
     let zoom = rule.style.zoom;
@@ -143,7 +145,14 @@ function doZoom(selector) {
         parent.style.width = width;
 
     }
-    rule.style.zoom = Math.min(zoom, maxZoom);
+    zoom = Math.min(zoom, maxZoom);
+    if(setZoom === false)
+        rule.style.zoom = defZoom;
+    else
+        rule.style.zoom = zoom;
+
+    return zoom;
+
 }
 
 function DateFromShotXMLString(ds){

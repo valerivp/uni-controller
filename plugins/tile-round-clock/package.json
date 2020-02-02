@@ -1,0 +1,16 @@
+{
+  "name": "web-tile-round-clock",
+  "version": "0.0.1",
+  "plugins-dependencies": {
+  },
+  "node": "",
+  "web":{
+    "js":[
+      "web-tile-round-clock.js"
+    ],
+    "css":[
+      "web-tile-round-clock.css"
+    ]
+  }
+}
+

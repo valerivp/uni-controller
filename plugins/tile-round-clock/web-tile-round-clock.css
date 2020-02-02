@@ -1,0 +1,42 @@
+.tile-round-clock .tile-data{
+    display: flex;
+    flex-direction: column;
+}
+
+.tile-round-clock-data{
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+canvas{
+    background:transparent;
+}
+/*
+.square {
+    width: 30%;
+    margin: auto;
+    background: silver;
+    overflow: hidden;
+}
+*/ /*
+.square:before {
+    content: "";
+    padding-top: 100%;
+    float: left;
+}
+*/ /*
+.wrapper {
+    width: 100px;
+    margin: 0 auto;
+}
+*/ /*
+.box {
+    background: goldenrod;
+    margin-left: auto;
+    margin-right: auto;
+    padding-top: 50%;
+    padding-bottom: 50%;
+}
+*/
