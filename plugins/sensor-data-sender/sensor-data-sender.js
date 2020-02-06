@@ -19,7 +19,7 @@ wscli.commands.add({SetAutosend: Number}, (arg)=> {
             if(arg) {
                 let q = `REPLACE INTO mem.SensorsSendTimeouts (ID, MaxTimeLabel)
                 VALUES ($ID, $TimeLabel)`;
-                db.querySync(q, {$ID: wscli.current.sensor, $TimeLabel: (arg + new Date().getTime() / 1000) | 0});
+                db.querySync(q, {$ID: wscli.current.sensor, $TimeLabel: (arg + Date.now() / 1000) | 0});
             } else {
                 db.querySync('DELETE FROM mem.SensorsSendTimeouts WHERE ID = $ID', {$ID: wscli.current.sensor});
             }
@@ -32,7 +32,7 @@ wscli.commands.add({SetAutosend: Number}, (arg)=> {
 
 function sendSensorData(data) {
     db.querySync(`DELETE FROM mem.SensorsSendTimeouts
-        WHERE MaxTimeLabel < $TimeLabel`, {$TimeLabel: new Date().getTime() / 1000 | 0});
+        WHERE MaxTimeLabel < $TimeLabel`, {$TimeLabel: Date.now() / 1000 | 0});
 
     let q = `SELECT SensorsData.ID AS ID, Type, TimeLabel FROM mem.SensorsData AS SensorsData
         INNER JOIN mem.SensorsSendTimeouts AS SensorsSendTimeouts

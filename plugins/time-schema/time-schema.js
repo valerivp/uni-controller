@@ -3,6 +3,8 @@
 const db = require(`uc-db`).init(getDbInitData());
 const wscli = require(`uc-wscli`);
 
+
+
 wscli.context.add('timeSchema');         /** @namespace wscli.context.timeSchema */
 
 
@@ -151,7 +153,8 @@ wscli.commands.add({SetParams: Object},
             if(qp.$TypeID){
                 Object.assign(qp, db.querySync(`SELECT TimeSchemasTypes.Type,
                         TimeSchemasTypeOptionsMin.[Value] AS minValue,
-                        TimeSchemasTypeOptionsMax.[Value] AS maxValue
+                        TimeSchemasTypeOptionsMax.[Value] AS maxValue,
+                        TimeSchemasTypeOptionsDef.[Value] AS defValue
                     FROM [TimeSchemasTypes]
                         LEFT JOIN TimeSchemasTypeOptions AS TimeSchemasTypeOptionsMin
                             ON TimeSchemasTypes.[Type] = TimeSchemasTypeOptionsMin.Type
@@ -159,6 +162,9 @@ wscli.commands.add({SetParams: Object},
                         LEFT JOIN TimeSchemasTypeOptions AS TimeSchemasTypeOptionsMax
                             ON TimeSchemasTypes.[Type] = TimeSchemasTypeOptionsMax.Type
                                 AND TimeSchemasTypeOptionsMax.Option = 'MaxValue'
+                        LEFT JOIN TimeSchemasTypeOptions AS TimeSchemasTypeOptionsDef
+                            ON TimeSchemasTypes.[Type] = TimeSchemasTypeOptionsMax.Type
+                                AND TimeSchemasTypeOptionsMax.Option = 'DefValue'
                         INNER JOIN TimeSchemasTypeOptions AS TimeSchemasTypeOptions
                             ON TimeSchemasTypes.[Type] = TimeSchemasTypeOptions.Type
                                 AND TimeSchemasTypeOptions.Option = 'ValueType'
@@ -182,6 +188,9 @@ wscli.commands.add({SetParams: Object},
                             q += data.map((item) => wscli.data.fromString(item, Object))
                                 .map((item) =>{
                                     let value = (item.value === undefined ? 'NULL' : String(item.value));
+
+                                    if(qp.defValue !== undefined)
+                                        value = `ifnull(${value}, ${qp.defValue})`;
                                     if(qp.minValue !== undefined)
                                         value = `max(${qp.minValue}, ${value})`;
                                     if(qp.maxValue !== undefined)
@@ -341,6 +350,44 @@ function getDbInitData() {
                 "PrevValue": "CHAR(64)"
               }
             }
+          },
+          "temp":{
+            "TimeSchemaCurrentData":{
+                "view": "WITH Step1 AS ( 
+SELECT ts.SchemaID, cdt.DOW AS DOWc, cdt.TimeHM, tsmask.[DOW], IFNULL(tsp.DOW, 0) AS DOWo,
+       IFNULL(tsp.[BeginTime], tsp0.[BeginTime]) AS BeginTime, IFNULL(tsp.[Value], tsp0.[Value]) AS Value,
+      tsmask.[DOW] + (7 - cdt.DOW)  
+      - CASE WHEN tsmask.DOW > cdt.DOW THEN 7 ELSE 0 END AS DOWmov      
+      ,7 AS DOWcmov
+        
+FROM main.[TimeSchemas] AS ts, mem.[CurrentDateTime] AS cdt
+LEFT JOIN main.[TimeSchemasDOWmask] AS tsmask
+     ON tsmask.DOW
+
+LEFT JOIN main.[TimeSchemasDOW] AS tsdow
+     ON ts.[SchemaID] = tsdow.[SchemaID] AND ts.[TypeID] = tsdow.[TypeID] AND tsdow.[DOWmask] & tsmask.[DOWmask]
+
+LEFT JOIN main.[TimeSchemasParams] AS tsp
+     ON tsdow.[SchemaID] = tsp.[SchemaID] AND tsdow.[TypeID] = tsp.[TypeID] AND tsmask.[DOW] = tsp.[DOW]      
+
+LEFT JOIN main.[TimeSchemasParams] AS tsp0
+     ON ts.[SchemaID] = tsp0.[SchemaID] AND ts.[TypeID] = tsp0.[TypeID] AND tsp.[DOW] IS NULL AND tsp0.[DOW] = 0
+WHERE NOT IFNULL(tsp.[Value], tsp0.[Value]) IS NULL     
+     ),
+     
+Step2 AS (      
+SELECT SchemaID, MAX(DOWmov * 10000 + BeginTime) AS DOW_BeginTime FROM Step1
+
+WHERE (DOWmov * 10000 + BeginTime) <= (DOWcmov * 10000 + TimeHM)
+GROUP BY SchemaID)
+
+SELECT s1.[SchemaID] AS SchemaID, s1.DOWo AS DOW, s1.[BeginTime] AS BeginTime, s1.[Value] AS Value FROM Step1 AS s1
+INNER JOIN Step2 AS s2
+ON s1.[SchemaID] = s2.[SchemaID] AND  (DOWmov * 10000 + BeginTime) = DOW_BeginTime"
+            }
           }
+          
         }`;
 }
+
+

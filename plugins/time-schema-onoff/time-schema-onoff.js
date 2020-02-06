@@ -14,7 +14,8 @@ function getDbInitData() {
             },
             "TimeSchemasTypeOptions": {
               "data": [
-                {"Type": "humidity", "Option": "ValueType", "Value": "Boolean"}
+                {"Type": "humidity", "Option": "ValueType", "Value": "Boolean"},
+                {"Type": "humidity", "Option": "DefValue", "Value": 1}
               ]
             }
           }

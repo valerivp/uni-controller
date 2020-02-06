@@ -20,15 +20,19 @@ Vue.component('tile-round-clock', {
     created() {
         this.elementid = 'tile-round-clock-' + this._uid;
 
+        this.$parent.$on('show', this.doResizeTilesContent);
         this.$parent.$on('resize', this.doResizeTilesContent);
+        setTimeout(this.doResizeTilesContent, 10);
 
         this.handleInterval = setInterval(this.drawClock, 1000);
+
 
     },
     beforeDestroy() {
         clearInterval(this.handleInterval);
 
         this.$parent.$off('resize', this.doResizeTilesContent);
+        this.$parent.$off('show', this.doResizeTilesContent);
     },
     methods: {
         doResizeTilesContent() {
@@ -93,23 +97,23 @@ Vue.component('tile-round-clock', {
                     contextHTML.lineTo(xCenterClock - (radiusNum) * ax, yCenterClock + (radiusNum) * ay);
                 }
             }
+            if(d) {
+                //Рисуем стрелки
+                let lengthMinutes = radiusClock * 0.9 - (this.showSerifs ? contextHTML.lineWidth * 2 : 0);
+                let lengthHour = lengthMinutes * 0.75;
+                let t_min = 6 * (d.getMinutes()); //Определяем угол для минут
+                let t_hour = 30 * (d.getHours() + (1 / 60) * d.getMinutes()); //Определяем угол для часов
 
-            //Рисуем стрелки
-            let lengthMinutes = radiusClock * 0.9 - (this.showSerifs ? contextHTML.lineWidth * 2: 0);
-            let lengthHour = lengthMinutes * 0.75;
-            let t_min = 6 * (d.getMinutes()); //Определяем угол для минут
-            let t_hour = 30 * (d.getHours() + (1 / 60) * d.getMinutes()); //Определяем угол для часов
+                //Рисуем минуты
+                ax = Math.cos(Math.PI / 2 - t_min * (Math.PI / 180)), ay = Math.sin(Math.PI / 2 - t_min * (Math.PI / 180));
+                contextHTML.moveTo(xCenterClock - lengthMinutes / 5 * ax, yCenterClock + lengthMinutes / 5 * ay);
+                contextHTML.lineTo(xCenterClock + lengthMinutes * ax, yCenterClock - lengthMinutes * ay);
 
-            //Рисуем минуты
-            ax = Math.cos(Math.PI / 2 - t_min * (Math.PI / 180)), ay = Math.sin(Math.PI / 2 - t_min * (Math.PI / 180));
-            contextHTML.moveTo(xCenterClock - lengthMinutes / 5 * ax, yCenterClock + lengthMinutes / 5 * ay);
-            contextHTML.lineTo(xCenterClock + lengthMinutes * ax, yCenterClock - lengthMinutes * ay);
-
-            //Рисуем часы
-            ax = Math.cos(Math.PI / 2 - t_hour * (Math.PI / 180)), ay = Math.sin(Math.PI / 2 - t_hour * (Math.PI / 180));
-            contextHTML.moveTo(xCenterClock - lengthHour / 5 * ax, yCenterClock + lengthHour / 5 * ay);
-            contextHTML.lineTo(xCenterClock + lengthHour * ax, yCenterClock - lengthHour * ay);
-
+                //Рисуем часы
+                ax = Math.cos(Math.PI / 2 - t_hour * (Math.PI / 180)), ay = Math.sin(Math.PI / 2 - t_hour * (Math.PI / 180));
+                contextHTML.moveTo(xCenterClock - lengthHour / 5 * ax, yCenterClock + lengthHour / 5 * ay);
+                contextHTML.lineTo(xCenterClock + lengthHour * ax, yCenterClock - lengthHour * ay);
+            }
             contextHTML.stroke();
             contextHTML.closePath();
         }

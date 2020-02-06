@@ -8,13 +8,13 @@ require("time-schema").components.types.add('onoff',
         style: undefined,
         type: Boolean,
         parseValue: function(val){
-            return val;
+            return String(val) === 'true';
         },
         valueFromData(val){
-            return val;
+            return val == 1;
         },
         valueToData(val){
-            return val;
+            return val ? true : false;
         }
     }
 );

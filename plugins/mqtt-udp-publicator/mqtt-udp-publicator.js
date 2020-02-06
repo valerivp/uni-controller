@@ -22,7 +22,8 @@ module.exports.init = function () {
     sensors.onSensorDataReceived(function (data) {
         if(module.MQTT_UDP_Settings.PublicateSensorsData && module.MQTT_UDP_Settings.IP){
             let params = Object.assign({}, data.params);
-            params.timelabel = data.timelabel;
+            params.timelabel = Math.trunc(data.timelabel.getTime() / 1000);
+
             mqtt_udp_send(`${data.type}/0x${Number(data.id).toHex()}`, JSON.stringify(params), module.MQTT_UDP_Settings.IP);
             //console.log(JSON.stringify(data));
         }

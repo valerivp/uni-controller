@@ -1,0 +1,16 @@
+{
+  "name": "datetime-to-db",
+  "version": "0.0.1",
+  "plugins-dependencies": {
+  },
+  "node": "datetime-to-db.js",
+  "web":{
+    "js":[
+
+    ],
+    "css":[
+
+    ]
+  }
+}
+
