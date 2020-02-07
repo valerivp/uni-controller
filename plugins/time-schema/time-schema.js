@@ -221,14 +221,14 @@ function getParams(SchemaID, DOWmask) {
         rows = db.querySync(`SELECT DOWmask FROM TimeSchemasDOW WHERE SchemaID = $SchemaID AND TypeID = $TypeID`, qp);
         res.DOWmask = rows.length ? rows[0].DOWmask : 0;
 
-        rows = db.querySync(`SELECT TimeSchemasDOWmask.DOW, BeginTime, Value,
+        rows = db.querySync(`SELECT dow.DOW, BeginTime, Value,
             (TimeSchemasParams.DOW IS NULL) AS NoData  
-            FROM TimeSchemasDOWmask AS TimeSchemasDOWmask
+            FROM temp.CurrentDOW AS dow
             LEFT JOIN TimeSchemasParams AS TimeSchemasParams
-                ON TimeSchemasDOWmask.DOW = TimeSchemasParams.DOW
+                ON dow.DOW = TimeSchemasParams.DOW
                     AND TimeSchemasParams.SchemaID = $SchemaID AND TypeID = $TypeID
-            WHERE TimeSchemasDOWmask.DOWmask & $DOWmask
-            ORDER BY TimeSchemasDOWmask.DOW`, qp);
+            WHERE dow.mask & $DOWmask
+            ORDER BY dow.DOW`, qp);
         let dow, i, data = {};
 
         rows.forEach((row) => {
@@ -280,22 +280,6 @@ function getDbInitData() {
               },
               "data": [
                 {"RowID": 1, "MaxCount": 8, "Count": 0}
-              ]
-            },
-            "TimeSchemasDOWmask": {
-              "schema": {
-                "DOW": "INTEGER PRIMARY KEY AUTOINCREMENT",
-                "DOWmask": "INTEGER NOT NULL"
-              },
-              "data": [
-                {"DOW": 0, "DOWmask": 128},
-                {"DOW": 1, "DOWmask": 1},
-                {"DOW": 2, "DOWmask": 2},
-                {"DOW": 3, "DOWmask": 4},
-                {"DOW": 4, "DOWmask": 8},
-                {"DOW": 5, "DOWmask": 16},
-                {"DOW": 6, "DOWmask": 32},
-                {"DOW": 7, "DOWmask": 64}
               ]
             },
             "TimeSchemasTypes": {
@@ -354,36 +338,34 @@ function getDbInitData() {
           "temp":{
             "TimeSchemaCurrentData":{
                 "view": "WITH Step1 AS ( 
-SELECT ts.SchemaID, cdt.DOW AS DOWc, cdt.TimeHM, tsmask.[DOW], IFNULL(tsp.DOW, 0) AS DOWo,
+SELECT ts.SchemaID AS SchemaID, cdt.DOW AS DOW_current, cdt.TimeHM AS TimeHM, dow.[DOW] AS DOW, IFNULL(tsp.DOW, 0) AS DOW_src,
        IFNULL(tsp.[BeginTime], tsp0.[BeginTime]) AS BeginTime, IFNULL(tsp.[Value], tsp0.[Value]) AS Value,
-      tsmask.[DOW] + (7 - cdt.DOW)  
-      - CASE WHEN tsmask.DOW > cdt.DOW THEN 7 ELSE 0 END AS DOWmov      
-      ,7 AS DOWcmov
+      dow.PrevDOW_desc AS PrevDOW_desc    
         
 FROM main.[TimeSchemas] AS ts, mem.[CurrentDateTime] AS cdt
-LEFT JOIN main.[TimeSchemasDOWmask] AS tsmask
-     ON tsmask.DOW
+LEFT JOIN temp.CurrentDOW AS dow
+ON dow.DOW > 0
 
 LEFT JOIN main.[TimeSchemasDOW] AS tsdow
-     ON ts.[SchemaID] = tsdow.[SchemaID] AND ts.[TypeID] = tsdow.[TypeID] AND tsdow.[DOWmask] & tsmask.[DOWmask]
+     ON ts.[SchemaID] = tsdow.[SchemaID] AND ts.[TypeID] = tsdow.[TypeID] AND tsdow.[DOWmask] & dow.[mask]
 
 LEFT JOIN main.[TimeSchemasParams] AS tsp
-     ON tsdow.[SchemaID] = tsp.[SchemaID] AND tsdow.[TypeID] = tsp.[TypeID] AND tsmask.[DOW] = tsp.[DOW]      
+     ON tsdow.[SchemaID] = tsp.[SchemaID] AND tsdow.[TypeID] = tsp.[TypeID] AND dow.[DOW] = tsp.[DOW]      
 
 LEFT JOIN main.[TimeSchemasParams] AS tsp0
      ON ts.[SchemaID] = tsp0.[SchemaID] AND ts.[TypeID] = tsp0.[TypeID] AND tsp.[DOW] IS NULL AND tsp0.[DOW] = 0
-WHERE NOT IFNULL(tsp.[Value], tsp0.[Value]) IS NULL     
+WHERE NOT IFNULL(tsp.[Value], tsp0.[Value]) IS NULL
      ),
      
 Step2 AS (      
-SELECT SchemaID, MAX(DOWmov * 10000 + BeginTime) AS DOW_BeginTime FROM Step1
+SELECT SchemaID, MAX(PrevDOW_desc * 10000 + BeginTime) AS DOW_BeginTime FROM Step1
 
-WHERE (DOWmov * 10000 + BeginTime) <= (DOWcmov * 10000 + TimeHM)
+WHERE (PrevDOW_desc * 10000 + BeginTime) <= (PrevDOW_desc * 10000 + TimeHM)
 GROUP BY SchemaID)
 
-SELECT s1.[SchemaID] AS SchemaID, s1.DOWo AS DOW, s1.[BeginTime] AS BeginTime, s1.[Value] AS Value FROM Step1 AS s1
+SELECT s1.[SchemaID] AS SchemaID, s1.DOW_src AS DOW, s1.[BeginTime] AS BeginTime, s1.[Value] AS Value FROM Step1 AS s1
 INNER JOIN Step2 AS s2
-ON s1.[SchemaID] = s2.[SchemaID] AND  (DOWmov * 10000 + BeginTime) = DOW_BeginTime"
+ON s1.[SchemaID] = s2.[SchemaID] AND  (PrevDOW_desc * 10000 + BeginTime) = DOW_BeginTime"
             }
           }
           
