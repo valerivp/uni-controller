@@ -91,7 +91,7 @@ Vue.component('tile-temperature', {
                     <nobr class="tile-caption-data">
                         <span>{{
                             sensor ? sensor.name || String(sensor) : 'no sensor'
-                            }}</span><span style="flex-grow: 1;">&nbsp;</span><span class="sensor-battery" v-if="String(params['show-battery']) === 'true' && sensor && sensor.param('battery') !== undefined"><div v-bind:class="(sensor.param('battery') ? 'ok' : 'low')"></div></span>
+                            }}</span><span style="flex-grow: 1;">&nbsp;</span><span class="sensor-battery" v-if="String(params['show-battery']) === 'true' && sensor && sensor.param('battery') !== undefined"><div v-bind:class="(Number(sensor.param('battery')) ? 'ok' : 'low')"></div></span>
                     </nobr>
                 </div>
             </div>

@@ -38,14 +38,14 @@ function onMqttUdpData(topic, load){
 
     for(let key in load_data){
         if(key.toLowerCase() === 'timelabel'){
-            let timelabel = load_data[key];
+            let timelabel = String(load_data[key]);
             if(timelabel.slice(8, 9) === 'T' && timelabel.length === 15)
                 sensorData.TimeLabel = utils.DateFromShotXMLString(load_data[key]);
             else if(timelabel.slice(10, 11) === 'T')
                 sensorData.TimeLabel = new Date(load_data[key]);
-            else if(timelabel.slice(0, 3) === '1' && timelabel.length === 10)
+            else if(timelabel.slice(0, 1) === '1' && timelabel.length === 10)
                 sensorData.TimeLabel = new Date(1000 * load_data[key]);
-            else if(timelabel.slice(0, 3) === '1' && timelabel.length === 13)
+            else if(timelabel.slice(0, 1) === '1' && timelabel.length === 13)
                 sensorData.TimeLabel = new Date(load_data[key]);
             else
                 throw new Error(`Unknown date format: ${timelabel}`);

@@ -15,7 +15,7 @@ let sensorInfo = {
         title: 'Бата\u00ADрея',
         align: 'center',
         data: (sd) => '',
-        html: (sd) => {return `<div class="sSensorBattery"><div class="${(sd.param('battery') ? 'ok' : 'low')}"></div></div>`}
+        html: (sd) => {return `<div class="sSensorBattery"><div class="${(Number(sd.param('battery')) ? 'ok' : 'low')}"></div></div>`}
     },
     dataAge:{
         title: 'Сек. назад',
