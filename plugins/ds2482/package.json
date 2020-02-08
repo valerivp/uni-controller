@@ -1,12 +1,12 @@
 {
-  "name": "datetime-to-db",
+  "name": "ds2482",
   "version": "0.0.1",
   "plugins-dependencies": {
+    "wire-i2c":""
   },
-  "node": "datetime-to-db.js",
+  "node": "",
   "web":{
     "js":[
-
     ],
     "css":[
 

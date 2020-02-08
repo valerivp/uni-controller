@@ -1,7 +1,33 @@
 'use strict';
 
-const db = require(`uc-db`).init(getDbInitData());
+const db = require(`uc-db`);
 const wscli = require(`uc-wscli`);
+
+
+module.exports.init = function () {
+    db.init(getDbInitData());
+
+    setInterval(updateTimeSchemaCurrentAndPrevValues, 1000);
+
+};
+
+function updateTimeSchemaCurrentAndPrevValues() {
+        db.querySync(`CREATE TABLE temp.NewDataTimeSchemaCurrentAndPrevValues AS
+                SELECT cd.[SchemaID] AS SchemaID, cd.TypeID AS TypeID,
+                       CASE WHEN NOT IFNULL(cd.[Value] = pv.[Value], 0) THEN pv.[Value] ELSE pv.[PrevValue] END AS PrevValue,  
+                       CASE WHEN NOT IFNULL(cd.[Value] = pv.[Value], 0) THEN dt.DateTime ELSE pv.TimeLabel END AS TimeLabel,
+                       cd.[Value] AS Value  
+                FROM temp.TimeSchemaCurrentData AS cd, mem.[CurrentDateTime] AS dt
+                LEFT JOIN mem.TimeSchemaCurrentAndPrevValues AS pv
+                     ON cd.[SchemaID] = pv.SchemaID AND cd.[TypeID] = pv.TypeID 
+                ;
+                DELETE FROM mem.TimeSchemaCurrentAndPrevValues;
+                
+                INSERT INTO mem.TimeSchemaCurrentAndPrevValues(SchemaID, TypeID, PrevValue, TimeLabel, Value)
+                SELECT SchemaID, TypeID, PrevValue, TimeLabel, Value FROM temp.NewDataTimeSchemaCurrentAndPrevValues;
+                DROP TABLE temp.NewDataTimeSchemaCurrentAndPrevValues;
+            `);
+}
 
 
 
@@ -310,14 +336,14 @@ function getDbInitData() {
             },
             "TimeSchemasDOW": {
               "schema": {
-                "SchemaID": "INTEGER NOT NULL",
+                "SchemaID": "INTEGER NOT NULL CONSTRAINT [SchemaID] REFERENCES [TimeSchemas]([SchemaID]) ON DELETE NO ACTION",
                 "TypeID": "INTEGER NOT NULL CONSTRAINT [TypeID] REFERENCES [TimeSchemasTypes]([TypeID]) ON DELETE CASCADE",
                 "DOWmask": "INTEGER NOT NULL ON CONFLICT REPLACE DEFAULT 0"
               }
             },
             "TimeSchemasParams": {
               "schema": {
-                "SchemaID": "INTEGER NOT NULL",
+                "SchemaID": "INTEGER NOT NULL CONSTRAINT [SchemaID] REFERENCES [TimeSchemas]([SchemaID]) ON DELETE NO ACTION",
                 "TypeID": "INTEGER NOT NULL CONSTRAINT [TypeID] REFERENCES [TimeSchemasTypes]([TypeID]) ON DELETE CASCADE",
                 "DOW": "INTEGER NOT NULL",
                 "BeginTime": "INTEGER NOT NULL",
@@ -326,9 +352,10 @@ function getDbInitData() {
             }
           },
           "mem":{
-            "TimeSchemasCurrentValues": {
+            "TimeSchemaCurrentAndPrevValues": {
               "schema": {
-                "SchemaID": "INTEGER NOT NULL",
+                "SchemaID": "INTEGER NOT NULL PRIMARY KEY",
+                "TypeID": "INTEGER NOT NULL",
                 "Value": "CHAR(64)",
                 "TimeLabel": "INTEGER NOT NULL",
                 "PrevValue": "CHAR(64)"
@@ -338,7 +365,7 @@ function getDbInitData() {
           "temp":{
             "TimeSchemaCurrentData":{
                 "view": "WITH Step1 AS ( 
-SELECT ts.SchemaID AS SchemaID, cdt.DOW AS DOW_current, cdt.TimeHM AS TimeHM, dow.[DOW] AS DOW, IFNULL(tsp.DOW, 0) AS DOW_src,
+SELECT ts.SchemaID AS SchemaID, ts.[TypeID] AS TypeID, cdt.DOW AS DOW_current, cdt.TimeHM AS TimeHM, dow.[DOW] AS DOW, IFNULL(tsp.DOW, 0) AS DOW_src,
        IFNULL(tsp.[BeginTime], tsp0.[BeginTime]) AS BeginTime, IFNULL(tsp.[Value], tsp0.[Value]) AS Value,
       dow.PrevDOW_desc AS PrevDOW_desc    
         
@@ -358,14 +385,14 @@ WHERE NOT IFNULL(tsp.[Value], tsp0.[Value]) IS NULL
      ),
      
 Step2 AS (      
-SELECT SchemaID, MAX(PrevDOW_desc * 10000 + BeginTime) AS DOW_BeginTime FROM Step1
+SELECT SchemaID, TypeID, MAX(PrevDOW_desc * 10000 + BeginTime) AS DOW_BeginTime FROM Step1
 
-WHERE (PrevDOW_desc * 10000 + BeginTime) <= (PrevDOW_desc * 10000 + TimeHM)
-GROUP BY SchemaID)
+WHERE (PrevDOW_desc * 10000 + BeginTime) <= (7 * 10000 + TimeHM)
+GROUP BY SchemaID, TypeID)
 
-SELECT s1.[SchemaID] AS SchemaID, s1.DOW_src AS DOW, s1.[BeginTime] AS BeginTime, s1.[Value] AS Value FROM Step1 AS s1
+SELECT s1.[SchemaID] AS SchemaID, s1.[TypeID] AS TypeID, s1.DOW_src AS DOW, s1.[BeginTime] AS BeginTime, s1.[Value] AS Value FROM Step1 AS s1
 INNER JOIN Step2 AS s2
-ON s1.[SchemaID] = s2.[SchemaID] AND  (PrevDOW_desc * 10000 + BeginTime) = DOW_BeginTime"
+ON s1.[SchemaID] = s2.[SchemaID] AND  (PrevDOW_desc * 10000 + BeginTime) = DOW_BeginTime;"
             }
           }
           

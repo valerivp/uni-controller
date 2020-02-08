@@ -1,0 +1,16 @@
+{
+  "name": "up-down-regulator",
+  "version": "0.0.1",
+  "plugins-dependencies": {
+    "time-schema": ""
+  },
+  "node": "up-down-regulator.js",
+  "web":{
+    "js":[
+      "up-down-regulator-web.js"
+    ],
+    "css":[
+    ]
+  }
+}
+

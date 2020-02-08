@@ -1,8 +1,7 @@
 {
   "name": "time-schema",
-  "version": "0.0.2",
+  "version": "0.0.4",
   "plugins-dependencies": {
-    "datetime-to-db": ""
   },
   "node": "time-schema",
   "web":{

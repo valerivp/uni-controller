@@ -10,6 +10,8 @@ console.info('Initialization...');
 
 const  mm = require('uc-mm-rt');
 
+require('uc-datetime-to-db');
+
 const router = require('uc-router');
 
 const server = require('uc-server').init(router);
@@ -17,6 +19,7 @@ const server = require('uc-server').init(router);
 require('uc-wscli').init(server.ws);
 
 require('uc-sensors');
+
 
 mm.loadPlugins();
 
