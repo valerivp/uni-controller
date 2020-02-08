@@ -1,0 +1,16 @@
+{
+  "name": "time-schema-lighting",
+  "version": "0.0.1",
+  "plugins-dependencies": {
+    "time-schema": ""
+  },
+  "node": "time-schema-lighting.js",
+  "web":{
+    "js":[
+      "www/time-schema-lighting-web.js"
+    ],
+    "css":[
+    ]
+  }
+}
+

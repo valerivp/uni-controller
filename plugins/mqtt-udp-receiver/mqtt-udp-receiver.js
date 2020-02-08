@@ -2,7 +2,6 @@
 
 const udp = require("dgram").createSocket("udp4");
 
-
 const utils = require(`uc-utils`);
 const sensors = require(`uc-sensors`);
 const util = require("util");
@@ -67,6 +66,7 @@ module.exports.onMqttUdpData((topic, load)=>{
 });
 
 udp.on("message", function (msg, rinfo) {
+    //console.log(rinfo);
     if(msg[0] !== 0x30)
         return;
     let pos = 1, byte = undefined, len = 0;
