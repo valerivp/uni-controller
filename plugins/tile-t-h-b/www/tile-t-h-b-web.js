@@ -50,10 +50,10 @@ Vue.component('tile-temperature', {
     methods: {
 
         doResizeTilesContent() {
-            doZoom('.tile-temperature-data .zoomed-content');
-            doZoom('.tile-temperature-data.only .zoomed-content');
-            doZoom('.tile-humidity-data .zoomed-content');
-            doZoom('.tile-humidity-data.only .zoomed-content');
+            utils.doZoom('.tile-temperature-data .zoomed-content');
+            utils.doZoom('.tile-temperature-data.only .zoomed-content');
+            utils.doZoom('.tile-humidity-data .zoomed-content');
+            utils.doZoom('.tile-humidity-data.only .zoomed-content');
         },
         fetchSensorData() {
             if (this.sensorId) {

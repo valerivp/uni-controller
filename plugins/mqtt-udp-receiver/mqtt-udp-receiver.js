@@ -25,7 +25,7 @@ module.exports.init = function () {
 
 
 function onMqttUdpData(topic, load){
-    //console.log(`${topic}: ${load}`);
+    console.log(`${topic}: ${load}`);
     let topic_data = topic.split("/");
     let sensorData = {};
     sensorData.ID = Number(topic_data[1]);
@@ -37,17 +37,7 @@ function onMqttUdpData(topic, load){
 
     for(let key in load_data){
         if(key.toLowerCase() === 'timelabel'){
-            let timelabel = String(load_data[key]);
-            if(timelabel.slice(8, 9) === 'T' && timelabel.length === 15)
-                sensorData.TimeLabel = utils.DateFromShotXMLString(load_data[key]);
-            else if(timelabel.slice(10, 11) === 'T')
-                sensorData.TimeLabel = new Date(load_data[key]);
-            else if(timelabel.slice(0, 1) === '1' && timelabel.length === 10)
-                sensorData.TimeLabel = new Date(1000 * load_data[key]);
-            else if(timelabel.slice(0, 1) === '1' && timelabel.length === 13)
-                sensorData.TimeLabel = new Date(load_data[key]);
-            else
-                throw new Error(`Unknown date format: ${timelabel}`);
+            sensorData.TimeLabel = utils.dateFromString(load_data[key]);
         }else
             sensorData[key] = load_data[key];
     }

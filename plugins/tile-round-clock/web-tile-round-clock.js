@@ -45,7 +45,7 @@ Vue.component('tile-round-clock', {
             let zoom = Math.max(isNaN(newZoom) ? minZoom : Math.min(maxZoom, newZoom), minZoom);
 
 
-            //this.zoom = doZoom('.tile-round-clock-data .zoomed-content', false);
+            //this.zoom = utils.doZoom('.tile-round-clock-data .zoomed-content', false);
             canvasHTML.width = canvasHTML.width * zoom;
             canvasHTML.height = canvasHTML.height * zoom;
 

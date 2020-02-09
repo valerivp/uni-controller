@@ -89,7 +89,7 @@ const vTiles = new Vue({
             vContent.setTab('tile-settings', {tileId: id});
         },
         checkTile(t, allowZero){
-            return checkInRange(t, allowZero ? 0 : 1, this.tiles.length(), "Tile id");
+            return wscli.checkInRange(t, allowZero ? 0 : 1, this.tiles.length(), "Tile id");
         },
 
         getCSSClass(id){
@@ -271,7 +271,7 @@ wscli.commands.add({Params: Object}, SetInfo.bind(undefined, 'params'));
 
 wscli.commands.add({Count: Number}, (arg) => {
         if (wscli.context.current === wscli.context.tile) {
-            checkInRange(wscli.current.tile, 0, 0, 'Tile');
+            wscli.checkInRange(wscli.current.tile, 0, 0, 'Tile');
             vTiles.setTilesCount(arg);
             doResizeTilesContent();
             return true;
@@ -297,7 +297,7 @@ function doResizeTilesContent() {
     if (doResizeTilesContent.timeoutHandle)
         clearTimeout(doResizeTilesContent.timeoutHandle);
     doResizeTilesContent.timeoutHandle = setTimeout(() => {
-        doZoom('.tile-caption .zoomed-content');
+        utils.doZoom('.tile-caption .zoomed-content');
         vTiles.$emit('resize');
 
     }, 100);

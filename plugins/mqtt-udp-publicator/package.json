@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "plugins-dependencies": {
   },
-  "node": "mqtt-udp-publicator.js",
+  "node": "mqtt-udp-publicator",
   "web":{
     "js":[
       "www/mqtt-udp-publicator-web.js"

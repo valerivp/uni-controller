@@ -116,7 +116,7 @@ const vContent = new Vue({
     }
 });
 
-moveElement('main-menu-button', 'main-menu-button-place');
+utils.moveElement('main-menu-button', 'main-menu-button-place');
 
 setTimeout(function () {vContent.setTab(vContent.tabsList[0].id)}, 1);
 
@@ -214,7 +214,7 @@ vContent.addTab({component: vTerminal, id: 'terminal'});
 
 function SensorData(id) {
     this.id = Number(id);
-    checkInRange(this.id, 1, 0xFFFF, 'Sensor');
+    wscli.checkInRange(this.id, 1, 0xFFFF, 'Sensor');
 
     this.type = undefined;
     this.name = '';
@@ -675,6 +675,18 @@ wscli.commands.add({Name: String}, (arg) => {
     }
 );
 
+wscli.checkInRange = function (arg, lv, rv, desc){
+
+    if(lv instanceof Array){
+        if(!lv.some(item=> ((item[0] <= arg) && (arg <= item[1])) )){
+            let arrDesc = lv.map(item => item[0] === item[1] ? `${item[0]}` : `${item[0]}…${item[1]}`).join(', ');
+            throw(`${rv} ${arg} not in range (${arrDesc})`);
+        }
+    }else
+    if (!((lv <= arg) && (arg <= rv)))
+        throw(`${desc} ${arg} not in range ${lv}…${rv}`);
+    return true;
+};
 
 function WSCli (ws){
     this.ws = ws;
@@ -845,7 +857,7 @@ function WSCli (ws){
             } else if(type === Number){
                 res = 0 | data;
             } else if(type === Date){
-                res = DateFromShotXMLString(data);
+                res = utils.dateFromString(data);
             }else
                 throw new Error(`Unknown type of parameter: ${type}`);
 

@@ -112,7 +112,7 @@ const vTimeSchemaSettings = new Vue({
             wscli.send("#TimeSchema,GetCount,GetName,GetType");
         },
         checkTimeSchema(t, allowZero){
-            return checkInRange(t, allowZero ? 0 : 1, this.timeSchemas.length(), "Time schema id");
+            return wscli.checkInRange(t, allowZero ? 0 : 1, this.timeSchemas.length(), "Time schema id");
         },
         setTimeSchemasCount(val){
             let count = this.timeSchemas.length();
@@ -310,7 +310,7 @@ wscli.commands.add({Type: String}, SetInfo.bind(undefined, 'type'));
 
 wscli.commands.add({Count: Number}, (arg) => {
         if (wscli.context.current === wscli.context.timeSchema) {
-            checkInRange(wscli.current.timeSchema, 0, 0, 'Time schema');
+            wscli.checkInRange(wscli.current.timeSchema, 0, 0, 'Time schema');
             vTimeSchemaSettings.setTimeSchemasCount(arg);
             return true;
         }

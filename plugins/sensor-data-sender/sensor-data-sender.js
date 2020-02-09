@@ -19,7 +19,7 @@ wscli.commands.add({SetAutosend: Number}, (arg)=> {
             if(arg) {
                 let q = `REPLACE INTO mem.SensorsSendTimeouts (ID, MaxTimeLabel)
                 VALUES ($ID, $TimeLabel)`;
-                db.querySync(q, {$ID: wscli.current.sensor, $TimeLabel: (arg + Date.now() / 1000) | 0});
+                db.querySync(q, {$ID: wscli.current.sensor, $TimeLabel: (arg + db.date2db(new Date()))});
             } else {
                 db.querySync('DELETE FROM mem.SensorsSendTimeouts WHERE ID = $ID', {$ID: wscli.current.sensor});
             }
@@ -43,7 +43,7 @@ function sendSensorData(data) {
         let data = '';
         let TimeLabel = new Date(row.TimeLabel * 1000);
         /** @namespace row.Type */
-        data += `#Sensor:0x${Number(row.ID).toHex()},Type:${row.Type},TimeLabel:${utils.DateToShotXMLString(TimeLabel)}`;
+        data += `#Sensor:0x${Number(row.ID).toHex()},Type:${row.Type},TimeLabel:${utils.DateToShortXMLString(TimeLabel)}`;
         data += ',Data:';
         let params = {};
         let rows_param = db.querySync("SELECT Param, Value FROM mem.SensorsParams WHERE ID = $ID", {$ID: row.ID});

@@ -97,10 +97,11 @@ wscli.commands.add({SetCount: Number}, (arg)=>{
 
 
 // noinspection JSUnusedLocalSymbols
-module.exports.update = function(prevVer){
+const update = {};
+module.exports.update = update;
+update['0.0.1'] = function(){
     return getDbInitData();
 };
-
 
 function getDbInitData() {
 

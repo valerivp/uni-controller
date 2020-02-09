@@ -1,5 +1,5 @@
 
-addElement("div", "main-logo").id = "clock-at-logo";
+utils.addElement("div", "main-logo").id = "clock-at-logo";
 
 new Vue({
     el: '#clock-at-logo',

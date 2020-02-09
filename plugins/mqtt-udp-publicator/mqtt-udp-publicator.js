@@ -22,7 +22,7 @@ module.exports.init = function () {
     sensors.onSensorDataReceived(function (data) {
         if(module.MQTT_UDP_Settings.PublicateSensorsData && module.MQTT_UDP_Settings.IP){
             let params = Object.assign({}, data.params);
-            params.timelabel = Math.trunc(data.timelabel.getTime() / 1000);
+            params.timelabel = db.date2db(data.timelabel);
 
             mqtt_udp_send(`${data.type}/0x${Number(data.id).toHex()}`, JSON.stringify(params), module.MQTT_UDP_Settings.IP);
             //console.log(JSON.stringify(data));
@@ -31,10 +31,11 @@ module.exports.init = function () {
 
 };
 
-module.exports.update = function(prevVer){
+const update = {};
+module.exports.update = update;
+update['0.0.1'] = function(){
     return getDbInitData();
 };
-
 function updateMQTT_UDP_SettingsFromDB() {
     module.MQTT_UDP_Settings = db.querySync('SELECT * FROM MQTT_UDP_publicator_Settings')[0];
 }

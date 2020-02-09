@@ -58,7 +58,7 @@ Vue.component('tile-energy-monitor', {
 
 
         doResizeTilesContent() {
-            doZoom('.tile-energy-monitor-data .zoomed-content');
+            utils.doZoom('.tile-energy-monitor-data .zoomed-content');
         },
 
         getParam(par, div){
