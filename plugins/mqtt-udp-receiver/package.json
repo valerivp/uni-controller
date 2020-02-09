@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "plugins-dependencies": {
   },
-  "node": "mqtt-udp-receiver",
+  "node": "mqtt-udp-receiver.js",
   "web":{
     "js":[
     ],
