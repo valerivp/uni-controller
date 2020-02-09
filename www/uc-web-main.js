@@ -587,7 +587,6 @@ vSettings.add(
 // noinspection JSUnusedGlobalSymbols
 vSettings.add(
     Vue.component('settings-reboot', {
-        data:()=> {return {httpUserPassword: '', httpUserName:''}},
         methods: {
             sendReboot:()=>{
                 axios.post(`http://${serverLocation}/reboot`)
@@ -599,6 +598,20 @@ vSettings.add(
     })
 );
 
+/*
+vSettings.add(
+    Vue.component('settings-restart', {
+        methods: {
+            sendRestart:()=>{
+                axios.post(`http://${serverLocation}/restart`)
+                    .then((response) => { vTerminal.log(response); vToasts.add(response.data);location.reload(true);})
+                    .catch((error) => {vTerminal.log(error);});
+            },
+        },
+        template: "#settings-restart"
+    })
+);
+*/
 
 
 const ws = new WSConnection(serverLocation, vTerminal);

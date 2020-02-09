@@ -252,8 +252,16 @@
 <script type="text/x-template"  id="settings-reboot">
     <div>
         <div>
-            <span>Перезагрузка</span>
+            <span>Перезагрузка устройства</span>
             <button v-on:click="sendReboot">Перезагрузить</button>
+        </div>
+    </div>
+</script>
+<script type="text/x-template"  id="settings-restart">
+    <div>
+        <div>
+            <span>Перезапуск сервиса</span>
+            <button v-on:click="sendRestart">Перезапустить</button>
         </div>
     </div>
 </script>
@@ -270,7 +278,7 @@
 
 <script src="uc-web-utils.js"></script>
 <script src="uc-web-main.js"></script>
-<script src="uc-web-plugins.js"></script>
+<script src="uc-web-addons.js"></script>
 <script>
     document.getElementsByTagName('body')[0].classList.remove('hidden');
 </script>
