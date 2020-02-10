@@ -29,7 +29,7 @@ function onReceiveData(data) {
     var sensorData = {};
     sensorData.ID       = Number(utils.byte(data[0]) + utils.byte(data[1]) * 256);
     sensorData.Type     = 'WTH433-' + ((utils.byte(data[0]) >> 2) & 0b11);
-    sensorData.TimeLabel= Date.now() - utils.byte(data[2]) * 1000;
+    sensorData.TimeLabel= Date.parse(Date.now() - utils.byte(data[2]) * 1000);
     sensorData.temperature = ((utils.byte(data[3]) + (utils.byte(data[4]) & 0x0f) * 256) - 500);
     sensorData.humidity = (utils.byte(data[5]) & 0x7f);
     sensorData.battery = utils.byte(data[5]) >> 7;
