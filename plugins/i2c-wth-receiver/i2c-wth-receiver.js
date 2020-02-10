@@ -36,7 +36,6 @@ function onReceiveData(data) {
 
     sensors.updateSensorData(sensorData);
     return true;
-
 }
 
 function readSensorsData(){

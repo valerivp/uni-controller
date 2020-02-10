@@ -124,7 +124,7 @@ function uc_web_utils_class() {
 
     };
 
-    module.exports.dateFromString = function (val) {
+    Date.parse = function (val) {
         if( val instanceof Date)
             return val;
         val = String(val);
