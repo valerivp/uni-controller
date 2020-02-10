@@ -870,7 +870,7 @@ function WSCli (ws){
             } else if(type === Number){
                 res = 0 | data;
             } else if(type === Date){
-                res = Date.parse(data);
+                res = Date.make(data);
             }else
                 throw new Error(`Unknown type of parameter: ${type}`);
 

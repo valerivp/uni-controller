@@ -124,7 +124,7 @@ function uc_web_utils_class() {
 
     };
 
-    Date.parse = function (val) {
+    Date.make = function (val) {
         if( val instanceof Date)
             return val;
         val = String(val);

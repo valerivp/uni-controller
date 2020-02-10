@@ -18,18 +18,17 @@ module.exports.init = function () {
 
 function onReceiveData(data) {
     if(!data[0] && !data[1]) { // no sensor data, id = 0
-
         return false;
     }else if(utils.byte(data[6]) != crc.crc8(data, 6)){ // bad src
         console.log('Bad crc WTH433: ' + utils.byte(data[6]) + ' != ' + crc.crc8(data, 6));
         return true;
     }
-    console.log(`Received data WTH433: ${data.toBin()}`);
+    console.log(`Received i2c data WTH433: ${data.toBin()}`);
 
     var sensorData = {};
     sensorData.ID       = Number(utils.byte(data[0]) + utils.byte(data[1]) * 256);
     sensorData.Type     = 'WTH433-' + ((utils.byte(data[0]) >> 2) & 0b11);
-    sensorData.TimeLabel= Date.parse(Date.now() - utils.byte(data[2]) * 1000);
+    sensorData.TimeLabel= Date.make(Date.now() - utils.byte(data[2]) * 1000);
     sensorData.temperature = ((utils.byte(data[3]) + (utils.byte(data[4]) & 0x0f) * 256) - 500);
     sensorData.humidity = (utils.byte(data[5]) & 0x7f);
     sensorData.battery = utils.byte(data[5]) >> 7;
@@ -44,7 +43,7 @@ function readSensorsData(){
             return wire.read(7);
         })
         .then((data) => {
-            console.log('Receive data:' + data);
+            //console.log('Receive data:' + data);
             wire.close();
 
             onReceiveData(data);

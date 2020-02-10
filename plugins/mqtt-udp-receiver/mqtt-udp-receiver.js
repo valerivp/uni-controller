@@ -37,7 +37,7 @@ function onMqttUdpData(topic, load){
 
     for(let key in load_data){
         if(key.toLowerCase() === 'timelabel'){
-            sensorData.TimeLabel = Date.parse(load_data[key]);
+            sensorData.TimeLabel = Date.make(load_data[key]);
         }else
             sensorData[key] = load_data[key];
     }
