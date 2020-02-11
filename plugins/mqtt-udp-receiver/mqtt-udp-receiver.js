@@ -25,7 +25,7 @@ module.exports.init = function () {
 
 
 function onMqttUdpData(topic, load){
-    console.log(`${topic}: ${load}`);
+//    console.log(`${topic}: ${load}`);
     let topic_data = topic.split("/");
     let sensorData = {};
     sensorData.ID = Number(topic_data[1]);

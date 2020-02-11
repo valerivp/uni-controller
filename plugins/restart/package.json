@@ -1,12 +1,12 @@
 {
-  "name": "mqtt-udp-publicator",
+  "name": "restart",
   "version": "0.0.1",
   "plugins-dependencies": {
   },
-  "node": "mqtt-udp-publicator",
+  "node": "restart",
   "web":{
     "js":[
-      "mqtt-udp-publicator-web.js"
+      "restart-web.js"
     ],
     "css":[
 
