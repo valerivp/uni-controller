@@ -16,6 +16,9 @@ vSettings.add(
         template:`
     <div>
         <div>
+            <span>Перезагрузка</span>
+        </div>
+        <div>
             <span>Перезапуск сервиса</span>
             <button v-on:click="sendRestart">Перезапустить</button>
         </div>

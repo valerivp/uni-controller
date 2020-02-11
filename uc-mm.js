@@ -43,10 +43,10 @@ if(process.mainModule.filename === module.filename){
 
 
 function cmdList() {
-    let q = "SELECT DISTINCT p.Name, p.Version AS Version, p.Directory FROM Plugins as p";
+    let q = "SELECT DISTINCT p.Name, p.Version AS Version FROM Plugins as p";
     let rows = db.querySync(q);
     rows.forEach(function (row) {
-        console.log(`${row.Name}\t${row.Version}\t${row.Directory}`);
+        console.log(`${row.Name}\t${row.Version}}`);
     });
     if(!rows.length)
         console.log(`Plugins not installed.`);
@@ -90,8 +90,8 @@ function installPlugin(dir) {
     if(rows.length)
         throw(`Plugin '${obj.name}' already installed.`);
 
-    db.querySync("INSERT INTO Plugins (Name, Directory) VALUES ($Name, $Directory)",
-        {$Name: obj.name, $Directory: dir});
+    db.querySync("INSERT INTO Plugins (Name) VALUES ($Name)",
+        {$Name: obj.name});
 
     return obj.name;
     /*
