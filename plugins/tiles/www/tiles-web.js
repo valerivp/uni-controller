@@ -44,17 +44,8 @@ Object.defineProperty(Tile.prototype, 'type', {
 function Tiles() {
 }
 
-Tiles.prototype.toArray = function () {
-    let res = [];
-    // noinspection JSCheckFunctionSignatures
-    Object.keys(this).forEach((id)=>res.push(this[id]));
-    return res;
-};
 Tiles.prototype.length = function () {
-    let res = 0;
-    // noinspection JSCheckFunctionSignatures
-    Object.keys(this).forEach(() => res++);
-    return res;
+    return Object.keys(this).length;
 };
 
 const vTiles = new Vue({
@@ -126,7 +117,7 @@ const vTiles = new Vue({
     },
     template:`
     <div id="tab-content-tiles" title="Состояние">
-        <div v-for="tile in tiles.toArray()" v-bind:class="getCSSClass(tile.id) + ' sTileWrap'" v-on:click="changeTileSetting(tile.id)">
+        <div v-for="tile in tiles" v-bind:class="getCSSClass(tile.id) + ' sTileWrap'" v-on:click="changeTileSetting(tile.id)">
             <div class="sTile border3d">
                 <div v-bind:params="tile.params" v-bind:is="tile.type">
                 

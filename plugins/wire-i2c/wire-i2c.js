@@ -12,12 +12,13 @@ let device;
 let wire;
 module.exports.init = function () {
 
-    db.init(getDbInitDataV0_0_2());
+    db.init(getDbInitData());
     let qp = {$Platform: `${os.arch()}.${os.platform()}`};
 
     device = db.querySync(`SELECT Device FROM I2C_Settings WHERE Platform = $Platform`, qp)[0].Device;
 
 };
+
 
 const wire_cashe = {};
 function getWire(address) {
@@ -68,14 +69,16 @@ module.exports.read = function (len) {
 const update = {};
 module.exports.update = update;
 
+update['0.0.1'] = function(){
+    return getDbInitData();
+};
 
 update['0.0.2'] = function () {
     db.querySync(`DROP TABLE IF EXISTS I2C_Settings`);
-    db.init(getDbInitDataV0_0_2());
-    return getDbInitDataV0_0_2();
+    return getDbInitData();
 };
 
-function getDbInitDataV0_0_2() {
+function getDbInitData() {
 
     return `{
           "main": {
@@ -92,21 +95,6 @@ function getDbInitDataV0_0_2() {
               "unique index": {
                 "Platform": ["Platform"]
               }
-            }
-          }
-        }`;
-}
-
-function getDbInitData() {
-    return `{
-          "main": {
-            "I2C_Settings": {
-              "schema": {
-                "Device": "CHAR(16) NOT NULL"
-              },
-              "data": [
-                {"RowID": 1, "Device": "/dev/i2c-0"}
-              ]
             }
           }
         }`;

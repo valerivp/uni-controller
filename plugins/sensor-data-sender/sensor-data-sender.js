@@ -72,7 +72,7 @@ function getDbInitData() {
     return `{
           "mem":{
             "SensorsSendTimeouts": {
-              "ID": "INTEGER PRIMARY KEY NOT NULL CONSTRAINT [SensorID] REFERENCES [SensorsData]([ID]) ON DELETE CASCADE",
+              "ID": "INTEGER PRIMARY KEY NOT NULL",
               "MaxTimeLabel": "INTEGER NOT NULL"
             }
           }

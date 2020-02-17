@@ -1,0 +1,16 @@
+{
+  "name": "regulator-thermo",
+  "version": "0.0.5",
+  "plugins-dependencies": {
+    "regulators": ""
+  },
+  "node": "regulator-thermo.js",
+  "web":{
+    "js":[
+      "regulator-thermo-web.js"
+    ],
+    "css":[
+    ]
+  }
+}
+

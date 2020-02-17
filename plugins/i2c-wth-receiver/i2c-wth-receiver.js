@@ -55,6 +55,11 @@ function readSensorsData(){
 }
 
 
+const update = {};
+module.exports.update = update;
+update['0.0.1'] = function(){
+    return getDbInitData();
+};
 
 
 function getDbInitData() {

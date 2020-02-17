@@ -143,6 +143,14 @@ function uc_web_utils_class() {
         return res;
 
     };
+    module.exports.defineProperty_length = function (obj) {
+        Object.defineProperty(obj.prototype, 'length', {
+            get() { return Object.keys(this).length; },
+            set(val) { throw('Property is read only'); },
+        });
+    };
+
+
 
 }
 
@@ -223,6 +231,16 @@ Date.prototype.toFormatString = function (format, utc) {
 
 String.prototype.replaceAll = function (search, replacement) {
     return this.split(search).join(replacement);
+};
+String.prototype.toKebab = function(){
+    return this
+        .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
+        .replace(/([A-Z])([A-Z])(?=[a-z])/g, '$1-$2')
+        .toLowerCase();
+};
+String.prototype.toCamel = function(){
+    let res = this.replace(/[-_]([a-z])/g, function (g) { return g[1].toUpperCase(); })
+    return res[0].toLowerCase() + res.slice(1);
 };
 
 var utils = new uc_web_utils_class();

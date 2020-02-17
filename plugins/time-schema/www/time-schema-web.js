@@ -5,12 +5,7 @@ TimeSchemaComponentsTypes.prototype.add = function(name, params){
     this[name].name = name;
 
 };
-TimeSchemaComponentsTypes.prototype.length = function () {
-    let res = 0;
-    // noinspection JSCheckFunctionSignatures
-    Object.keys(this).forEach(() => res++);
-    return res;
-};
+utils.defineProperty_length(TimeSchemaComponentsTypes);
 
 const vTimeSchemaComponentsTypes = new TimeSchemaComponentsTypes;
 module.exports.components = {types: vTimeSchemaComponentsTypes};
@@ -76,19 +71,11 @@ TimeSchema.prototype.toString = function(){
 
 function TimeSchemas() {
 }
+utils.defineProperty_length(TimeSchemas);
 
-TimeSchemas.prototype.toArray = function () {
-    let res = [];
-    // noinspection JSCheckFunctionSignatures
-    Object.keys(this).forEach((id)=>res.push(this[id]));
-    return res;
-};
-TimeSchemas.prototype.length = function () {
-    let res = 0;
-    // noinspection JSCheckFunctionSignatures
-    Object.keys(this).forEach(() => res++);
-    return res;
-};
+
+module.exports.TimeSchemas = new TimeSchemas();
+
 
 
 
@@ -96,7 +83,7 @@ const vTimeSchemaSettings = new Vue({
     data: {
         // _isActive: false,
         _selectedTimeSchemaId: 0,
-        timeSchemas: new TimeSchemas(),
+        timeSchemas: module.exports.TimeSchemas,
         dowData:[]
     },
 
@@ -112,10 +99,10 @@ const vTimeSchemaSettings = new Vue({
             wscli.send("#TimeSchema,GetCount,GetName,GetType");
         },
         checkTimeSchema(t, allowZero){
-            return wscli.checkInRange(t, allowZero ? 0 : 1, this.timeSchemas.length(), "Time schema id");
+            return wscli.checkInRange(t, allowZero ? 0 : 1, this.timeSchemas.length, "Time schema id");
         },
         setTimeSchemasCount(val){
-            let count = this.timeSchemas.length();
+            let count = this.timeSchemas.length;
             if(count !== val) {
                 while (count < val){
                     count++;
@@ -164,7 +151,7 @@ const vTimeSchemaSettings = new Vue({
     },
     computed:{
         typeInfo(){
-            return vTimeSchemaComponentsTypes[this.selectedTimeSchema.type];
+            return this.types[this.selectedTimeSchema.type];
         },
         types(){
             let res = vTimeSchemaComponentsTypes;
@@ -175,7 +162,7 @@ const vTimeSchemaSettings = new Vue({
             return res;
         },
         timeSchemasCount: {
-            get(){ return this.timeSchemas.length();},
+            get(){ return this.timeSchemas.length;},
             set(val){
                 wscli.send(`#TimeSchema,SetCount:${val}`);
             }
@@ -226,7 +213,7 @@ const vTimeSchemaSettings = new Vue({
                 <div>
                     <span>Схема</span>
                     <select v-model="selectedTimeSchemaId">
-                        <option disabled value="0" v-if="!timeSchemas.length()">не выбрано</option>
+                        <option disabled value="0" v-if="!timeSchemas.length">не выбрано</option>
                         <option v-for="timeSchema in timeSchemas" v-bind:value="timeSchema.id">{{String(timeSchema)}}</option>
                     </select>
                     <div class="button-inc-dec">
@@ -245,7 +232,7 @@ const vTimeSchemaSettings = new Vue({
                 <div>
                     <span>Тип данных</span>
                     <select v-model="selectedTypeName">
-                        <option disabled value="" v-if="!types.length()">не выбрано</option>
+                        <option disabled value="" v-if="!types.length">не выбрано</option>
                         <option v-for="type in types" v-bind:value="type.name">{{type.title}}</option>
                     </select>
                 </div>

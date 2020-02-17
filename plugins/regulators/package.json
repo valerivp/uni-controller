@@ -1,0 +1,16 @@
+{
+  "name": "regulators",
+  "version": "0.0.7",
+  "plugins-dependencies": {
+    "time-schema": ""
+  },
+  "node": "regulators.js",
+  "web":{
+    "js":[
+      "regulators-web.js"
+    ],
+    "css":[
+    ]
+  }
+}
+

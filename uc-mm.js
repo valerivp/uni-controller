@@ -46,7 +46,7 @@ function cmdList() {
     let q = "SELECT DISTINCT p.Name, p.Version AS Version FROM Plugins as p";
     let rows = db.querySync(q);
     rows.forEach(function (row) {
-        console.log(`${row.Name}\t${row.Version}}`);
+        console.log(`${row.Name}\t${row.Version}`);
     });
     if(!rows.length)
         console.log(`Plugins not installed.`);

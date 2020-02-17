@@ -122,7 +122,7 @@ wscli.commands.add({GetCount: null},
 
 function checkRangeTimeSchema(arg) {
     // noinspection JSUnresolvedVariable
-    return wscli.checkInRange(arg, 0,
+    return wscli.checkInRange(arg, 1,
         db.querySync("SELECT Count FROM TimeSchemasSettings")[0].Count,
         'TimeSchema');
 }
@@ -142,10 +142,10 @@ wscli.commands.add({SetCount:Number},
                 let row = db.querySync(q, {$SchemasCount: arg})[0];
                 wscli.sendData(`#TimeSchema,Count:${row.Count}`);
             }else{
-                let rows = db.querySync(`SELECT Type, TypeID FROM TimeSchemasTypes ORDER BY TypeID LIMIT 1`);
-                if(!rows.length)
+                let row = db.querySync(`SELECT Type, TypeID FROM TimeSchemasTypes ORDER BY TypeID LIMIT 1`)[0];
+                if(!row)
                     throw ("Types of time schemas not defined");
-                let qp = {$TypeID: rows[0].TypeID};
+                let qp = {$TypeID: row.TypeID};
                 let q = `INSERT
                         INTO TimeSchemas (SchemaID, TypeID)
                         VALUES ($SchemaID, $TypeID);
@@ -154,7 +154,6 @@ wscli.commands.add({SetCount:Number},
                         FROM TimeSchemasSettings AS TimeSchemasSettings, TimeSchemas AS TimeSchemas
                         LEFT JOIN TimeSchemasTypes AS TimeSchemasTypes
                             ON TimeSchemas.TypeID = TimeSchemasTypes.TypeID
-                                AND TimeSchemasSettings.Count = TimeSchemas.SchemaID
                         WHERE TimeSchemas.SchemaID = $SchemaID`;
                 for(let i = count + 1; i <= arg; i++){
                     qp.$SchemaID = i;
@@ -241,13 +240,14 @@ function getParams(SchemaID, DOWmask) {
     let res = {};
     let qp = {$SchemaID: SchemaID, $DOWmask: (DOWmask === undefined ? 0b11111111 : DOWmask)};
 
-    let rows = db.querySync(`SELECT TypeID FROM TimeSchemas WHERE SchemaID = $SchemaID`, qp);
-    if(rows.length) {
-        qp.$TypeID = rows[0].TypeID;
-        rows = db.querySync(`SELECT DOWmask FROM TimeSchemasDOW WHERE SchemaID = $SchemaID AND TypeID = $TypeID`, qp);
-        res.DOWmask = rows.length ? rows[0].DOWmask : 0;
+    let row = db.querySync(`SELECT TypeID FROM TimeSchemas WHERE SchemaID = $SchemaID`, qp)[0];
+    if(row) {
+        qp.$TypeID = row.TypeID;
 
-        rows = db.querySync(`SELECT dow.DOW, BeginTime, Value,
+        row = db.querySync(`SELECT DOWmask FROM TimeSchemasDOW WHERE SchemaID = $SchemaID AND TypeID = $TypeID`, qp)[0];
+        res.DOWmask = row ? row.DOWmask : 0;
+
+        let rows = db.querySync(`SELECT dow.DOW, BeginTime, Value,
             (TimeSchemasParams.DOW IS NULL) AS NoData  
             FROM temp.CurrentDOW AS dow
             LEFT JOIN TimeSchemasParams AS TimeSchemasParams
@@ -289,7 +289,6 @@ wscli.commands.add({GetParams: String},
 
 
 
-// noinspection JSUnusedLocalSymbols
 const update = {};
 module.exports.update = update;
 update['0.0.1'] = function(){
@@ -330,22 +329,22 @@ function getDbInitData() {
             },
             "TimeSchemas": {
               "schema": {
-                "SchemaID": "INTEGER PRIMARY KEY AUTOINCREMENT",
-                "TypeID": "INTEGER NOT NULL CONSTRAINT [TypeID] REFERENCES [TimeSchemasTypes]([TypeID]) ON DELETE CASCADE",
+                "SchemaID": "INTEGER PRIMARY KEY",
+                "TypeID": "INTEGER NOT NULL CONSTRAINT [TypeID] REFERENCES [TimeSchemasTypes]([TypeID]) ON DELETE SET NULL",
                 "Name": "CHAR(32) NOT NULL ON CONFLICT REPLACE DEFAULT ''"
               }
             },
             "TimeSchemasDOW": {
               "schema": {
-                "SchemaID": "INTEGER NOT NULL CONSTRAINT [SchemaID] REFERENCES [TimeSchemas]([SchemaID]) ON DELETE NO ACTION",
-                "TypeID": "INTEGER NOT NULL CONSTRAINT [TypeID] REFERENCES [TimeSchemasTypes]([TypeID]) ON DELETE CASCADE",
+                "SchemaID": "INTEGER NOT NULL CONSTRAINT [SchemaID] REFERENCES [TimeSchemas]([SchemaID]) ON DELETE CASCADE",
+                "TypeID": "INTEGER NOT NULL CONSTRAINT [TypeID] REFERENCES [TimeSchemasTypes]([TypeID]) ON DELETE  SET NULL",
                 "DOWmask": "INTEGER NOT NULL ON CONFLICT REPLACE DEFAULT 0"
               }
             },
             "TimeSchemasParams": {
               "schema": {
-                "SchemaID": "INTEGER NOT NULL CONSTRAINT [SchemaID] REFERENCES [TimeSchemas]([SchemaID]) ON DELETE NO ACTION",
-                "TypeID": "INTEGER NOT NULL CONSTRAINT [TypeID] REFERENCES [TimeSchemasTypes]([TypeID]) ON DELETE CASCADE",
+                "SchemaID": "INTEGER NOT NULL CONSTRAINT [SchemaID] REFERENCES [TimeSchemas]([SchemaID]) ON DELETE CASCADE",
+                "TypeID": "INTEGER NOT NULL CONSTRAINT [TypeID] REFERENCES [TimeSchemasTypes]([TypeID]) ON DELETE  SET NULL",
                 "DOW": "INTEGER NOT NULL",
                 "BeginTime": "INTEGER NOT NULL",
                 "Value": "CHAR(64)"
@@ -355,7 +354,7 @@ function getDbInitData() {
           "mem":{
             "TimeSchemaCurrentAndPrevValues": {
               "schema": {
-                "SchemaID": "INTEGER NOT NULL PRIMARY KEY",
+                "SchemaID": "INTEGER PRIMARY KEY",
                 "TypeID": "INTEGER NOT NULL",
                 "Value": "CHAR(64)",
                 "TimeLabel": "INTEGER NOT NULL",
