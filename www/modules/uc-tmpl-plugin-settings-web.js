@@ -6,6 +6,17 @@ function TemplatePluginSettings(PluginName, PluginNamePN, options) {
 
     options = options || {};
     this.exports = {};
+    options.component = options.component || {};
+    if(!options.template){
+        options.template = options.component.template || `
+            <template v-bind:is="selectedTypeName + '-settings'" v-if="selectedTypeName"
+                v-bind:type="selectedTypeName + '-settings'"
+                v-bind:parent="this"
+                v-bind:params="selectedComponent && selectedComponent.params"
+                v-bind:component="selectedComponent">
+            </template>`;
+    }
+    delete options.component.template;
 
 
     function ComponentsTypes() {
@@ -71,8 +82,11 @@ function TemplatePluginSettings(PluginName, PluginNamePN, options) {
                 if (params && params[`${PluginName}Id`])
                     this.selectedComponentId = params[`${PluginName}Id`];
                 this.fetchInfo();
+
+                this.$emit('show-' + this.selectedTypeName);
             },
-            onHide() {
+            onHide(params){
+                this.$emit('hide-' + this.selectedTypeName);
             },
             fetchInfo() {
                 wscli.send(`#${PluginName},GetCount,GetType` + (options.name ? `,GetName` : ''));
@@ -170,6 +184,9 @@ function TemplatePluginSettings(PluginName, PluginNamePN, options) {
         created: function () {
             ws.on('open', this.fetchInfo);
         },
+        beforeDestroy(){
+            ws.off('open', this.fetchInfo);
+        },
         template: `
     <div id="tab-content-${PluginNamePN.toKebab()}-settings" title="${options.title}">
         <div class="sProperties">
@@ -200,18 +217,15 @@ function TemplatePluginSettings(PluginName, PluginNamePN, options) {
                         <option v-for="type in types" v-bind:value="type.name">{{type.title}}</option>
                     </select>
                 </div>
-                <div v-bind:is="selectedTypeName + '-settings'" v-if="selectedTypeName"
-                    v-bind:type="selectedTypeName + '-settings'"
-                    v-bind:parent="this"
-                    v-bind:component="selectedComponent">
-                
-                </div>
             </div>
-
+            ${options.template}
         </div>
     </div>`
 
     };
+
+    utils.mixin(vComponentTemplate, options.component);
+
     this[`v${PluginNamePN}SettingsComponent`] = vComponentTemplate;
 
     this.initWscli = function(vComponent) {

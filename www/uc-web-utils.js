@@ -124,25 +124,27 @@ function uc_web_utils_class() {
 
     };
 
-    Date.make = function (val) {
+    Date.make = function (val) { //dateFromString
         if( val instanceof Date)
             return val;
-        val = String(val);
-        let res;
-        if (val.slice(8, 9) === 'T' && val.length === 15)
-            res = new Date(val.substr(0, 4), Number(val.substr(4, 2)) - 1, val.substr(6, 2), val.substr(9, 2), val.substr(11, 2), val.substr(13, 2));
-        else if (val.slice(0, 1) === '1' && val.length === 10)
-            res = new Date(1000 * val);
-        else if (val.slice(10, 11) === 'T')
-            res = new Date(val);
-        else if (val.slice(0, 1) === '1' && val.length === 13)
-            res = new Date(val);
+
+        let res, _val = String(val);
+        if(_val.slice(8, 9) === 'T' && _val.length === 15)
+            res = new Date(_val.substr(0, 4), Number(_val.substr(4, 2)) - 1, _val.substr(6, 2), _val.substr(9, 2), _val.substr(11, 2), _val.substr(13, 2));
+        else if(_val.slice(0, 1) === '1' && _val.length === 10)
+            res = new Date(1000 * _val);
+        else if(_val.slice(10, 11) === 'T')
+            res = new Date(_val);
+        else if(_val.slice(0, 1) === '1' && _val.length === 13)
+            res = new Date(Number(_val));
+        else if (_val === '0')
+            res = new Date(0);
         else
-            throw new Error(`Unknown date format: ${val}`);
+            throw new Error(`Unknown date format: ${_val}`);
 
         return res;
-
     };
+
     module.exports.defineProperty_length = function (obj) {
         Object.defineProperty(obj.prototype, 'length', {
             get() { return Object.keys(this).length; },
@@ -150,7 +152,25 @@ function uc_web_utils_class() {
         });
     };
 
+    function mixin(target, source) {
+        Object.keys(source).forEach(name=>{
+            if(target.hasOwnProperty(name) && target[name] instanceof Object) {
+                if('function' === typeof target[name]){
+                    let res = function(){
+                        let r = target[name];
+                        r.r1.bind(this)(...arguments);
+                        r.r2.bind(this)(...arguments);
+                    };
+                    res.r1 = target[name], res.r2 = source[name];
+                    target[name] = res; //
+                }else
+                    mixin(target[name], source[name]);
+            }else
+                target[name] = source[name];
 
+        });
+    }
+    module.exports.mixin = mixin;
 
 }
 

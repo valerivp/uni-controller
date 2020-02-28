@@ -691,6 +691,17 @@ function WSCli (ws){
             //    throw new Error(`Command is already registered with a different type of parameter: ${name}`)
 
             this[_name].funcs.push({cb: func, type: type});
+
+            return {_name: func};
+        },
+        remove: function (nameAndFunc) {
+            for(let name in nameAndFunc){
+                let i = this[name].indexOf(nameAndFunc[name]);
+                if(i >= 0)
+                    this[name].splice(i, 1);
+                else
+                    throw new Error(`Callback not found ${name}`);
+            }
         }
     };
 
@@ -732,7 +743,7 @@ function WSCli (ws){
     });
 
     this._onCommand = function(cmdStrings) {
-        (String(cmdStrings).match(/(^#.*$)/gm) || []).forEach(
+        (String(cmdStrings).match(/(^#.*$)|((^[?][\s\S]*))/gm) || []).forEach(
              (cmdString)=> {
                 this.context.current = this.context.none;
 
@@ -896,6 +907,7 @@ function WSConnection (server, terminal) {
         this._socket.onmessage = (msg) => {
             this._lastMsgTimelabel = new Date();
             this._terminal.log(String(msg.data).trim());
+            //console.log(String(msg.data).trim());
             this.emit('message', msg.data);
         };
         this._socket.onclose = () => {

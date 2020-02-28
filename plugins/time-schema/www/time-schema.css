@@ -1,23 +1,23 @@
-#tab-content-time-schema-settings .values-short input[type="text"] {
+#tab-content-time-schemas-settings .values-short input[type="text"] {
     flex-grow: 1;
     max-width: 7ex;
     min-width: 5ex;
 }
 
-#tab-content-time-schema-settings .values-short >div:not(:first-child) span {
+#tab-content-time-schemas-settings .values-short >div:not(:first-child) span {
     flex-grow: 1;
     max-width: 20ex;
     min-width: 15ex;
     height: 2em;
 }
 
-#tab-content-time-schema-settings .time-value >div{
+#tab-content-time-schemas-settings .time-value >div{
     display: flex;
     flex-direction: column;
 }
-#tab-content-time-schema-settings .time-value{
+#tab-content-time-schemas-settings .time-value{
     align-items: flex-start;
 }
-#tab-content-time-schema-settings .time-value input{
+#tab-content-time-schemas-settings .time-value input{
     margin-right: 0;
 }

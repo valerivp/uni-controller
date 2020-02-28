@@ -2,10 +2,13 @@
 
 const db = require(`uc-db`);
 const wscli = require(`uc-wscli`);
+const template = require('uc-tmpl-plugin-settings');
 
+
+Object.assign(module, new template('TimeSchema', 'TimeSchemas', {maxCount:8, name:true}));
 
 module.exports.init = function () {
-    db.init(getDbInitData());
+    db.init(module.getDbInitData(getDbInitData()));
 
     setInterval(updateTimeSchemaCurrentAndPrevValues, 1000);
 
@@ -13,160 +16,22 @@ module.exports.init = function () {
 
 function updateTimeSchemaCurrentAndPrevValues() {
         db.querySync(`CREATE TABLE temp.NewDataTimeSchemaCurrentAndPrevValues AS
-                SELECT cd.[SchemaID] AS SchemaID, cd.TypeID AS TypeID,
+                SELECT cd.[TimeSchemaID] AS TimeSchemaID, cd.TypeID AS TypeID,
                        CASE WHEN NOT IFNULL(cd.[Value] = pv.[Value], 0) THEN pv.[Value] ELSE pv.[PrevValue] END AS PrevValue,  
                        CASE WHEN NOT IFNULL(cd.[Value] = pv.[Value], 0) THEN dt.DateTime ELSE pv.TimeLabel END AS TimeLabel,
                        cd.[Value] AS Value  
                 FROM temp.TimeSchemaCurrentData AS cd, mem.[CurrentDateTime] AS dt
                 LEFT JOIN mem.TimeSchemaCurrentAndPrevValues AS pv
-                     ON cd.[SchemaID] = pv.SchemaID AND cd.[TypeID] = pv.TypeID 
+                     ON cd.[TimeSchemaID] = pv.TimeSchemaID AND cd.[TypeID] = pv.TypeID 
                 ;
                 DELETE FROM mem.TimeSchemaCurrentAndPrevValues;
                 
-                INSERT INTO mem.TimeSchemaCurrentAndPrevValues(SchemaID, TypeID, PrevValue, TimeLabel, Value)
-                SELECT SchemaID, TypeID, PrevValue, TimeLabel, Value FROM temp.NewDataTimeSchemaCurrentAndPrevValues;
+                INSERT INTO mem.TimeSchemaCurrentAndPrevValues(TimeSchemaID, TypeID, PrevValue, TimeLabel, Value)
+                SELECT TimeSchemaID, TypeID, PrevValue, TimeLabel, Value FROM temp.NewDataTimeSchemaCurrentAndPrevValues;
                 DROP TABLE temp.NewDataTimeSchemaCurrentAndPrevValues;
             `);
 }
 
-
-
-wscli.context.add('timeSchema');         /** @namespace wscli.context.timeSchema */
-
-
-wscli.commands.add({TimeSchema: Number},
-    function(arg){
-        wscli.context.current = wscli.context.timeSchema;
-        if(arg)
-            checkRangeTimeSchema(arg); // noinspection CommaExpressionJS
-        wscli.current.timeSchema = arg;
-        return true;
-    },
-    'Set current TimeSchema.'
-);
-
-// noinspection JSUnusedLocalSymbols
-function GetInfo(info, arg) {
-    if(wscli.context.current === wscli.context.timeSchema){
-        let res = false;
-        // noinspection JSUnresolvedVariable
-        let q = `SELECT SchemaID, Name, Type
-            FROM TimeSchemas AS TimeSchemas 
-            LEFT JOIN TimeSchemasTypes AS TimeSchemasTypes
-                ON TimeSchemas.TypeID = TimeSchemasTypes.TypeID
-            WHERE (SchemaID = $SchemaID OR ($SchemaID = 0 AND SchemaID <= (SELECT Count FROM TimeSchemasSettings)))`;
-        let rows = db.querySync(q, {$SchemaID: wscli.current.timeSchema});
-        rows.forEach(function (row) { // noinspection JSUnresolvedVariable
-            let data = `#TimeSchema:${row.SchemaID},${info}:${row[info]}`;
-            wscli.sendClientData(data);
-            res = true;
-        });
-
-        return true; //res || !wscli.current.timeSchema;
-    }
-}
-
-wscli.commands.add({GetName: null}, GetInfo.bind(undefined, 'Name'), 'Get TimeSchema name.');
-wscli.commands.add({GetType: null}, GetInfo.bind(undefined, 'Type'), 'Get TimeSchema type.');
-
-
-wscli.commands.add({SetName: String},
-    function(arg) {
-        if(wscli.context.current === wscli.context.timeSchema){
-            checkRangeTimeSchema(wscli.current.timeSchema);
-            let qp = {$SchemaID: wscli.current.timeSchema};
-            qp.$Name = arg;
-            db.querySync(`UPDATE TimeSchemas
-                SET Name = $Name
-            WHERE SchemaID = $SchemaID and Name != $Name`, qp);
-            let row = db.querySync("SELECT SchemaID, Name FROM TimeSchemas WHERE SchemaID = $SchemaID", qp)[0];
-            wscli.sendData(`#TimeSchema:${row.SchemaID},Name:${row.Name}`);
-            return true;
-        }
-    },
-    'Set TimeSchema name.');
-
-wscli.commands.add({SetType: String},
-    function(arg) {
-        if(wscli.context.current === wscli.context.timeSchema){
-            checkRangeTimeSchema(wscli.current.timeSchema);
-            let qp = {$SchemaID: wscli.current.timeSchema};
-            qp.$Type = arg;
-            db.querySync(`UPDATE TimeSchemas
-                SET TypeID = (SELECT TypeID FROM TimeSchemasTypes WHERE Type = $Type)
-            WHERE SchemaID = $SchemaID`, qp);
-            let row = db.querySync(`SELECT SchemaID, Type
-                FROM TimeSchemas
-                    LEFT JOIN TimeSchemasTypes AS TimeSchemasTypes
-                        ON TimeSchemas.TypeID = TimeSchemasTypes.TypeID
-                WHERE SchemaID = $SchemaID`, qp)[0];
-            wscli.sendData(`#TimeSchema:${row.SchemaID},Type:${row.Type}`);
-            // noinspection JSConstructorReturnsPrimitive
-            return true;
-        }
-    },
-    'Set TimeSchema type.');
-
-// noinspection JSUnusedLocalSymbols
-wscli.commands.add({GetCount: null},
-    function(arg){
-        if(wscli.context.current === wscli.context.timeSchema) {
-            let row = db.querySync("SELECT Count FROM TimeSchemasSettings")[0];
-            // noinspection JSUnresolvedVariable
-            wscli.sendClientData(`#TimeSchema,Count:${row.Count}`);
-            return true;
-        }
-    },
-    'Get TimeSchemas count.'
-);
-
-function checkRangeTimeSchema(arg) {
-    // noinspection JSUnresolvedVariable
-    return wscli.checkInRange(arg, 1,
-        db.querySync("SELECT Count FROM TimeSchemasSettings")[0].Count,
-        'TimeSchema');
-}
-
-wscli.commands.add({SetCount:Number},
-    function(arg){
-        if(wscli.context.current === wscli.context.timeSchema) {
-
-            let row = db.querySync("SELECT MaxCount, Count FROM TimeSchemasSettings")[0];
-            wscli.checkInRange(arg, 0, row.MaxCount, 'TimeSchema')
-
-            let count = row.Count;
-            if(count >= arg){
-                let q = `DELETE FROM TimeSchemas WHERE SchemaID > $SchemasCount;
-                    UPDATE TimeSchemasSettings SET Count = (SELECT COUNT(*) AS Count FROM TimeSchemas);
-                    SELECT Count FROM TimeSchemasSettings;`;
-                let row = db.querySync(q, {$SchemasCount: arg})[0];
-                wscli.sendData(`#TimeSchema,Count:${row.Count}`);
-            }else{
-                let row = db.querySync(`SELECT Type, TypeID FROM TimeSchemasTypes ORDER BY TypeID LIMIT 1`)[0];
-                if(!row)
-                    throw ("Types of time schemas not defined");
-                let qp = {$TypeID: row.TypeID};
-                let q = `INSERT
-                        INTO TimeSchemas (SchemaID, TypeID)
-                        VALUES ($SchemaID, $TypeID);
-                     UPDATE TimeSchemasSettings SET Count = (SELECT COUNT(*) AS Count FROM TimeSchemas);
-                     SELECT Count, SchemaID, Type
-                        FROM TimeSchemasSettings AS TimeSchemasSettings, TimeSchemas AS TimeSchemas
-                        LEFT JOIN TimeSchemasTypes AS TimeSchemasTypes
-                            ON TimeSchemas.TypeID = TimeSchemasTypes.TypeID
-                        WHERE TimeSchemas.SchemaID = $SchemaID`;
-                for(let i = count + 1; i <= arg; i++){
-                    qp.$SchemaID = i;
-                    let row = db.querySync(q, qp)[0];
-                    wscli.sendData(`#TimeSchema,Count:${row.Count}`);
-                    wscli.sendData(`#TimeSchema:${row.SchemaID},Type:${row.Type}`);
-                }
-            }
-            return true;
-        }
-    },
-    'Set TimeSchemas count.'
-);
 
 
 
@@ -174,7 +39,7 @@ wscli.commands.add({SetParams: Object},
     function (arg) {
         if(wscli.context.current === wscli.context.timeSchema){
             let qp = {$SchemaID: wscli.current.timeSchema};
-            qp.$TypeID = (db.querySync(`SELECT TypeID FROM TimeSchemas WHERE SchemaID = $SchemaID`, qp)[0] || {}).TypeID;
+            qp.$TypeID = (db.querySync(`SELECT TypeID FROM TimeSchemas WHERE TimeSchemaID = $SchemaID`, qp)[0] || {}).TypeID;
             if(qp.$TypeID){
                 Object.assign(qp, db.querySync(`SELECT TimeSchemasTypes.Type,
                         TimeSchemasTypeOptionsMin.[Value] AS minValue,
@@ -200,16 +65,16 @@ wscli.commands.add({SetParams: Object},
                 for(let key in arg){
                     if(key === 'DOWmask'){
                         qp.$DOWmask = arg.DOWmask | 0;
-                        q += `UPDATE TimeSchemasDOW SET DOWmask = $DOWmask WHERE SchemaID = $SchemaID AND TypeID = $TypeID;
-                            INSERT INTO TimeSchemasDOW (SchemaID, TypeID, DOWmask)
+                        q += `UPDATE TimeSchemasDOW SET DOWmask = $DOWmask WHERE TimeSchemaID = $SchemaID AND TypeID = $TypeID;
+                            INSERT INTO TimeSchemasDOW (TimeSchemaID, TypeID, DOWmask)
                                 SELECT $SchemaID, $TypeID, $DOWmask WHERE (Select Changes() = 0);\n`;
                     }else if(key.startsWith('dow=')){
                         let dow = wscli.data.fromString(key, Object).dow;
-                        q += `DELETE FROM TimeSchemasParams WHERE SchemaID = $SchemaID AND TypeID = $TypeID AND DOW = ${dow};\n`;
+                        q += `DELETE FROM TimeSchemasParams WHERE TimeSchemaID = $SchemaID AND TypeID = $TypeID AND DOW = ${dow};\n`;
                         let data = arg[key];
                         data = wscli.data.fromString(data, Array);
                         if(data.length) {
-                            q += `INSERT INTO TimeSchemasParams(SchemaID, TypeID, DOW, BeginTime, Value) VALUES\n`;
+                            q += `INSERT INTO TimeSchemasParams(TimeSchemaID, TypeID, DOW, BeginTime, Value) VALUES\n`;
                             q += data.map((item) => wscli.data.fromString(item, Object))
                                 .map((item) =>{
                                     let value = (item.value === undefined ? 'NULL' : String(item.value));
@@ -236,15 +101,15 @@ wscli.commands.add({SetParams: Object},
     'Set TimeSchema params.');
 
 
-function getParams(SchemaID, DOWmask) {
+function getParams(TimeSchemaID, DOWmask) {
     let res = {};
-    let qp = {$SchemaID: SchemaID, $DOWmask: (DOWmask === undefined ? 0b11111111 : DOWmask)};
+    let qp = {$SchemaID: TimeSchemaID, $DOWmask: (DOWmask === undefined ? 0b11111111 : DOWmask)};
 
-    let row = db.querySync(`SELECT TypeID FROM TimeSchemas WHERE SchemaID = $SchemaID`, qp)[0];
+    let row = db.querySync(`SELECT TypeID FROM TimeSchemas WHERE TimeSchemaID = $SchemaID`, qp)[0];
     if(row) {
         qp.$TypeID = row.TypeID;
 
-        row = db.querySync(`SELECT DOWmask FROM TimeSchemasDOW WHERE SchemaID = $SchemaID AND TypeID = $TypeID`, qp)[0];
+        row = db.querySync(`SELECT DOWmask FROM TimeSchemasDOW WHERE TimeSchemaID = $SchemaID AND TypeID = $TypeID`, qp)[0];
         res.DOWmask = row ? row.DOWmask : 0;
 
         let rows = db.querySync(`SELECT dow.DOW, BeginTime, Value,
@@ -252,7 +117,7 @@ function getParams(SchemaID, DOWmask) {
             FROM temp.CurrentDOW AS dow
             LEFT JOIN TimeSchemasParams AS TimeSchemasParams
                 ON dow.DOW = TimeSchemasParams.DOW
-                    AND TimeSchemasParams.SchemaID = $SchemaID AND TypeID = $TypeID
+                    AND TimeSchemasParams.TimeSchemaID = $SchemaID AND TypeID = $TypeID
             WHERE dow.mask & $DOWmask
             ORDER BY dow.DOW`, qp);
         let dow, i, data = {};
@@ -297,26 +162,8 @@ update['0.0.1'] = function(){
 
 function getDbInitData() {
 
-    return `{
+    return module.getDbInitData(`{
           "main": {
-            "TimeSchemasSettings": {
-              "schema": {
-                "MaxCount": "INTEGER NOT NULL",
-                "Count": "INTEGER NOT NULL ON CONFLICT REPLACE DEFAULT 0"
-              },
-              "data": [
-                {"RowID": 1, "MaxCount": 8, "Count": 0}
-              ]
-            },
-            "TimeSchemasTypes": {
-              "schema": {
-                "TypeID": "INTEGER PRIMARY KEY AUTOINCREMENT",
-                "Type": "CHAR(32) NOT NULL"
-              },
-              "unique index": {
-                "Type": ["Type"]
-              }
-            },
             "TimeSchemasTypeOptions": {
               "schema": {
                 "Type": "CHAR(32) NOT NULL",
@@ -327,23 +174,16 @@ function getDbInitData() {
                 "TypeOption": ["Type", "Option"]
               }
             },
-            "TimeSchemas": {
-              "schema": {
-                "SchemaID": "INTEGER PRIMARY KEY",
-                "TypeID": "INTEGER NOT NULL CONSTRAINT [TypeID] REFERENCES [TimeSchemasTypes]([TypeID]) ON DELETE SET NULL",
-                "Name": "CHAR(32) NOT NULL ON CONFLICT REPLACE DEFAULT ''"
-              }
-            },
             "TimeSchemasDOW": {
               "schema": {
-                "SchemaID": "INTEGER NOT NULL CONSTRAINT [SchemaID] REFERENCES [TimeSchemas]([SchemaID]) ON DELETE CASCADE",
+                "TimeSchemaID": "INTEGER NOT NULL CONSTRAINT [TimeSchemaID] REFERENCES [TimeSchemas]([TimeSchemaID]) ON DELETE CASCADE",
                 "TypeID": "INTEGER NOT NULL CONSTRAINT [TypeID] REFERENCES [TimeSchemasTypes]([TypeID]) ON DELETE  SET NULL",
                 "DOWmask": "INTEGER NOT NULL ON CONFLICT REPLACE DEFAULT 0"
               }
             },
             "TimeSchemasParams": {
               "schema": {
-                "SchemaID": "INTEGER NOT NULL CONSTRAINT [SchemaID] REFERENCES [TimeSchemas]([SchemaID]) ON DELETE CASCADE",
+                "TimeSchemaID": "INTEGER NOT NULL CONSTRAINT [TimeSchemaID] REFERENCES [TimeSchemas]([TimeSchemaID]) ON DELETE CASCADE",
                 "TypeID": "INTEGER NOT NULL CONSTRAINT [TypeID] REFERENCES [TimeSchemasTypes]([TypeID]) ON DELETE  SET NULL",
                 "DOW": "INTEGER NOT NULL",
                 "BeginTime": "INTEGER NOT NULL",
@@ -354,7 +194,7 @@ function getDbInitData() {
           "mem":{
             "TimeSchemaCurrentAndPrevValues": {
               "schema": {
-                "SchemaID": "INTEGER PRIMARY KEY",
+                "TimeSchemaID": "INTEGER PRIMARY KEY",
                 "TypeID": "INTEGER NOT NULL",
                 "Value": "CHAR(64)",
                 "TimeLabel": "INTEGER NOT NULL",
@@ -365,7 +205,7 @@ function getDbInitData() {
           "temp":{
             "TimeSchemaCurrentData":{
                 "view": "WITH Step1 AS ( 
-SELECT ts.SchemaID AS SchemaID, ts.[TypeID] AS TypeID, cdt.DOW AS DOW_current, cdt.TimeHM AS TimeHM, dow.[DOW] AS DOW, IFNULL(tsp.DOW, 0) AS DOW_src,
+SELECT ts.TimeSchemaID AS TimeSchemaID, ts.[TypeID] AS TypeID, cdt.DOW AS DOW_current, cdt.TimeHM AS TimeHM, dow.[DOW] AS DOW, IFNULL(tsp.DOW, 0) AS DOW_src,
        IFNULL(tsp.[BeginTime], tsp0.[BeginTime]) AS BeginTime, IFNULL(tsp.[Value], tsp0.[Value]) AS Value,
       dow.PrevDOW_desc AS PrevDOW_desc    
         
@@ -374,29 +214,29 @@ LEFT JOIN temp.CurrentDOW AS dow
 ON dow.DOW > 0
 
 LEFT JOIN main.[TimeSchemasDOW] AS tsdow
-     ON ts.[SchemaID] = tsdow.[SchemaID] AND ts.[TypeID] = tsdow.[TypeID] AND tsdow.[DOWmask] & dow.[mask]
+     ON ts.[TimeSchemaID] = tsdow.[TimeSchemaID] AND ts.[TypeID] = tsdow.[TypeID] AND tsdow.[DOWmask] & dow.[mask]
 
 LEFT JOIN main.[TimeSchemasParams] AS tsp
-     ON tsdow.[SchemaID] = tsp.[SchemaID] AND tsdow.[TypeID] = tsp.[TypeID] AND dow.[DOW] = tsp.[DOW]      
+     ON tsdow.[TimeSchemaID] = tsp.[TimeSchemaID] AND tsdow.[TypeID] = tsp.[TypeID] AND dow.[DOW] = tsp.[DOW]      
 
 LEFT JOIN main.[TimeSchemasParams] AS tsp0
-     ON ts.[SchemaID] = tsp0.[SchemaID] AND ts.[TypeID] = tsp0.[TypeID] AND tsp.[DOW] IS NULL AND tsp0.[DOW] = 0
+     ON ts.[TimeSchemaID] = tsp0.[TimeSchemaID] AND ts.[TypeID] = tsp0.[TypeID] AND tsp.[DOW] IS NULL AND tsp0.[DOW] = 0
 WHERE NOT IFNULL(tsp.[Value], tsp0.[Value]) IS NULL
      ),
      
 Step2 AS (      
-SELECT SchemaID, TypeID, MAX(PrevDOW_desc * 10000 + BeginTime) AS DOW_BeginTime FROM Step1
+SELECT TimeSchemaID, TypeID, MAX(PrevDOW_desc * 10000 + BeginTime) AS DOW_BeginTime FROM Step1
 
 WHERE (PrevDOW_desc * 10000 + BeginTime) <= (7 * 10000 + TimeHM)
-GROUP BY SchemaID, TypeID)
+GROUP BY TimeSchemaID, TypeID)
 
-SELECT s1.[SchemaID] AS SchemaID, s1.[TypeID] AS TypeID, s1.DOW_src AS DOW, s1.[BeginTime] AS BeginTime, s1.[Value] AS Value FROM Step1 AS s1
+SELECT s1.[TimeSchemaID] AS TimeSchemaID, s1.[TypeID] AS TypeID, s1.DOW_src AS DOW, s1.[BeginTime] AS BeginTime, s1.[Value] AS Value FROM Step1 AS s1
 INNER JOIN Step2 AS s2
-ON s1.[SchemaID] = s2.[SchemaID] AND  (PrevDOW_desc * 10000 + BeginTime) = DOW_BeginTime;"
+ON s1.[TimeSchemaID] = s2.[TimeSchemaID] AND  (PrevDOW_desc * 10000 + BeginTime) = DOW_BeginTime;"
             }
           }
           
-        }`;
+        }`);
 }
 
 
