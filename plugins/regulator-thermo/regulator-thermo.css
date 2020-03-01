@@ -1,0 +1,6 @@
+.regulator-thermo .button-inc-dec input[type="text"] {
+    flex-grow: 1;
+    max-width: 6ex;
+    min-width: 5ex;
+    text-align: center;
+}

@@ -17,11 +17,11 @@ wscli.commands.add({SetAutosend: Number}, (arg)=> {
         if(wscli.context.current === wscli.context.sensor){
             sensors.checkRangeSensorID(wscli.current.sensor);
             if(arg) {
-                let q = `REPLACE INTO mem.SensorsSendTimeouts (ID, MaxTimeLabel)
+                let q = `REPLACE INTO mem.SensorsSendTimeouts (SensorID, MaxTimeLabel)
                 VALUES ($ID, $TimeLabel)`;
                 db.querySync(q, {$ID: wscli.current.sensor, $TimeLabel: (arg + db.date2db(new Date()))});
             } else {
-                db.querySync('DELETE FROM mem.SensorsSendTimeouts WHERE ID = $ID', {$ID: wscli.current.sensor});
+                db.querySync('DELETE FROM mem.SensorsSendTimeouts WHERE SensorID = $ID', {$ID: wscli.current.sensor});
             }
             wscli.sendData(`#Sensor:0x${Number(wscli.current.sensor).toHex()},Autosend:${arg}`);
             return true;
@@ -34,19 +34,19 @@ function sendSensorData(data) {
     db.querySync(`DELETE FROM mem.SensorsSendTimeouts
         WHERE MaxTimeLabel < $TimeLabel`, {$TimeLabel: Date.now() / 1000 | 0});
 
-    let q = `SELECT SensorsData.ID AS ID, Type, TimeLabel FROM mem.SensorsData AS SensorsData
+    let q = `SELECT SensorsData.SensorID AS SensorID, Type, TimeLabel FROM mem.SensorsData AS SensorsData
         INNER JOIN mem.SensorsSendTimeouts AS SensorsSendTimeouts
-            ON SensorsData.ID = SensorsSendTimeouts.ID
-        WHERE SensorsData.ID = $ID`;
+            ON SensorsData.SensorID = SensorsSendTimeouts.SensorID
+        WHERE SensorsData.SensorID = $ID`;
     let rows = db.querySync(q, {$ID: data.id});
     rows.forEach(function (row) {
         let data = '';
         let TimeLabel = new Date(row.TimeLabel * 1000);
         /** @namespace row.Type */
-        data += `#Sensor:0x${Number(row.ID).toHex()},Type:${row.Type},TimeLabel:${utils.DateToShortXMLString(TimeLabel)}`;
+        data += `#Sensor:0x${Number(row.SensorID).toHex()},Type:${row.Type},TimeLabel:${utils.DateToShortXMLString(TimeLabel)}`;
         data += ',Data:';
         let params = {};
-        let rows_param = db.querySync("SELECT Param, Value FROM mem.SensorsParams WHERE ID = $ID", {$ID: row.ID});
+        let rows_param = db.querySync("SELECT Param, Value FROM mem.SensorsParams WHERE SensorID = $ID", {$ID: row.SensorID});
         rows_param.forEach(function (row_param) {
             /** @namespace row_param.Param */
             /** @namespace row_param.Value */
@@ -72,7 +72,7 @@ function getDbInitData() {
     return `{
           "mem":{
             "SensorsSendTimeouts": {
-              "ID": "INTEGER PRIMARY KEY NOT NULL",
+              "SensorID": "INTEGER PRIMARY KEY NOT NULL",
               "MaxTimeLabel": "INTEGER NOT NULL"
             }
           }

@@ -177,7 +177,7 @@ Vue.component('tile-temperature-settings', {
         },
         sensors() {
             let res = vSensors.sensors.toArray().filter((sd) => (sd.param('temperature') !== undefined));
-            if (this.sensor && !res.find(item => item.id === this.sensor))
+            if (Number(this.sensor) && !res.find(item => item.id === this.sensor))
                 res.splice(0, 0, vSensors.sensors[this.sensor] || new SensorData(this.sensor));
             return res;
         },

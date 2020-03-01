@@ -72,6 +72,7 @@ function TemplatePluginSettings(PluginName, PluginNamePN, options) {
     let data = {};
     data._selectedComponentId = 0;
     data[PluginNamePN] = new this[PluginNamePN]();
+    //data.selectedTypeName = '';
 
 
     let vComponentTemplate = {
@@ -168,11 +169,6 @@ function TemplatePluginSettings(PluginName, PluginNamePN, options) {
                 get: function () {
                     return this.selectedComponent.type;
                 },
-                set: function (val) {
-                    if (val && this.selectedComponent.type !== val) {
-                        wscli.send(`#${PluginName}:${this.selectedComponentId},SetType:${val}`);
-                    }
-                }
             },
         },
         watch: {
@@ -199,9 +195,9 @@ function TemplatePluginSettings(PluginName, PluginNamePN, options) {
                     </select>
                     <div class="button-inc-dec">
                         <span> из </span>
-                        <button v-on:click="componentsCount--" class="button-inc-dec">-</button>
+                        <button v-on:click="componentsCount--">-</button>
                         <span>{{componentsCount}}</span>
-                        <button v-on:click="componentsCount++" class="button-inc-dec">+</button>
+                        <button v-on:click="componentsCount++">+</button>
                     </div>
                 </div>` + (options.name ? `
                 <div v-show="selectedComponentId">
@@ -212,7 +208,7 @@ function TemplatePluginSettings(PluginName, PluginNamePN, options) {
             <div v-show="selectedComponentId">
                 <div>
                     <span>Тип</span>
-                    <select v-model="selectedTypeName">
+                    <select v-model="selectedComponent.type" v-on:change="setType">
                         <option disabled value="" v-if="!types.length">не выбрано</option>
                         <option v-for="type in types" v-bind:value="type.name">{{type.title}}</option>
                     </select>
@@ -245,6 +241,7 @@ function TemplatePluginSettings(PluginName, PluginNamePN, options) {
             if (wscli.context.current === wscli.context[pluginName]) {
                 vComponent.checkInRange(wscli.current[pluginName]);
                 Vue.set(vComponent[PluginNamePN][wscli.current[pluginName]], info, arg);
+
                 return true;
             }
         }

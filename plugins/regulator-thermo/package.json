@@ -1,8 +1,9 @@
 {
   "name": "regulator-thermo",
-  "version": "0.0.6",
+  "version": "0.0.8",
   "plugins-dependencies": {
-    "regulators": ""
+    "regulators": "",
+    "time-schema-temperature": ""
   },
   "node": "regulator-thermo.js",
   "web":{
@@ -10,6 +11,7 @@
       "regulator-thermo-web.js"
     ],
     "css":[
+      "regulator-thermo.css"
     ]
   }
 }

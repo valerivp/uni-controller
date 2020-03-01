@@ -1,0 +1,17 @@
+{
+  "name": "tile-regulator-thermo",
+  "version": "0.0.1",
+  "plugins-dependencies": {
+    "tiles":"",
+    "regulator-thermo":""
+  },
+  "node": "",
+  "web":{
+    "js":[
+      "tile-regulator-thermo-web.js"
+    ],
+    "css":[
+    ]
+  }
+}
+

@@ -212,9 +212,9 @@ const vTileSettings = new Vue({
                     </select>
                     <div class="button-inc-dec">
                         <span> из </span>
-                        <button v-on:click="tilesCount--"  class="button-inc-dec">-</button>
+                        <button v-on:click="tilesCount--">-</button>
                         <span>{{tilesCount}}</span>
-                        <button v-on:click="tilesCount++"  class="button-inc-dec">+</button>
+                        <button v-on:click="tilesCount++">+</button>
                     </div>
                 </div>
             </div>

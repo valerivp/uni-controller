@@ -3,11 +3,12 @@
 const db = require(`uc-db`);
 const wscli = require(`uc-wscli`);
 
+const REGULATOR_TYPE = 'thermo';
+
 module.exports.init = function () {
     db.init(getDbInitData())
 };
 
-const REGULATOR_TYPE = 'thermo';
 
 wscli.commands.add({SetParams: Object},
     function (arg) {
@@ -19,30 +20,32 @@ wscli.commands.add({SetParams: Object},
                     ON r.TypeID = rt.TypeID
                 WHERE RegulatorID = $ID AND rt.Type = $Type`, qp)[0];
             if(row){
-                let arrParamNames = [];
-                if(arg.hasOwnProperty('timeSchema')){
-                    qp.$TimeSchemaID = arg.timeSchema;
-                    if(!db.querySync(`SELECT TimeSchemaID FROM TimeSchemas WHERE TimeSchemaID = $TimeSchemaID`, qp).length)
-                        throw `TimeSchema not exist: ${arg.TimeSchema}`;
-                    arrParamNames.push('TimeSchema');
-                }
-                if(arg.hasOwnProperty('sensor')) {
-                    qp.$SensorID = arg.sensor;
-                    //if (!db.querySync(`SELECT SensorID FROM Sensors WHERE SensorsID = $SensorsID`, qp).length)
-                     //   throw `Sensor not exist: ${arg.Sensors}`;
-                    arrParamNames.push('Sensor');
+                let names = [], params = [], keys = [];
+                for(let key in arg){
+                    keys.push(key);
+                    let keylc = key.toLowerCase();
+                    if(keylc === 'timeschema'){
+                        qp.$TimeSchemaID = arg[key], names.push('TimeSchemaID'), params.push('$TimeSchemaID');
+                    }else if(keylc === 'sensor') {
+                        qp.$SensorID = arg[key], names.push('SensorID'), params.push('$SensorID');
+                    }else if(keylc === 'temperaturedeviation') {
+                        qp.$TemperatureDeviation = Number(arg[key]), names.push('TemperatureDeviation'), params.push('min(max($TemperatureDeviation, -MaxTemperatureDeviation), MaxTemperatureDeviation)');
+                    }else if(keylc === 'temperaturetolerance') {
+                        qp.$TemperatureTolerance = Number(arg[key]), names.push('TemperatureTolerance'), params.push('min(max($TemperatureTolerance, 0), MaxTemperatureTolerance)');
+                    }
                 }
 
                 let q = `UPDATE RegulatorsThermoParams 
-                    SET ${arrParamNames.map(item=>`${item}ID = $${item}ID`).join(', ')}
+                    SET (${names.join(', ')}) = (SELECT ${params.join(', ')} FROM Regulators${REGULATOR_TYPE.toPascal()}Settings )
                     WHERE RegulatorID = $ID;
                         -- If no update happened (i.e. the row didn't exist) then insert one
-                    INSERT INTO RegulatorsThermoParams (RegulatorID, ${arrParamNames.map(item=>`${item}ID`).join(', ')})
-                        SELECT $ID, ${arrParamNames.map(item=>`$${item}ID`).join(', ')}
-                    WHERE (Select Changes() = 0);`;
-                db.querySync(q, qp);
+                    INSERT INTO RegulatorsThermoParams (RegulatorID, ${names.join(', ')})
+                        SELECT $ID, ${params.join(', ')} FROM Regulators${REGULATOR_TYPE.toPascal()}Settings
+                    WHERE (Select Changes() = 0);
+                    SELECT ${names.map((item, ind) => `${item} AS ${keys[ind]}`)} FROM Regulators${REGULATOR_TYPE.toPascal()}Params WHERE RegulatorID = $ID`;
+                row = db.querySync(q, qp)[0];
 
-                wscli.sendData(`#Regulator:${qp.$ID},Params:${getParams(qp.$ID)}`);
+                wscli.sendData(`#Regulator:${qp.$ID},Params:${wscli.data.toString(row)}`);
                 return true;
             }
         }
@@ -54,9 +57,15 @@ function getParams(RegulatorID) {
     let res = {};
     let qp = {$ID: RegulatorID};
 
-    let row = db.querySync(`SELECT TimeSchemaID AS TimeSchema, SensorID AS Sensor FROM RegulatorsThermoParams WHERE RegulatorID = $ID`, qp)[0];
-    if(!row)
-        row ={TimeSchema: 0, Sensor: 0};
+    let row = db.querySync(`
+        INSERT OR IGNORE INTO RegulatorsThermoParams (RegulatorID, TimeSchemaID)
+                        SELECT $ID, TimeSchemaID FROM TimeSchemas ts
+                            INNER JOIN TimeSchemasTypes as tst ON ts.TypeID = tst.TypeID 
+                        WHERE tst.Type = 'temperature'
+                        ORDER BY TimeSchemaID LIMIT 1;    
+        SELECT
+            TimeSchemaID AS TimeSchema, SensorID AS Sensor, TemperatureDeviation, TemperatureTolerance
+            FROM RegulatorsThermoParams WHERE RegulatorID = $ID`, qp)[0];
 
     res = wscli.data.toString(row);
     return res;
@@ -84,7 +93,7 @@ wscli.commands.add({GetParams: String},
 
 const update = {};
 module.exports.update = update;
-update['0.0.1'] = function(){
+update['0.0.7'] = function(){
     return getDbInitData();
 };
 
@@ -93,16 +102,72 @@ function getDbInitData() {
     return `
         {
            "main": {
+              "Regulators${REGULATOR_TYPE.toPascal()}Settings":{
+                  "schema":{
+                    "MaxTemperatureDeviation": "INTEGER NOT NULL",
+                    "MaxTemperatureTolerance": "INTEGER NOT NULL"
+                  },
+                  "data":[
+                        {"RowID": 1, "MaxTemperatureDeviation": 50, "MaxTemperatureTolerance": 50}
+                    ]
+              },
               "RegulatorsTypes": {
                   "data": [
                       {"Type": "regulator-${REGULATOR_TYPE}"}
                   ]
               },
               "RegulatorsThermoParams":{
-                "RegulatorID": "INTEGER NOT NULL CONSTRAINT [RegulatorID] REFERENCES [Regulators]([RegulatorID]) ON DELETE CASCADE",
+                "RegulatorID": "INTEGER NOT NULL PRIMARY KEY CONSTRAINT [RegulatorID] REFERENCES [Regulators]([RegulatorID]) ON DELETE CASCADE",
                 "TimeSchemaID": "INTEGER NOT NULL CONSTRAINT [TimeSchemaID] REFERENCES [TimeSchemas]([TimeSchemaID]) ON DELETE SET NULL",
-                "SensorID": "INTEGER NOT NULL ON CONFLICT REPLACE DEFAULT 0"
+                "SensorID": "INTEGER NOT NULL ON CONFLICT REPLACE DEFAULT 0",
+                "TemperatureDeviation": "INTEGER NOT NULL ON CONFLICT REPLACE DEFAULT 10",
+                "TemperatureTolerance": "INTEGER NOT NULL ON CONFLICT REPLACE DEFAULT 0"
               }
+           },
+           "mem":{
+                "RegulatorsThermoState": {
+                    "RegulatorID": "INTEGER NOT NULL PRIMARY KEY CONSTRAINT [RegulatorID] REFERENCES [RegulatorsThermoParams]([RegulatorID]) ON DELETE CASCADE",
+                    "TimeSchemaID": "INTEGER NOT NULL",
+                    "TargetTemperature": "INTEGER NOT NULL",
+                    "CurrentTemperature": "INTEGER NOT NULL",
+                    "State": "INTEGER NOT NULL"
+                }
+           },
+           "temp":{
+             "FillTimeSchemasInUseByRegulators${REGULATOR_TYPE.toPascal()}_update":{
+                "trigger": "AFTER UPDATE OF [TimeSchemaID]
+                    ON [main].[Regulators${REGULATOR_TYPE.toPascal()}Params]
+                    BEGIN
+                    DELETE FROM TimeSchemasInUse WHERE OwnerKey = 'regulator-${REGULATOR_TYPE}';
+                    INSERT INTO TimeSchemasInUse(TimeSchemaID, OwnerKey)
+                        SELECT DISTINCT [TimeSchemaID], 'regulator-${REGULATOR_TYPE}' FROM [main].[Regulators${REGULATOR_TYPE.toPascal()}Params];
+                    END"
+             },
+             "FillTimeSchemasInUseByRegulators${REGULATOR_TYPE.toPascal()}_insert":{
+                "trigger": "AFTER INSERT
+                    ON [main].[Regulators${REGULATOR_TYPE.toPascal()}Params]
+                    BEGIN
+                    DELETE FROM TimeSchemasInUse WHERE OwnerKey = 'regulator-${REGULATOR_TYPE}';
+                    INSERT INTO TimeSchemasInUse(TimeSchemaID, OwnerKey)
+                        SELECT DISTINCT [TimeSchemaID], 'regulator-${REGULATOR_TYPE}' FROM [main].[Regulators${REGULATOR_TYPE.toPascal()}Params];
+                    END"
+             },
+             "FillTimeSchemasInUseByRegulators${REGULATOR_TYPE.toPascal()}_delete":{
+                "trigger": "AFTER DELETE
+                    ON [main].[Regulators${REGULATOR_TYPE.toPascal()}Params]
+                    BEGIN
+                    DELETE FROM TimeSchemasInUse WHERE OwnerKey = 'regulator-${REGULATOR_TYPE}';
+                    INSERT INTO TimeSchemasInUse(TimeSchemaID, OwnerKey)
+                        SELECT DISTINCT [TimeSchemaID], 'regulator-${REGULATOR_TYPE}' FROM [main].[Regulators${REGULATOR_TYPE.toPascal()}Params];
+                    END"
+             },
+             "FillTimeSchemasInUseByRegulators${REGULATOR_TYPE.toPascal()}":{
+                "query": "DELETE FROM TimeSchemasInUse WHERE OwnerKey = 'regulator-${REGULATOR_TYPE}';
+                    INSERT INTO TimeSchemasInUse(TimeSchemaID, OwnerKey)
+                        SELECT DISTINCT [TimeSchemaID], 'regulator-${REGULATOR_TYPE}' FROM [main].[Regulators${REGULATOR_TYPE.toPascal()}Params];"
+             }
+             
+             
            }
         }`;
 }
