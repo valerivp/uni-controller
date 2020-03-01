@@ -68,6 +68,11 @@ function TemplatePluginSettings(PluginName, PluginNamePN, options) {
     };
 
     utils.defineProperty_length(this[PluginNamePN]);
+    this[PluginNamePN].prototype.toArray = function () {
+        let res = [];
+        Object.keys(this).forEach((id)=>res.push(this[id]));
+        return res;
+    };
 
     let data = {};
     data._selectedComponentId = 0;

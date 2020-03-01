@@ -10,7 +10,6 @@ regulators.components.types.add(`regulator-${REGULATOR_TYPE}`, {title: 'Регу
 
 Vue.component(`regulator-${REGULATOR_TYPE}-settings`, {
     data:()=>({
-        timeSchemas: timeSchemas.TimeSchemas,
         timeSchema: 0,
         sensor: 0,
         temperatureDeviation: 0,
@@ -28,6 +27,9 @@ Vue.component(`regulator-${REGULATOR_TYPE}-settings`, {
             if (Number(this.sensor) && !res.find(item => item.id === this.sensor))
                 res.splice(0, 0, vSensors.sensors[this.sensor] || new SensorData(this.sensor));
             return res;
+        },
+        timeSchemas(){
+            return timeSchemas.TimeSchemas.toArray().filter(ts => ts.type === 'temperature');
         },
     },
     methods: {
@@ -49,7 +51,7 @@ Vue.component(`regulator-${REGULATOR_TYPE}-settings`, {
         },
         setDelta(field, delta){
             let params = {};
-            params[field] = Math.trunc(10 * (Number(this[field]) + delta));
+            params[field] = Math.trunc(10 * (Number(String(this[field]).replace('±', '')) + delta));
             this.setParam(params);
         }
     },
@@ -62,8 +64,8 @@ Vue.component(`regulator-${REGULATOR_TYPE}-settings`, {
                 for(let key in arg){
                     let val = arg[key];
                     switch(key.toCamel()){
-                        case 'temperatureDeviation': val = Number(val / 10).toFixed(1); break;
-                        case 'temperatureTolerance': val = Number(val / 10).toFixed(1); break;
+                        case 'temperatureDeviation': val = Number(val); val = ( val > 0 ? '+':'') + Number(val / 10).toFixed(1); break;
+                        case 'temperatureTolerance': val = Number(val); val = (val ? '±' : '') + Number(val / 10).toFixed(1); break;
                     }
                     this[key.toCamel()] = val;
                 }

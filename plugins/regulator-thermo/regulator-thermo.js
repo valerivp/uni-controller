@@ -7,7 +7,15 @@ const REGULATOR_TYPE = 'thermo';
 
 module.exports.init = function () {
     db.init(getDbInitData())
+    db.querySync(getQueryForUpdateTimeSchemasInUse());
 };
+
+function getQueryForUpdateTimeSchemasInUse() {
+    return `DELETE FROM TimeSchemasInUse WHERE OwnerKey = 'regulator-${REGULATOR_TYPE}';
+        INSERT INTO TimeSchemasInUse(TimeSchemaID, OwnerKey)
+            SELECT DISTINCT [TimeSchemaID], 'regulator-${REGULATOR_TYPE}' FROM [main].[Regulators${REGULATOR_TYPE.toPascal()}Params];`
+
+}
 
 
 wscli.commands.add({SetParams: Object},
@@ -42,6 +50,7 @@ wscli.commands.add({SetParams: Object},
                     INSERT INTO RegulatorsThermoParams (RegulatorID, ${names.join(', ')})
                         SELECT $ID, ${params.join(', ')} FROM Regulators${REGULATOR_TYPE.toPascal()}Settings
                     WHERE (Select Changes() = 0);
+                    ${getQueryForUpdateTimeSchemasInUse()}
                     SELECT ${names.map((item, ind) => `${item} AS ${keys[ind]}`)} FROM Regulators${REGULATOR_TYPE.toPascal()}Params WHERE RegulatorID = $ID`;
                 row = db.querySync(q, qp)[0];
 
@@ -63,6 +72,7 @@ function getParams(RegulatorID) {
                             INNER JOIN TimeSchemasTypes as tst ON ts.TypeID = tst.TypeID 
                         WHERE tst.Type = 'temperature'
                         ORDER BY TimeSchemaID LIMIT 1;    
+        ${getQueryForUpdateTimeSchemasInUse()}
         SELECT
             TimeSchemaID AS TimeSchema, SensorID AS Sensor, TemperatureDeviation, TemperatureTolerance
             FROM RegulatorsThermoParams WHERE RegulatorID = $ID`, qp)[0];
@@ -132,7 +142,12 @@ function getDbInitData() {
                     "CurrentTemperature": "INTEGER NOT NULL",
                     "State": "INTEGER NOT NULL"
                 }
-           },
+           }
+        }`;
+}
+
+/*
+,
            "temp":{
              "FillTimeSchemasInUseByRegulators${REGULATOR_TYPE.toPascal()}_update":{
                 "trigger": "AFTER UPDATE OF [TimeSchemaID]
@@ -166,8 +181,8 @@ function getDbInitData() {
                     INSERT INTO TimeSchemasInUse(TimeSchemaID, OwnerKey)
                         SELECT DISTINCT [TimeSchemaID], 'regulator-${REGULATOR_TYPE}' FROM [main].[Regulators${REGULATOR_TYPE.toPascal()}Params];"
              }
-             
-             
+
+
            }
-        }`;
-}
+
+* */
