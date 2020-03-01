@@ -4,7 +4,7 @@ const wire = require('wire-i2c');
 const utils = require(`uc-utils`);
 const crc = require(`uc-crc`);
 
-const DS2482s = require('ds2482');
+const DS2482s = require('ds2482s');
 
 const sensors = require(`uc-sensors`);
 const db = require(`uc-db`).init(getDbInitData());
@@ -20,6 +20,7 @@ module.exports.init = function () {
 };
 
 function receiveData(wire) {
+    let $this = receiveData;
     const SensorsTypes = { // Model IDs
         DS18S20MODEL: 0x10,  // also DS1820
         DS18B20MODEL: 0x28,
@@ -38,14 +39,14 @@ function receiveData(wire) {
 
     let bridge_DS2482s = new DS2482s(wire);
 
-    if(!this.searchStarted){
-        this.searchStarted = true;
+    if(!$this.searchStarted){
+        $this.searchStarted = true;
         bridge_DS2482s.resetSearch();
         bridge_DS2482s.skipROM();
         bridge_DS2482s.wireWriteByte(OneWireCommands.STARTCONVO);        // start conversion, with parasite power on at the end
         return true;
     }
-    var sensorROM = bridge_DS2482s.wireSearchNext();
+    let sensorROM = bridge_DS2482s.wireSearchNext();
     if(sensorROM){
         // проверим crc
         // console.log("OneWire sensor ROM: " + sensorROM);
@@ -58,8 +59,8 @@ function receiveData(wire) {
         bridge_DS2482s.matchROM(sensorROM);
         // нашли датчик, прочитаем данные. Датчик уже выбран
         bridge_DS2482s.wireWriteByte(OneWireCommands.READSCRATCH);
-        var databuf = [];
-        for (var i = 0; i < 9; i++) {           // we need 9 bytes
+        let databuf = [];
+        for (let i = 0; i < 9; i++) {           // we need 9 bytes
             databuf[i] = bridge_DS2482s.wireReadByte();
         }
         //console.log("OneWire sensor data: " + databuf);
@@ -69,16 +70,16 @@ function receiveData(wire) {
             return true;
         }
 
-        var sensorData = {};
+        let sensorData = {};
         sensorData.ID       = utils.crc16(sensorROM);
         sensorData.TimeLabel= Date.now();
 
         switch (sensorROM[0]){
             case SensorsTypes.DS18B20MODEL:{
                 sensorData.Type     = 'DS18B20';
-                var raw = (databuf[1] << 8) | databuf[0];
+                let raw = (databuf[1] << 8) | databuf[0];
 
-                var cfg = (databuf[4] & 0x60);
+                let cfg = (databuf[4] & 0x60);
                 // at lower res, the low bits are undefined, so let's zero them
                 if (cfg == 0x00) raw = raw & ~7;  // 9 bit resolution, 93.75 ms
                 else if (cfg == 0x20) raw = raw & ~3; // 10 bit res, 187.5 ms
@@ -92,7 +93,7 @@ function receiveData(wire) {
             sensors.updateSensorData(sensorData);
 
     }else
-        this.searchStarted = false;
+        $this.searchStarted = false;
 
     return true;
 }
@@ -104,6 +105,7 @@ function readSensorsData(){
             wire.close();
         })
         .catch((err) => {
+            wire.close();
             console.error(err)
         });
     return;
