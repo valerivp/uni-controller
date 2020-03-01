@@ -40,7 +40,7 @@ function onReceiveData(data) {
 
 function readSensorsData(){
     wire.open(address)
-        .then(() => {
+        .then((i2c) => {
             return wire.read(7);
         })
         .then((data) => {

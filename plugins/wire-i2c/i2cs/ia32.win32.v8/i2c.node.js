@@ -21,7 +21,12 @@ module.exports.open = function(device, callback) {
             return callback(undefined);
         });
 };
+
 module.exports.close = function() {
+    return true;
+};
+
+module.exports.write = function() {
     return true;
 };
 

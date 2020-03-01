@@ -4,7 +4,7 @@ const wire = require('wire-i2c');
 const utils = require(`uc-utils`);
 const crc = require(`uc-crc`);
 
-const DS2482s = require('ds2482s');
+const DS2482s = require('ds2482');
 
 const sensors = require(`uc-sensors`);
 const db = require(`uc-db`).init(getDbInitData());
@@ -100,8 +100,8 @@ function receiveData(wire) {
 
 function readSensorsData(){
     wire.open(address)
-        .then(() => {
-            receiveData(wire);
+        .then((i2c) => {
+            receiveData(i2c);
             wire.close();
         })
         .catch((err) => {

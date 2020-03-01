@@ -38,7 +38,7 @@ module.exports.open = function(address) {
             return new Promise(function(resolve, reject) {
                 wire = getWire(address);
                 wire.open(device, ()=>{
-                    resolve(this);
+                    resolve(wire);
                 });
             });
         });
