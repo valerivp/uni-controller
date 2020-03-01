@@ -4,7 +4,7 @@
   "plugins-dependencies": {
     "wire-i2c":""
   },
-  "node": "ds2482-sync.js",
+  "node": "ds2482-sync",
   "web":{
     "js":[
     ],
