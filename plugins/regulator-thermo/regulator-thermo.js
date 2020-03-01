@@ -130,8 +130,8 @@ function getDbInitData() {
                 "RegulatorID": "INTEGER NOT NULL PRIMARY KEY CONSTRAINT [RegulatorID] REFERENCES [Regulators]([RegulatorID]) ON DELETE CASCADE",
                 "TimeSchemaID": "INTEGER NOT NULL CONSTRAINT [TimeSchemaID] REFERENCES [TimeSchemas]([TimeSchemaID]) ON DELETE SET NULL",
                 "SensorID": "INTEGER NOT NULL ON CONFLICT REPLACE DEFAULT 0",
-                "TemperatureDeviation": "INTEGER NOT NULL ON CONFLICT REPLACE DEFAULT 10",
-                "TemperatureTolerance": "INTEGER NOT NULL ON CONFLICT REPLACE DEFAULT 0"
+                "TemperatureDeviation": "INTEGER NOT NULL ON CONFLICT REPLACE DEFAULT 0",
+                "TemperatureTolerance": "INTEGER NOT NULL ON CONFLICT REPLACE DEFAULT 5"
               }
            },
            "mem":{

@@ -11,9 +11,10 @@ const db = require(`uc-db`).init(getDbInitData());
 let address;
 
 module.exports.init = function () {
-    address = db.querySync(`SELECT Address FROM I2C_WTH_ReceiverSettings`)[0].Address;
+    let settings = db.querySync(`SELECT Address FROM I2C_WTH_ReceiverSettings`)[0];
+    address = settings.Address;
 
-    setInterval(readSensorsData, db.querySync(`SELECT Interval AS Interval FROM I2C_WTH_ReceiverSettings`)[0].Interval);
+    setInterval(readSensorsData, settings.Interval);
 };
 
 function onReceiveData(data) {

@@ -1,0 +1,16 @@
+{
+  "name": "ds2482-sensors-receiver",
+  "version": "0.0.1",
+  "plugins-dependencies": {
+    "ds2482": ""
+  },
+  "node": "ds2482-sensors-receiver",
+  "web":{
+    "js":[
+    ],
+    "css":[
+
+    ]
+  }
+}
+
