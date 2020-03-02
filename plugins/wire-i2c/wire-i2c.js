@@ -37,11 +37,19 @@ module.exports.open = function(address) {
         .then(()=> {
             return new Promise(function(resolve, reject) {
                 wire = getWire(address);
-                wire.open(device, ()=>{
-                    resolve(wire);
+                wire.open(device, (err)=>{
+                    if(err)
+                        reject(err);
+                    else
+                        resolve(wire);
                 });
             });
-        });
+        })
+        // .catch((err) => {
+        //     //wire.close();
+        //     console.error(err)
+        // })
+        ;
 };
 module.exports.close = function() {
     if(wire)

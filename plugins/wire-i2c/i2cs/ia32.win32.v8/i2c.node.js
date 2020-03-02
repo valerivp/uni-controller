@@ -26,8 +26,22 @@ module.exports.close = function() {
     return true;
 };
 
-module.exports.write = function() {
+module.exports.write = function(data, cb) {
+    setTimeout(()=>{
+        cb();
+    }, 500);
+};
+module.exports.writeBlock = function(cmd, data, cb) {
+    setTimeout(()=>{
+        cb();
+    }, 500);
+};
+
+module.exports.writeByte = function() {
     return true;
+};
+module.exports.readByte = function() {
+    return Math.random()*255|0;
 };
 
 module.exports.setAddress = function(address) {
