@@ -61,6 +61,18 @@ class DS2482 {
         return (this._busyWait() & cmds.STATUS.PRESENCE) != 0;
     }
 
+    getSearchState(){
+        return {
+            searchExhausted: this.searchExhausted,
+            searchLastDisrepancy: this.searchLastDisrepancy,
+            searchAddress: this.searchAddress
+        }
+    }
+    setSearchState(state){
+        for(let key in state)
+            this[key] = state[key];
+    }
+
     wireSearchNext(){
         var i;
         var direction;

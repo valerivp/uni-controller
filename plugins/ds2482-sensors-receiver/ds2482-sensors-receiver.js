@@ -13,7 +13,7 @@ const db = require(`uc-db`).init(getDbInitData());
 let address;
 
 module.exports.init = function () {
-    let settings = db.querySync(`SELECT Address FROM DS2482SensorsReceiverSettings`)[0];
+    let settings = db.querySync(`SELECT * FROM DS2482SensorsReceiverSettings`)[0];
     address = settings.Address;
 
     setInterval(readSensorsData, settings.Interval);
@@ -42,17 +42,21 @@ function receiveData(wire) {
     if(!$this.searchStarted){
         $this.searchStarted = true;
         bridge_DS2482s.resetSearch();
+        $this.searchState = bridge_DS2482s.getSearchState();
         bridge_DS2482s.skipROM();
         bridge_DS2482s.wireWriteByte(OneWireCommands.STARTCONVO);        // start conversion, with parasite power on at the end
         return true;
     }
+    bridge_DS2482s.setSearchState($this.searchState);
+
     let sensorROM = bridge_DS2482s.wireSearchNext();
     if(sensorROM){
+        $this.searchState = bridge_DS2482s.getSearchState();
         // проверим crc
         // console.log("OneWire sensor ROM: " + sensorROM);
-        if (utils.crc8(sensorROM, 7) != utils.byte(sensorROM[7])) {
+        if (crc.crc8(sensorROM, 7) != utils.byte(sensorROM[7])) {
             console.log("OneWire sensor ROM: " + sensorROM);
-            console.log('Bad crc: ' + utils.byte(sensorROM[7]) + ' != ' + utils.crc8(sensorROM, 7));
+            console.log('Bad crc: ' + utils.byte(sensorROM[7]) + ' != ' + crc.crc8(sensorROM, 7));
             return true; //
         }
         bridge_DS2482s.reset();
@@ -64,14 +68,14 @@ function receiveData(wire) {
             databuf[i] = bridge_DS2482s.wireReadByte();
         }
         //console.log("OneWire sensor data: " + databuf);
-        if (utils.crc8(databuf, 8) != databuf[8]) {
+        if (crc.crc8(databuf, 8) != databuf[8]) {
             console.log("OneWire sensor data: " + databuf);
-            console.log('Bad crc: ' + utils.byte(databuf[8]) + ' != ' + utils.crc8(databuf, 8));
+            console.log('Bad crc: ' + utils.byte(databuf[8]) + ' != ' + crc.crc8(databuf, 8));
             return true;
         }
 
         let sensorData = {};
-        sensorData.ID       = utils.crc16(sensorROM);
+        sensorData.ID       = crc.crc16(sensorROM);
         sensorData.TimeLabel= Date.now();
 
         switch (sensorROM[0]){
@@ -101,11 +105,16 @@ function receiveData(wire) {
 function readSensorsData(){
     wire.open(address)
         .then((i2c) => {
-            receiveData(i2c);
-            wire.close();
+            try {
+                receiveData(i2c);
+            }catch (err){
+                throw err;
+            }finally {
+                wire.close();
+            }
         })
         .catch((err) => {
-            wire.close();
+            //wire.close();
             console.error(err)
         });
     return;
