@@ -16,7 +16,7 @@ module.exports.init = function () {
     let settings = db.querySync(`SELECT * FROM DS2482SensorsReceiverSettings`)[0];
     address = settings.Address;
 
-    setInterval(readSensorsData, settings.Interval__);
+    setInterval(readSensorsData, settings.Interval);
 };
 
 function receiveData(wire) {
