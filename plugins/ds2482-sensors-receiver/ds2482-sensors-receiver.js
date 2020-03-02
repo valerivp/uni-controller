@@ -105,18 +105,16 @@ function receiveData(wire) {
 function readSensorsData(){
     wire.open(address)
         .then((i2c) => {
-            try {
-                receiveData(i2c);
-            }catch (err){
-                throw err;
-            }finally {
-                wire.close();
-            }
+            receiveData(i2c);
+        })
+        .finally(()=>{
+            wire.close();
         })
         .catch((err) => {
             //wire.close();
             console.error(err)
-        });
+        })
+    ;
     return;
 }
 
