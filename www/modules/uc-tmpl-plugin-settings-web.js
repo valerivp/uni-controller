@@ -210,7 +210,7 @@ function TemplatePluginSettings(PluginName, PluginNamePN, options) {
                     <input type="text" v-model.lazy="selectedComponentName">
                 </div>` : '') + `
             </div>
-            <div v-show="selectedComponentId">
+            <div v-show="selectedComponentId" v-if="!selectedComponent.type || types.length > 1">
                 <div>
                     <span>Тип</span>
                     <select v-model="selectedComponent.type" v-on:change="setType">
