@@ -102,10 +102,8 @@ Vue.component('tile-temperature', {
                 <div class="zoom-place">
                     <div class="zoomed-content">
                         <nobr v-if="temperature !== undefined" v-bind:class="(temperature > 0 ? 'temperature warm' : 'temperature cold')">
-                            <span class="integer-part">{{
-                                Number(temperature).toFixed(0)
-                                }}</span><span class="fractional-part">.{{
-                                Number(Math.abs(temperature * 10 % 10)).toFixed(0)}}
+                            <span class="integer-part">{{Math.trunc(temperature)}}</span>
+                            <span class="fractional-part">.{{Math.trunc(Math.abs(temperature * 10 % 10))}}
                                 </span><span v-if="trend('temperature') !== undefined" 
                                     v-bind:class="trend('temperature') ? 'tile-t-h-trend-up' : 'tile-t-h-trend-down'"></span>
                          </nobr>
