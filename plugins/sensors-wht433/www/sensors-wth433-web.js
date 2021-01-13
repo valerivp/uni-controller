@@ -29,3 +29,4 @@ delete sensorInfo1.battery;
 sensorsTypes.add( 'WTH433-1', sensorInfo1);
 sensorsTypes.add( 'WTH433-2', Object.assign({}, sensorInfo));
 sensorsTypes.add( 'WTH433-3', Object.assign({}, sensorInfo));
+sensorsTypes.add( 'WH31a', Object.assign({}, sensorInfo));
