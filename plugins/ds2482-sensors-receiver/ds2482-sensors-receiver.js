@@ -139,7 +139,7 @@ function getDbInitData() {
                 "Interval": "INTEGER NOT NULL"
               },
               "data": [
-                {"RowID": 1, "Address": 24, "Interval": 2000}
+                {"RowID": 1, "Address": 24, "Interval": 500}
               ]
             }
           }
