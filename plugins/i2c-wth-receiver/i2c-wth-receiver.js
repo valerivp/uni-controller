@@ -7,13 +7,13 @@ const crc = require(`uc-crc`);
 const sensors = require(`uc-sensors`);
 const db = require(`uc-db`).init(getDbInitData());
 
-
 let address;
 
 module.exports.init = function () {
     let settings = db.querySync(`SELECT Address FROM I2C_WTH_ReceiverSettings`)[0];
     address = settings.Address;
-
+    settings.Interval = settings.Interval || 1000;
+    console.info('readSensorsData.Interval', settings.Interval);
     setInterval(readSensorsData, settings.Interval);
 };
 
@@ -39,15 +39,18 @@ function onReceiveData(data) {
 }
 
 function readSensorsData(){
+    let receivedData;
     wire.open(address)
         .then((i2c) => {
             return wire.read(7);
         })
         .then((data) => {
-            //console.log('Receive data:' + data);
-            wire.close();
-
-            onReceiveData(data);
+            console.log('Receive data:' + data);
+            receivedData = data;
+            return wire.close();
+        })
+        .then(() => {
+            onReceiveData(receivedData);
         })
         .catch((err) => {
             console.error(err)
@@ -73,7 +76,7 @@ function getDbInitData() {
                 "Interval": "INTEGER NOT NULL"
               },
               "data": [
-                {"RowID": 1, "Address": 96, "Interval": 2000}
+                {"RowID": 1, "Address": 96, "Interval": 1000}
               ]
             }
           }

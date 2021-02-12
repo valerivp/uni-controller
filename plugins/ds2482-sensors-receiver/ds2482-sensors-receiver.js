@@ -15,11 +15,13 @@ let address;
 module.exports.init = function () {
     let settings = db.querySync(`SELECT * FROM DS2482SensorsReceiverSettings`)[0];
     address = settings.Address;
-
+    settings.Interval = settings.Interval || 1000;
+    console.info('readSensorsData.Interval', settings.Interval);
     setInterval(readSensorsData, settings.Interval);
 };
 
 function receiveData(wire) {
+    let result;
     let $this = receiveData;
     const SensorsTypes = { // Model IDs
         DS18S20MODEL: 0x10,  // also DS1820
@@ -45,7 +47,7 @@ function receiveData(wire) {
         $this.searchState = bridge_DS2482s.getSearchState();
         bridge_DS2482s.skipROM();
         bridge_DS2482s.wireWriteByte(OneWireCommands.STARTCONVO);        // start conversion, with parasite power on at the end
-        return true;
+        return undefined;
     }
     bridge_DS2482s.setSearchState($this.searchState);
 
@@ -57,7 +59,7 @@ function receiveData(wire) {
         if (crc.crc8(sensorROM, 7) != utils.byte(sensorROM[7])) {
             console.log("OneWire sensor ROM: " + sensorROM);
             console.log('Bad crc: ' + utils.byte(sensorROM[7]) + ' != ' + crc.crc8(sensorROM, 7));
-            return true; //
+            return undefined; //
         }
         bridge_DS2482s.reset();
         bridge_DS2482s.matchROM(sensorROM);
@@ -71,7 +73,7 @@ function receiveData(wire) {
         if (crc.crc8(databuf, 8) != databuf[8]) {
             console.log("OneWire sensor data: " + databuf);
             console.log('Bad crc: ' + utils.byte(databuf[8]) + ' != ' + crc.crc8(databuf, 8));
-            return true;
+            return undefined;
         }
 
         let sensorData = {};
@@ -94,27 +96,27 @@ function receiveData(wire) {
             }break;
         }
         if(sensorData.Type)
-            sensors.updateSensorData(sensorData);
+            result = sensorData;
+//            sensors.updateSensorData(sensorData);
 
     }else
         $this.searchStarted = false;
 
-    return true;
+    return result;
 }
 
 function readSensorsData(){
+    let receivedData;
     wire.open(address)
         .then((i2c) => {
-            try{
-                receiveData(i2c);
-            }catch (err){
-                throw err;
-            }finally {
-                wire.close();
-            }
+            receivedData = receiveData(i2c);
+            return wire.close();
+        })
+        .then(() => {
+            if(receivedData)
+                sensors.updateSensorData(receivedData);
         })
         .catch((err) => {
-            //wire.close();
             console.error(err)
         })
     ;

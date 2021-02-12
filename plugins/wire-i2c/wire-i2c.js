@@ -55,7 +55,9 @@ module.exports.close = function() {
     if(wire)
         wire.close();
     wire = undefined;
-    return queue.unlock();
+    //return queue.unlock();
+    queue.unlock();
+    return Promise.resolve();
 };
 
 module.exports.read = function (len) {
